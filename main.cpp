@@ -3,12 +3,43 @@
 #include <iostream>
 #include <iomanip>
 #include <OpenXLSX.h>
+#include <named_type.hpp>
 
 using namespace std;
 using namespace OpenXLSX;
 
+void check_lg3(int error, const char *message, const char *extra);
+template <typename Function>
+using Comparator = fluent::NamedType<Function, struct ComparatorTag>;
+
+template <typename Function>
+void performAction(Comparator<Function> comp)
+{
+    auto a = comp.get();
+    a(1);
+}
+
 int main()
 {
+    auto x = fluent::make_named<Comparator>([](int x) { std::cout << "compare\n"; });
+    performAction(x);
+
+    git_repository *repo = nullptr;
+
+    check_lg3(git_libgit2_init() < 0, "init", nullptr);
+    check_lg3(git_repository_open(&repo, "."), "open", nullptr);
+    const char *sha = "4a202b346bb0fb0db7eff3cffeb3c70babbd2045";
+    git_oid *oid = nullptr;
+    git_commit *out = nullptr;
+    git_commit_free(out);
+    git_commit_lookup(&out, repo, oid);
+    check_lg3(git_oid_fromstr(oid, sha), "oid", nullptr);
+
+    char shortsha[10] = {0};
+    git_oid_tostr(shortsha, 9, oid);
+
+    git_repository_free(repo);
+
     XLDocument doc;
     doc.CreateDocument("./MyTest.xlsx");
     auto wks = doc.Workbook().Worksheet("Sheet1");
@@ -37,4 +68,28 @@ int main()
     doc.SaveDocument();
 
     return 0;
+}
+
+void check_lg3(int error, const char *message, const char *extra)
+{
+    const git_error *lg2err;
+    const char *lg2msg = "", *lg2spacer = "";
+
+    if (!error)
+        return;
+
+    if ((lg2err = git_error_last()) != NULL && lg2err->message != NULL)
+    {
+        lg2msg = lg2err->message;
+        lg2spacer = " - ";
+    }
+
+    if (extra)
+        fprintf(stderr, "%s '%s' [%d]%s%s\n",
+                message, extra, error, lg2spacer, lg2msg);
+    else
+        fprintf(stderr, "%s [%d]%s%s\n",
+                message, error, lg2spacer, lg2msg);
+
+    exit(1);
 }

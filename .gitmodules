@@ -4,3 +4,6 @@
 [submodule "extern/OpenXLSX"]
 	path = extern/OpenXLSX
 	url = https://github.com/troldal/OpenXLSX.git
+[submodule "extern/NamedType"]
+	path = extern/NamedType
+	url = https://github.com/joboccara/NamedType.git

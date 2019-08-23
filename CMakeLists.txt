@@ -14,5 +14,6 @@ target_link_libraries(main PRIVATE git2 OpenXLSX)
 target_include_directories(main PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/extern/libgit2/include>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/extern/OpenXLSX/library/openxlsx/interfaces/c++/headers>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/extern/NamedType>
   #$<INSTALL_INTERFACE:include>  # <prefix>/include/mylib
 )
