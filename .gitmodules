@@ -1,0 +1,6 @@
+[submodule "extern/libgit2"]
+	path = extern/libgit2
+	url = https://github.com/libgit2/libgit2.git
+[submodule "extern/OpenXLSX"]
+	path = extern/OpenXLSX
+	url = https://github.com/troldal/OpenXLSX.git
