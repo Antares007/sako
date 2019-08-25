@@ -28,19 +28,22 @@ int main()
 
     check_lg3(git_libgit2_init() < 0, "init", nullptr);
     check_lg3(git_repository_open(&repo, "."), "open", nullptr);
-    const char *sha = "4a202b346bb0fb0db7eff3cffeb3c70babbd2045";
-    git_oid *oid = nullptr;
-    git_commit *out = nullptr;
-    git_commit_free(out);
-    git_commit_lookup(&out, repo, oid);
-    check_lg3(git_oid_fromstr(oid, sha), "oid", nullptr);
+    git_oid oid;
+    git_commit *commit = nullptr;
 
-    char shortsha[10] = {0};
-    git_oid_tostr(shortsha, 9, oid);
+    const char *sha = "28db7ff9455022c7e4e70220b4bb360721d2274c";
+    check_lg3(git_oid_fromstr(&oid, sha), "oid", nullptr);
 
+    git_commit_lookup(&commit, repo, &oid);
+    git_tree *tree = nullptr;
+    check_lg3(git_commit_tree(&tree, commit), "get tree", nullptr);
+    auto len = git_tree_entrycount(tree);
+
+    git_tree_free(tree);
+    git_commit_free(commit);
     git_repository_free(repo);
 
-    XLDocument doc;
+    /* XLDocument doc;
     doc.CreateDocument("./MyTest.xlsx");
     auto wks = doc.Workbook().Worksheet("Sheet1");
 
@@ -65,7 +68,7 @@ int main()
     cout << "Cell D1: " << D1 << endl;
     cout << "Cell E1: " << E1 << endl;
 
-    doc.SaveDocument();
+    doc.SaveDocument(); */
 
     return 0;
 }
