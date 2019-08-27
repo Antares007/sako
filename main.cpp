@@ -1,76 +1,74 @@
 #include <iostream>
 #include <git2.h>
-#include <iostream>
-#include <iomanip>
-#include <OpenXLSX.h>
-#include <named_type.hpp>
-
-using namespace std;
-using namespace OpenXLSX;
+#include <variant>
+#include <functional>
+#include <filesystem>
 
 void check_lg3(int error, const char *message, const char *extra);
-template <typename Function>
-using Comparator = fluent::NamedType<Function, struct ComparatorTag>;
 
-template <typename Function>
-void performAction(Comparator<Function> comp)
+using b = git_oid (*)(git_repository *);
+
+struct entry
 {
-    auto a = comp.get();
-    a(1);
+    std::string name;
+    git_filemode_t type;
+    git_oid oid;
+};
+
+struct bark
+{
+    using o = std::function<void(entry &&)>;
+    using Pith = void (*)(const o, git_repository *, const bark &);
+
+    git_oid operator()(Pith pith) const
+    {
+        git_treebuilder *bld = nullptr;
+        int error = git_treebuilder_new(&bld, repo, nullptr);
+
+        pith(
+            [&](entry &&r) {
+                error = git_treebuilder_insert(nullptr, bld, r.name.c_str(), &r.oid, r.type);
+            },
+            repo, *this);
+
+        git_oid oid;
+        error = git_treebuilder_write(&oid, bld);
+        git_treebuilder_free(bld);
+        return oid;
+    };
+    bark(git_repository *repo) : repo(repo){};
+
+private:
+    git_repository *repo;
+};
+
+void p1(const bark::o o, git_repository *repo, const bark &bark)
+{
+    git_oid oid;
+    git_blob_create_from_buffer(&oid, repo, "abo", sizeof("abo"));
+    o(entry{"name1", GIT_FILEMODE_BLOB, oid});
+}
+void p0(const bark::o o, git_repository *repo, const bark &bark)
+{
+    git_oid oid;
+    git_blob_create_from_buffer(&oid, repo, "abo", sizeof("abo"));
+    o(entry{"name1", GIT_FILEMODE_BLOB, oid});
+    o(entry{"name2", GIT_FILEMODE_TREE, bark(p1)});
 }
 
 int main()
 {
-    auto x = fluent::make_named<Comparator>([](int x) { std::cout << "compare\n"; });
-    performAction(x);
-
     git_repository *repo = nullptr;
 
     check_lg3(git_libgit2_init() < 0, "init", nullptr);
-    check_lg3(git_repository_open(&repo, "."), "open", nullptr);
-    git_oid oid;
-    git_commit *commit = nullptr;
+    auto cwd = std::filesystem::current_path().generic_string();
+    check_lg3(git_repository_open(&repo, (std::filesystem::current_path().generic_string() + "/../.git").data()), "open", nullptr);
 
-    const char *sha = "28db7ff9455022c7e4e70220b4bb360721d2274c";
-    check_lg3(git_oid_fromstr(&oid, sha), "oid", nullptr);
+    auto oid = bark{repo}(p0);
 
-    git_commit_lookup(&commit, repo, &oid);
-    git_tree *tree = nullptr;
-    check_lg3(git_commit_tree(&tree, commit), "get tree", nullptr);
-    auto len = git_tree_entrycount(tree);
-
-    git_tree_free(tree);
-    git_commit_free(commit);
+    const auto sha1 = git_oid_tostr_s(&oid);
+    std::cout << sha1 << '\n';
     git_repository_free(repo);
-
-    /* XLDocument doc;
-    doc.CreateDocument("./MyTest.xlsx");
-    auto wks = doc.Workbook().Worksheet("Sheet1");
-
-    wks.Cell("A1").Value() = 3.14159;
-    wks.Cell("B1").Value() = 42;
-    wks.Cell("C1").Value() = "Hello OpenXLSX!";
-    wks.Cell("D1").Value() = true;
-    wks.Cell("E1").Value() = wks.Cell("C1").Value();
-
-    auto A1 = wks.Cell("A1").Value().Get<double>();
-    auto B1 = wks.Cell("B1").Value().Get<unsigned int>();
-    auto C1 = wks.Cell("C1").Value().Get<std::string>();
-    auto D1 = wks.Cell("D1").Value().Get<bool>();
-    auto E1 = wks.Cell("E1").Value().Get<std::string>();
-
-    auto val = wks.Cell("E1").Value();
-    cout << val.Get<std::string>() << endl;
-
-    cout << "Cell A1: " << A1 << endl;
-    cout << "Cell B1: " << B1 << endl;
-    cout << "Cell C1: " << C1 << endl;
-    cout << "Cell D1: " << D1 << endl;
-    cout << "Cell E1: " << E1 << endl;
-
-    doc.SaveDocument(); */
-
-    return 0;
 }
 
 void check_lg3(int error, const char *message, const char *extra)
