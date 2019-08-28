@@ -4,7 +4,23 @@
 #include <functional>
 #include <filesystem>
 
+template <typename... Ts>
+struct overloaded : Ts...
+{
+    using Ts::operator()...;
+};
+template <typename... Ts>
+overloaded(Ts...)->overloaded<Ts...>;
+using Pith = std::variant<int, std::string> (*)(void);
+
+std::variant<int, std::string> frombuffer()
+{
+    //git_blob_create_frombuffer();
+    return "";
+};
+
 void check_lg3(int error, const char *message, const char *extra);
+auto emptyTreeSha = "4b825dc642cb6eb9a060e54bf8d69288fbee4904";
 
 using b = git_oid (*)(git_repository *);
 
@@ -18,22 +34,32 @@ struct entry
 struct bark
 {
     using o = std::function<void(entry &&)>;
-    using Pith = void (*)(const o, git_repository *, const bark &);
+    using Pith = void (*)(const o, git_tree *tree, git_repository *, const bark &);
 
     git_oid operator()(Pith pith) const
     {
+        git_oid oid;
+        git_oid_fromstr(&oid, emptyTreeSha);
+        return (*this)(oid, pith);
+    };
+
+    git_oid operator()(git_oid ooid, Pith pith) const
+    {
         git_treebuilder *bld = nullptr;
+        git_tree *tree;
+        git_tree_lookup(&tree, repo, &ooid);
         int error = git_treebuilder_new(&bld, repo, nullptr);
 
         pith(
             [&](entry &&r) {
                 error = git_treebuilder_insert(nullptr, bld, r.name.c_str(), &r.oid, r.type);
             },
-            repo, *this);
+            tree, repo, *this);
 
         git_oid oid;
         error = git_treebuilder_write(&oid, bld);
         git_treebuilder_free(bld);
+        git_tree_free(tree);
         return oid;
     };
     bark(git_repository *repo) : repo(repo){};
@@ -42,13 +68,14 @@ private:
     git_repository *repo;
 };
 
-void p1(const bark::o o, git_repository *repo, const bark &bark)
+void p1(const bark::o o, git_tree *tree, git_repository *repo, const bark &bark)
 {
     git_oid oid;
     git_blob_create_from_buffer(&oid, repo, "abo", sizeof("abo"));
     o(entry{"name1", GIT_FILEMODE_BLOB, oid});
 }
-void p0(const bark::o o, git_repository *repo, const bark &bark)
+
+void p0(const bark::o o, git_tree *tree, git_repository *repo, const bark &bark)
 {
     git_oid oid;
     git_blob_create_from_buffer(&oid, repo, "abo", sizeof("abo"));
@@ -59,12 +86,13 @@ void p0(const bark::o o, git_repository *repo, const bark &bark)
 int main()
 {
     git_repository *repo = nullptr;
-
     check_lg3(git_libgit2_init() < 0, "init", nullptr);
-    auto cwd = std::filesystem::current_path().generic_string();
-    check_lg3(git_repository_open(&repo, (std::filesystem::current_path().generic_string() + "/../.git").data()), "open", nullptr);
-
-    auto oid = bark{repo}(p0);
+    //    auto cwd = std::filesystem::current_path().generic_string();
+    check_lg3(git_repository_open(&repo, "."), "open", nullptr);
+    git_oid oid;
+    git_oid_fromstr(&oid, "d9624d8ab7559e574d00b94ceb91ffd766ee1a5f");
+    auto b = bark{repo};
+    oid = b(oid, p0);
 
     const auto sha1 = git_oid_tostr_s(&oid);
     std::cout << sha1 << '\n';
