@@ -1,8 +1,7 @@
 #ifndef LR_H
 #define LR_H 1
-#include <variant>
 #include "overloaded.h"
-void test();
+#include <variant>
 
 namespace lr
 {

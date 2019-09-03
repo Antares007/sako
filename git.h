@@ -1,10 +1,9 @@
 #ifndef GIT_H
 #define GIT_H 1
 
+#include "lr.h"
 #include <named_type.hpp>
-#include <variant>
 #include <vector>
-#include <tuple>
 
 namespace git
 {

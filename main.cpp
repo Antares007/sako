@@ -71,7 +71,6 @@ void p0(const bark::o o, git_tree *tree, git_repository *repo, const bark &bark)
 
 int main()
 {
-    test();
     git_repository *repo = nullptr;
     check_lg3(git_libgit2_init() < 0, "init", nullptr);
     //    auto cwd = std::filesystem::current_path().generic_string();

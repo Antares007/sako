@@ -1,8 +1,8 @@
 #include "git.h"
-#include "lr.h"
 #include <iostream>
 #include <string>
 #include <utility>
+
 template <typename... Ts>
 struct print;
 void test()
@@ -10,7 +10,9 @@ void test()
     auto b = 4;
     auto see = lr::map(
         [&](int &a) {
+            std::cout << a << '\n';
             return b + a;
         },
-        lr::LR<int>(1));
+        lr::LR<int>(11));
+    std::cout << &see << '\n';
 }
