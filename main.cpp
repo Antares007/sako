@@ -3,21 +3,7 @@
 #include <variant>
 #include <functional>
 #include <filesystem>
-
-template <typename... Ts>
-struct overloaded : Ts...
-{
-    using Ts::operator()...;
-};
-template <typename... Ts>
-overloaded(Ts...)->overloaded<Ts...>;
-using Pith = std::variant<int, std::string> (*)(void);
-
-std::variant<int, std::string> frombuffer()
-{
-    //git_blob_create_frombuffer();
-    return "";
-};
+#include "lr.h"
 
 void check_lg3(int error, const char *message, const char *extra);
 auto emptyTreeSha = "4b825dc642cb6eb9a060e54bf8d69288fbee4904";
@@ -85,6 +71,7 @@ void p0(const bark::o o, git_tree *tree, git_repository *repo, const bark &bark)
 
 int main()
 {
+    test();
     git_repository *repo = nullptr;
     check_lg3(git_libgit2_init() < 0, "init", nullptr);
     //    auto cwd = std::filesystem::current_path().generic_string();

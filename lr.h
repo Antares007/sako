@@ -2,6 +2,7 @@
 #define LR_H 1
 #include <variant>
 #include "overloaded.h"
+void test();
 
 namespace lr
 {
@@ -14,7 +15,7 @@ struct L
 };
 
 template <typename Os, typename... Ts>
-decltype(auto) map(Os &&os, LR<Ts...> &&lr)
+constexpr decltype(auto) map(Os &&os, LR<Ts...> &&lr)
 {
     return std::visit(
         overloaded{
