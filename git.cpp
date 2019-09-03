@@ -1,18 +1,14 @@
 #include "git.h"
 #include "lr.h"
-#include "overloaded.h"
 #include <iostream>
 #include <string>
 #include <utility>
-
+template <typename... Ts>
+struct print;
 void test()
 {
-    auto see = lr::LR<std::string, std::pair<int, float>>("1");
-
-    std::visit(lr::overloaded{
-                   [](std::pair<int, float> &) {},
-                   [](std::string &) {},
-                   [](lr::L &) {},
-               },
-               see);
+    auto see = lr::map(overloaded{[](int &a) {
+                           return a;
+                       }},
+                       lr::LR<int>(1));
 }

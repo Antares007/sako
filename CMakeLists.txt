@@ -7,7 +7,11 @@ set(STATIC ON CACHE BOOL "" FORCE)
 add_subdirectory(extern/libgit2)
 add_subdirectory(extern/OpenXLSX)
 
-add_executable(main main.cpp git.h git.cpp lr.h)
+add_executable(main
+  main.cpp
+  git.h git.cpp
+  lr.h
+  overloaded.h)
 target_compile_features(main PRIVATE cxx_std_17)
 #target_compile_options(main PRIVATE -std=c++2a)
 #target_compile_options(main PRIVATE -fconcepts)
