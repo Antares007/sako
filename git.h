@@ -25,12 +25,13 @@ enum Mode
 struct treeBark
 {
     using O = std::tuple<std::string_view, Mode, Sha1>;
-    using Ray = std::function<void(lr::LR<O> &&)>;
-    using Pith = void (*)(
-        const Ray,
-        const std::vector<O> &,
-        const Repo &,
-        const treeBark &);
+    struct Ray
+    {
+        const std::vector<O> entries;
+        const treeBark &bark;
+        void operator()(lr::LR<O> &&) const;
+    };
+    using Pith = void (*)(const Ray &);
     lr::LR<Sha1> operator()(const Sha1 &, Pith) const;
     lr::LR<Sha1> operator()(Pith) const;
 };

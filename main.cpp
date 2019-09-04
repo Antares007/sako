@@ -2,8 +2,8 @@
 int main()
 {
     auto bark = git::treeBark{};
-    auto rez = bark([](git::treeBark::Ray const o, std::vector<git::treeBark::O> const &entries, auto, auto) {
-        for (auto &e : entries)
+    auto rez = bark([](const git::treeBark::Ray &o) {
+        for (auto &e : o.entries)
         {
             o(e);
             o(std::make_tuple("", git::BLOB, git::Sha1{""}));

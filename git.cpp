@@ -11,6 +11,10 @@ struct print;
 namespace git
 {
 
+void treeBark::Ray::operator()(lr::LR<O> &&r) const
+{
+    std::cout << &r << '\n';
+};
 lr::LR<Sha1> treeBark::operator()(const Sha1 &, treeBark::Pith) const
 {
     return Sha1{"3"};
@@ -18,10 +22,9 @@ lr::LR<Sha1> treeBark::operator()(const Sha1 &, treeBark::Pith) const
 lr::LR<Sha1> treeBark::operator()(treeBark::Pith pith) const
 {
 
-    pith([](lr::LR<treeBark::O> &&r) {
-        std::cout << &r << '\n';
-    },
-         std::vector<treeBark::O>{std::make_tuple("", BLOB, Sha1{"1"})}, Repo{nullptr}, *this);
+    pith(treeBark::Ray{
+        std::vector<treeBark::O>{std::make_tuple("", BLOB, Sha1{"1"})},
+        *this});
 
     return Sha1{"2"};
 };
