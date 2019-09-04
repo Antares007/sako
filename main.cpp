@@ -1,3 +1,16 @@
+#include "git.h"
+int main()
+{
+    auto bark = git::treeBark{};
+    auto rez = bark([](git::treeBark::Ray const o, std::vector<git::treeBark::O> const &entries, auto, auto) {
+        for (auto &e : entries)
+        {
+            o(e);
+            o(std::make_tuple("", git::BLOB, git::Sha1{""}));
+        }
+    });
+}
+/*
 #include <iostream>
 #include <git2.h>
 #include <variant>
@@ -68,9 +81,11 @@ void p0(const bark::o o, git_tree *tree, git_repository *repo, const bark &bark)
     o(entry{"name1", GIT_FILEMODE_BLOB, oid});
     o(entry{"name2", GIT_FILEMODE_TREE, bark(p1)});
 }
-
+void test();
 int main()
 {
+    test();
+    exit(9);
     git_repository *repo = nullptr;
     check_lg3(git_libgit2_init() < 0, "init", nullptr);
     //    auto cwd = std::filesystem::current_path().generic_string();
@@ -107,4 +122,4 @@ void check_lg3(int error, const char *message, const char *extra)
                 message, error, lg2spacer, lg2msg);
 
     exit(1);
-}
+}*/

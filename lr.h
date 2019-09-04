@@ -2,6 +2,7 @@
 #define LR_H 1
 #include "overloaded.h"
 #include <variant>
+#include <type_traits>
 
 namespace lr
 {
@@ -19,7 +20,9 @@ constexpr decltype(auto) map(Os &&os, LR<Ts...> &&lr)
     return std::visit(
         overloaded{
             [&lr](L &) { return lr; },
-            [&os](auto &&a) { return LR<Ts...>{os(a)}; }},
+            [&os](auto &&a) {
+                return LR<Ts...>(os(a));
+            }},
         lr);
 };
 } // namespace lr

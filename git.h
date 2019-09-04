@@ -24,14 +24,15 @@ enum Mode
 
 struct treeBark
 {
-    using O = std::tuple<std::string, Mode, Sha1>;
+    using O = std::tuple<std::string_view, Mode, Sha1>;
+    using Ray = std::function<void(lr::LR<O> &&)>;
     using Pith = void (*)(
-        const std::function<void(const O &&)>,
+        const Ray,
         const std::vector<O> &,
         const Repo &,
         const treeBark &);
-    Sha1 operator()(Sha1, Pith) const;
-    Sha1 operator()(Pith) const;
+    lr::LR<Sha1> operator()(const Sha1 &, Pith) const;
+    lr::LR<Sha1> operator()(Pith) const;
 };
 
 } // namespace git
