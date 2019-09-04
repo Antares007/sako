@@ -1,22 +1,21 @@
 #include "git.h"
-int main()
-{
-    auto bark = git::treeBark{};
-    auto rez = bark([](const git::treeBark::Ray &o) {
-        for (auto &e : o.entries)
-        {
-            o(e);
-            o(std::make_tuple("", git::BLOB, git::Sha1{""}));
-        }
-    });
+
+int main() {
+  auto bark = git::treeBark{};
+  auto rez = bark([](const git::treeBark::Ray &o) {
+    for (auto &e : o.entries) {
+      o(e);
+      o(std::make_tuple("", git::BLOB, git::Sha1{""}));
+    }
+  });
 }
 /*
-#include <iostream>
-#include <git2.h>
-#include <variant>
-#include <functional>
-#include <filesystem>
 #include "lr.h"
+#include <filesystem>
+#include <functional>
+#include <git2.h>
+#include <iostream>
+#include <variant>
 
 void check_lg3(int error, const char *message, const char *extra);
 auto emptyTreeSha = "4b825dc642cb6eb9a060e54bf8d69288fbee4904";
@@ -33,7 +32,8 @@ struct entry
 struct bark
 {
     using o = std::function<void(entry &&)>;
-    using Pith = void (*)(const o, git_tree *tree, git_repository *, const bark &);
+    using Pith = void (*)(const o, git_tree *tree, git_repository *, const bark
+&);
 
     git_oid operator()(Pith pith) const
     {
@@ -51,7 +51,8 @@ struct bark
 
         pith(
             [&](entry &&r) {
-                error = git_treebuilder_insert(nullptr, bld, r.name.c_str(), &r.oid, r.type);
+                error = git_treebuilder_insert(nullptr, bld, r.name.c_str(),
+&r.oid, r.type);
             },
             tree, repo, *this);
 

@@ -1,33 +1,29 @@
-#include <cstdio>
 #include "git.h"
+#include <cstdio>
 #include <iostream>
 #include <string>
 #include <utility>
-#include <iostream>
 
-template <typename Ts>
-struct print;
+template <typename Ts> struct print;
 
-namespace git
-{
+namespace git {
 
-void treeBark::Ray::operator()(lr::LR<O> &&r) const
-{
-    std::cout << &r << '\n';
+void treeBark::Ray::operator()(lr::LR<O> &&r) const {
+  std::cout << &r << '\n';
 };
-lr::LR<Sha1> treeBark::operator()(const Sha1 &, treeBark::Pith) const
-{
-    return Sha1{"3"};
-};
-lr::LR<Sha1> treeBark::operator()(treeBark::Pith pith) const
-{
 
-    pith(treeBark::Ray{
-        std::vector<treeBark::O>{std::make_tuple("", BLOB, Sha1{"1"})},
-        *this});
-
-    return Sha1{"2"};
+lr::LR<Sha1> treeBark::operator()(const Sha1 &, treeBark::Pith) const {
+  return Sha1{"3"};
 };
+
+lr::LR<Sha1> treeBark::operator()(treeBark::Pith pith) const {
+
+  pith(treeBark::Ray{
+      std::vector<treeBark::O>{std::make_tuple("", BLOB, Sha1{"1"})}, *this});
+
+  return Sha1{"2"};
+};
+
 } // namespace git
 
 /*
