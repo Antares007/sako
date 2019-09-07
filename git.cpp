@@ -4,22 +4,21 @@
 #include <string>
 #include <utility>
 
-template <typename Ts> struct print;
-
 namespace git {
 
-void treeBark::Ray::operator()(lr::LR<O> &&r) const {
-  std::cout << &r << '\n';
+void treeBark::Ray::operator()(Name n, Mode, Id) const {
+  std::cout << n.get() << '\n';
 };
-
 lr::LR<Sha1> treeBark::operator()(const Sha1 &, treeBark::Pith) const {
   return Sha1{"3"};
 };
 
 lr::LR<Sha1> treeBark::operator()(treeBark::Pith pith) const {
+  auto x = git_oid{};
 
-  pith(treeBark::Ray{
-      std::vector<treeBark::O>{std::make_tuple("", BLOB, Sha1{"1"})}, *this});
+  pith(treeBark::Ray{std::vector<treeBark::Entry>{std::make_tuple(
+                         name = "file.txt", mode = BLOB, id = x)},
+                     *this});
 
   return Sha1{"2"};
 };

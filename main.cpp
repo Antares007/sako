@@ -1,13 +1,18 @@
 #include "git.h"
-
+#include <git2.h>
+using namespace git;
 int main() {
-  auto bark = git::treeBark{};
-  auto rez = bark([](const git::treeBark::Ray &o) {
+  std::string_view("");
+  auto bark = treeBark{};
+
+  auto rez = bark([](const treeBark::Ray &o) {
     for (auto &e : o.entries) {
-      o(e);
-      o(std::make_tuple("", git::BLOB, git::Sha1{""}));
+      auto [name, mode, id] = e;
+      o(git::name = name, mode, id);
     }
   });
+
+  // print<decltype(rez3)> p;
 }
 /*
 #include "lr.h"
