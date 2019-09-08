@@ -2,22 +2,19 @@
 #include <git2.h>
 using namespace git;
 int main() {
-
-  auto bark = treeBark{};
-
-  bark([](treeBark::Ray &&o) {
+  auto bark = Bark{};
+  bark([](Bark::Ray &&o) {
     for (auto &e : o.entries) {
       auto [name, mode, id] = e;
       o(git::name = name, mode, id);
     }
-    o(name = "folder1", TREE, o.bark([](treeBark::Ray &&o) {
+    o(name = "folder", TREE, o.bark([](Bark::Ray &&o) {
       for (auto &e : o.entries) {
         auto [name, mode, id] = e;
         o(git::name = name, mode, id);
       }
     }));
   });
-
   // print<decltype(rez3)> p;
 }
 /*

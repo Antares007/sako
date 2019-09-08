@@ -19,12 +19,8 @@ template <typename T> struct NamedArgument {
 };
 namespace git {
 
-using Sha1 = fluent::NamedType<std::string, struct Sha1Tag>;
-using Name = fluent::NamedType<const char *, struct NameTag>;
-constexpr static Name::argument name;
+using Name = fluent::NamedType<std::string_view, struct NameTag>;
 using Id = fluent::NamedType<git_oid, struct IdTag>;
-constexpr static Id::argument id;
-
 enum Mode {
   UNREADABLE = 0000000,
   TREE = 0040000,
@@ -33,19 +29,22 @@ enum Mode {
   LINK = 0120000,
   COMMIT = 0160000,
 };
-constexpr static NamedArgument<Mode>::argument mode;
+using Entry = std::tuple<Name, Mode, Id>;
 
-struct treeBark {
-  using Entry = std::tuple<Name, Mode, Id>;
+struct Bark {
   struct Ray {
     const std::vector<Entry> entries;
-    const treeBark &bark;
+    const Bark &bark;
     void operator()(Name, Mode, lr::LR<Id>) const;
   };
   using Pith = void (*)(Ray &&);
   lr::LR<Id> operator()(Id, Pith) const;
   lr::LR<Id> operator()(Pith) const;
 };
+
+constexpr static Name::argument name;
+constexpr static Id::argument id;
+constexpr static NamedArgument<Mode>::argument mode;
 
 } // namespace git
 
