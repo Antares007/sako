@@ -6,21 +6,20 @@
 
 namespace git {
 
-void treeBark::Ray::operator()(Name n, Mode, Id) const {
+void treeBark::Ray::operator()(Name n, Mode, lr::LR<Id>) const {
   std::cout << n.get() << '\n';
 };
-lr::LR<Sha1> treeBark::operator()(const Sha1 &, treeBark::Pith) const {
-  return Sha1{"3"};
+lr::LR<Id> treeBark::operator()(Id, treeBark::Pith) const {
+  return id = git_oid{};
 };
 
-lr::LR<Sha1> treeBark::operator()(treeBark::Pith pith) const {
-  auto x = git_oid{};
+lr::LR<Id> treeBark::operator()(treeBark::Pith pith) const {
 
   pith(treeBark::Ray{std::vector<treeBark::Entry>{std::make_tuple(
-                         name = "file.txt", mode = BLOB, id = x)},
+                         name = "file.txt", mode = BLOB, id = git_oid{})},
                      *this});
 
-  return Sha1{"2"};
+  return id = git_oid{};
 };
 
 } // namespace git

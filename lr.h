@@ -11,11 +11,11 @@ struct L {
   const char *message = "";
 };
 
-template <typename OSet, typename... Ts>
-constexpr decltype(auto) map(OSet &&os, LR<Ts...> &&lr) {
-  using RT = decltype(os(std::get<1>(lr)));
-  return std::visit(overloaded{[](L &l) { return LR<RT>(l); },
-                               [&os](auto &&a) { return LR<RT>(os(a)); }},
+template <typename OSet, typename... Rs>
+constexpr decltype(auto) map(OSet &&os, LR<Rs...> &&lr) {
+  using R = decltype(os(std::get<1>(lr)));
+  return std::visit(overloaded{[](L &l) { return LR<R>(l); },
+                               [&os](auto &&a) { return LR<R>(os(a)); }},
                     lr);
 };
 

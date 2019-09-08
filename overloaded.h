@@ -3,6 +3,6 @@
 
 template <class... Ts> struct overloaded : Ts... { using Ts::operator()...; };
 template <class... Ts> overloaded(Ts...)->overloaded<Ts...>;
-template <typename Ts> struct print;
+template <typename... Ts> struct print;
 
 #endif

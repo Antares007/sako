@@ -34,19 +34,17 @@ enum Mode {
   COMMIT = 0160000,
 };
 constexpr static NamedArgument<Mode>::argument mode;
-// using Mode = fluent::NamedType<git_filemode_t, struct ModeTag>;
-// constexpr static Mode::argument mode;
 
 struct treeBark {
   using Entry = std::tuple<Name, Mode, Id>;
   struct Ray {
     const std::vector<Entry> entries;
     const treeBark &bark;
-    void operator()(Name, Mode, Id) const;
+    void operator()(Name, Mode, lr::LR<Id>) const;
   };
-  using Pith = void (*)(const Ray &);
-  lr::LR<Sha1> operator()(const Sha1 &, Pith) const;
-  lr::LR<Sha1> operator()(Pith) const;
+  using Pith = void (*)(Ray &&);
+  lr::LR<Id> operator()(Id, Pith) const;
+  lr::LR<Id> operator()(Pith) const;
 };
 
 } // namespace git
