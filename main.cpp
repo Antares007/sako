@@ -1,5 +1,6 @@
 #include "git.h"
 #include <git2.h>
+#include <tuple>
 using namespace git;
 int main() {
   auto bark = Bark{};

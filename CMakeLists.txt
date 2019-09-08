@@ -11,7 +11,9 @@ add_executable(main
   main.cpp
   git.h git.cpp
   lr.h
-  overloaded.h)
+  overloaded.h
+  nt.h
+  ntskills.h)
 target_compile_features(main PRIVATE cxx_std_17)
 #target_compile_options(main PRIVATE -std=c++2a)
 #target_compile_options(main PRIVATE -fconcepts)

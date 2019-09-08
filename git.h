@@ -2,8 +2,9 @@
 #define GIT_H 1
 
 #include "lr.h"
-#include <git2.h>
-#include <named_type.hpp>
+#include "nt.h"
+#include <git2/types.h>
+#include <string>
 #include <vector>
 template <typename T> struct NamedArgument {
   struct argument {
@@ -19,8 +20,8 @@ template <typename T> struct NamedArgument {
 };
 namespace git {
 
-using Name = fluent::NamedType<std::string_view, struct NameTag>;
-using Id = fluent::NamedType<git_oid, struct IdTag>;
+using Name = nt::NamedType<std::string_view, struct NameTag>;
+using Id = nt::NamedType<git_oid, struct IdTag>;
 enum Mode {
   UNREADABLE = 0000000,
   TREE = 0040000,
@@ -40,6 +41,9 @@ struct Bark {
   using Pith = void (*)(Ray &&);
   lr::LR<Id> operator()(Id, Pith) const;
   lr::LR<Id> operator()(Pith) const;
+
+private:
+  git_repository *repo;
 };
 
 constexpr static Name::argument name;

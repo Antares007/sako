@@ -1,7 +1,9 @@
 #include "git.h"
+#include "git2.h"
 #include <cstdio>
 #include <iostream>
 #include <string>
+#include <tuple>
 #include <utility>
 
 namespace git {
@@ -22,49 +24,17 @@ lr::LR<Id> Bark::operator()(Pith pith) const {
 
 } // namespace git
 
-/*
-
-struct S
-{
-    S()
-    noexcept
-    {
-        puts("S()");
-    }
-    S(S const &)
-    noexcept
-    {
-        puts("S(const S &)");
-    }
-    S(S &&)
-    noexcept
-    {
-        puts("S(S &&)");
-    }
-    S &operator=(const S &) noexcept
-    {
-        puts("S &operator = (const S &)");
-        return *this;
-    }
-    S &operator=(S &&) noexcept
-    {
-        puts("S &operator = (S &&)");
-        return *this;
-    }
-    ~S() noexcept
-    {
-        puts("~S()");
-    }
-};
-void test()
-{
-
-    auto see = lr::map(
-        [&](S &a) {
-            return a;
-        },
-        lr::LR<S>(S{}));
-
-    std::cout << &see << '\n';
-}
-*/
+// struct S {
+//   S() noexcept { puts("S()"); }
+//   S(S const &) noexcept { puts("S(const S &)"); }
+//   S(S &&) noexcept { puts("S(S &&)"); }
+//   S &operator=(const S &) noexcept {
+//     puts("S &operator = (const S &)");
+//     return *this;
+//   }
+//   S &operator=(S &&) noexcept {
+//     puts("S &operator = (S &&)");
+//     return *this;
+//   }
+//   ~S() noexcept { puts("~S()"); }
+// };
