@@ -9,15 +9,19 @@
 namespace git {
 
 void Bark::Ray::operator()(Name n, Mode, lr::LR<Id>) const {
-  std::cout << n.get() << '\n';
+  auto repo = this->bark.repo;
+  std::cout << n.get() << repo << '\n';
 };
 lr::LR<Id> Bark::operator()(Id, Pith) const { return id = git_oid{}; };
 
 lr::LR<Id> Bark::operator()(Pith pith) const {
+  auto entries = std::vector<Entry>{
+      std::make_tuple(name = "file1.txt", mode = BLOB, id = git_oid{}),
+      std::make_tuple(name = "file2.txt", mode = BLOB, id = git_oid{}),
+      std::make_tuple(name = "file3.txt", mode = BLOB, id = git_oid{})};
+  auto ray = Bark::Ray(std::move(entries), *this);
 
-  pith(Bark::Ray{std::vector<Entry>{std::make_tuple(
-                     name = "file.txt", mode = BLOB, id = git_oid{})},
-                 *this});
+  pith(std::move(ray));
 
   return id = git_oid{};
 };

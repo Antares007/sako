@@ -34,13 +34,16 @@ using Entry = std::tuple<Name, Mode, Id>;
 
 struct Bark {
   struct Ray {
-    const std::vector<Entry> entries;
+    const std::vector<Entry> &entries;
     const Bark &bark;
     void operator()(Name, Mode, lr::LR<Id>) const;
+    explicit Ray(std::vector<Entry> &&entries, const Bark &bark)
+        : entries(std::forward<std::vector<Entry>>(entries)), bark(bark) {}
   };
   using Pith = void (*)(Ray &&);
   lr::LR<Id> operator()(Id, Pith) const;
   lr::LR<Id> operator()(Pith) const;
+  explicit Bark(git_repository *repo) : repo(repo) {}
 
 private:
   git_repository *repo;

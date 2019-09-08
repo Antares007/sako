@@ -3,18 +3,15 @@
 #include <tuple>
 using namespace git;
 int main() {
-  auto bark = Bark{};
+  git_repository *repo = nullptr;
+  auto bark = Bark{repo};
   bark([](Bark::Ray &&o) {
     for (auto &e : o.entries) {
       auto [name, mode, id] = e;
       o(git::name = name, mode, id);
     }
-    o(name = "folder", TREE, o.bark([](Bark::Ray &&o) {
-      for (auto &e : o.entries) {
-        auto [name, mode, id] = e;
-        o(git::name = name, mode, id);
-      }
-    }));
+    o(name = "folder", TREE,
+      o.bark([](Bark::Ray &&o) { o(git::name = "a", BLOB, lr::L{""}); }));
   });
   // print<decltype(rez3)> p;
 }
