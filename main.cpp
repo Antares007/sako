@@ -16,7 +16,7 @@ int main() {
             o.bark([](Bark::Ray &&o) { o(git::name = "a", BLOB, lr::L{""}); }));
         });
       },
-      open(""));
+      open("."));
 
   // print<decltype(rez3)> p;
 }

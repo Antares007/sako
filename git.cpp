@@ -1,5 +1,6 @@
 #include "git.h"
 #include <cstdio>
+#include <git2.h>
 #include <iostream>
 #include <string>
 #include <tuple>
@@ -7,9 +8,19 @@
 
 namespace git {
 
-void D::operator()(git_repository *repo) const noexcept {}
+void D::operator()(git_repository *repo) const noexcept {
+  git_repository_free(repo);
+}
 
-lr::LR<Repo> open(const char *path) { return lr::L{"error"}; }
+lr::LR<Repo> open(const char *path) {
+  static int initCount = git_libgit2_init();
+  if (initCount < 1)
+    return lr::L{"initCount < 1"};
+  git_repository *repo;
+  if (git_repository_open(&repo, path) < 0)
+    return lr::L{"git_repository_open(&repo, path) < 0"};
+  return std::unique_ptr<git_repository, D>(repo, D());
+}
 
 Bark::Bark(Repo repo) : repo(std::move(repo)) {}
 void Bark::Ray::operator()(Name n, Mode, lr::LR<Id>) const {
