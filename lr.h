@@ -17,7 +17,7 @@ constexpr decltype(auto) map(OSet &&os, LR<Rs...> &&lr) {
   return std::visit(overloaded{[](L &l) { return LR<R>(l); },
                                [&os](auto &&a) { return LR<R>(os(a)); }},
                     lr);
-};
+}
 
 // template <typename OSet, typename... Ts>
 // constexpr decltype(auto) map(OSet &&os, LR<Ts...> &lr) {
