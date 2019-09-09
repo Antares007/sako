@@ -3,16 +3,16 @@
 #include <tuple>
 using namespace git;
 int main() {
-  git_repository *repo = nullptr;
-  auto bark = Bark{repo};
-  bark([](Bark::Ray &&o) {
-    for (auto &e : o.entries) {
-      auto [name, mode, id] = e;
-      o(git::name = name, mode, id);
-    }
-    o(name = "folder", TREE,
-      o.bark([](Bark::Ray &&o) { o(git::name = "a", BLOB, lr::L{""}); }));
-  });
+  auto init = git_libgit2_init();
+  // auto bark = Bark(1);
+  // bark([](Bark::Ray &&o) {
+  //  for (auto &e : o.entries) {
+  //    auto [name, mode, id] = e;
+  //    o(git::name = name, mode, id);
+  //  }
+  //  o(name = "folder", TREE,
+  //    o.bark([](Bark::Ray &&o) { o(git::name = "a", BLOB, lr::L{""}); }));
+  //});
   // print<decltype(rez3)> p;
 }
 /*

@@ -4,6 +4,19 @@
 #include <type_traits>
 #include <variant>
 
+template <typename T> struct NamedArgument {
+  struct argument {
+    template <typename U> T operator=(U &&value) const {
+      return T(std::forward<U>(value));
+    }
+    argument() = default;
+    argument(argument const &) = delete;
+    argument(argument &&) = delete;
+    argument &operator=(argument const &) = delete;
+    argument &operator=(argument &&) = delete;
+  };
+};
+
 namespace lr {
 template <typename... Rs> using LR = std::variant<struct L, Rs...>;
 

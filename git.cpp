@@ -1,5 +1,4 @@
 #include "git.h"
-#include "git2.h"
 #include <cstdio>
 #include <iostream>
 #include <string>
@@ -7,10 +6,9 @@
 #include <utility>
 
 namespace git {
-
+Bark::Bark(Repo repo) : repo(std::move(repo)) {}
 void Bark::Ray::operator()(Name n, Mode, lr::LR<Id>) const {
-  auto repo = this->bark.repo;
-  std::cout << n.get() << repo << '\n';
+  std::cout << n.get() << &this->bark.repo << '\n';
 }
 lr::LR<Id> Bark::operator()(Id, Pith) const { return id = git_oid{}; }
 

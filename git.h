@@ -3,21 +3,10 @@
 
 #include "lr.h"
 #include "nt.h"
-#include <git2/types.h>
+#include "repository.h"
 #include <string>
 #include <vector>
-template <typename T> struct NamedArgument {
-  struct argument {
-    template <typename U> T operator=(U &&value) const {
-      return T(std::forward<U>(value));
-    }
-    argument() = default;
-    argument(argument const &) = delete;
-    argument(argument &&) = delete;
-    argument &operator=(argument const &) = delete;
-    argument &operator=(argument &&) = delete;
-  };
-};
+
 namespace git {
 
 using Name = nt::NamedType<std::string_view, struct NameTag>;
@@ -32,6 +21,8 @@ enum Mode {
 };
 using Entry = std::tuple<Name, Mode, Id>;
 
+using Repo = std::unique_ptr<git_repository, D>;
+
 struct Bark {
   struct Ray {
     const std::vector<Entry> &entries;
@@ -43,10 +34,10 @@ struct Bark {
   using Pith = void (*)(Ray &&);
   lr::LR<Id> operator()(Id, Pith) const;
   lr::LR<Id> operator()(Pith) const;
-  explicit Bark(git_repository *repo) : repo(repo) {}
+  explicit Bark(Repo repo);
 
 private:
-  git_repository *repo;
+  Repo repo;
 };
 
 constexpr static Name::argument name;
