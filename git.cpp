@@ -6,6 +6,11 @@
 #include <utility>
 
 namespace git {
+
+void D::operator()(git_repository *repo) const noexcept {}
+
+lr::LR<Repo> open(const char *path) { return lr::L{"error"}; }
+
 Bark::Bark(Repo repo) : repo(std::move(repo)) {}
 void Bark::Ray::operator()(Name n, Mode, lr::LR<Id>) const {
   std::cout << n.get() << &this->bark.repo << '\n';
