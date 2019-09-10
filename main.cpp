@@ -2,21 +2,23 @@
 #include <git2.h>
 #include <tuple>
 using namespace git;
+
+lr::LR<Id> run(Repo &repo) {
+  auto bark = Bark(std::move(repo));
+  auto id = bark([](Bark::Ray &&o) {
+    for (auto &e : o.entries) {
+      auto [name, mode, id] = e;
+      o(git::name = name, mode, id);
+    }
+    o(name = "folder", TREE,
+      o.bark([](Bark::Ray &&o) { o(git::name = "a", BLOB, lr::L{""}); }));
+  });
+  return std::move(id);
+}
+
 int main() {
   // auto init = git_libgit2_init();
-  auto rez = lr::map(
-      [](Repo &repo) {
-        auto bark = Bark(std::move(repo));
-        return bark([](Bark::Ray &&o) {
-          for (auto &e : o.entries) {
-            auto [name, mode, id] = e;
-            o(git::name = name, mode, id);
-          }
-          o(name = "folder", TREE,
-            o.bark([](Bark::Ray &&o) { o(git::name = "a", BLOB, lr::L{""}); }));
-        });
-      },
-      open("."));
+  lr::map(run, open("."));
 
   // print<decltype(rez3)> p;
 }
