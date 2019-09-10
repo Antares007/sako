@@ -24,17 +24,28 @@ struct L {
   const char *message = "";
 };
 
+template <typename R> struct leftf {
+  R operator()(L &l) { return R(std::move(l)); }
+};
+
 template <typename OSet, typename... Rs>
 constexpr decltype(auto) map(OSet &&os, LR<Rs...> &&lr) {
   using R = decltype(os(std::get<1>(lr)));
-  return std::visit(overloaded{[](L &l) { return LR<R>(l); },
-                               [&os](auto &&a) { return LR<R>(os(a)); }},
-                    lr);
+  return std::visit(
+      overloaded{leftf<LR<R>>{}, [&os](auto &&a) { return LR<R>(os(a)); }}, lr);
 }
 
-// template <typename OSet, typename... Ts>
-// constexpr decltype(auto) map(OSet &&os, LR<Ts...> &lr) {
-//  return map(std::forward<OSet>(os), std::move(lr));
-//}
+template <typename OSet, typename... Rs>
+constexpr decltype(auto) flatMap(OSet &&os, LR<LR<Rs...>> &&olr) {
+  using T = std::decay_t<decltype(std::get<1>(std::get<LR<Rs...>>(olr)))>;
+  using R = decltype(os(std::declval<T>()));
+  return std::visit(
+      overloaded{leftf<R>{},
+                 [&os](LR<Rs...> &&ilr) {
+                   return std::visit(overloaded{leftf<R>{}, os}, ilr);
+                 }},
+      std::forward<LR<LR<Rs...>>>(olr));
+}
+
 } // namespace lr
 #endif
