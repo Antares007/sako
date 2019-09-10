@@ -18,7 +18,7 @@ lr::LR<Id> run(Repo &repo) {
 
 int main() {
   // auto init = git_libgit2_init();
-  lr::map(run, open("."));
+  auto rez = lr::flatMap(run, open("."));
 
   // print<decltype(rez3)> p;
 }

@@ -42,7 +42,7 @@ struct Bark {
   using Pith = void (*)(Ray &&);
   lr::LR<Id> operator()(Id, Pith) const;
   lr::LR<Id> operator()(Pith) const;
-  explicit Bark(Repo repo);
+  Bark(Repo &&repo);
 
 private:
   Repo repo;
@@ -53,8 +53,6 @@ constexpr static Id::argument id;
 constexpr static NamedArgument<Mode>::argument mode;
 
 lr::LR<Repo> open(const char *);
-
-
 
 } // namespace git
 

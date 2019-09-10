@@ -36,15 +36,10 @@ constexpr decltype(auto) map(OSet &&os, LR<Rs...> &&lr) {
 }
 
 template <typename OSet, typename... Rs>
-constexpr decltype(auto) flatMap(OSet &&os, LR<LR<Rs...>> &&olr) {
-  using T = std::decay_t<decltype(std::get<1>(std::get<LR<Rs...>>(olr)))>;
-  using R = decltype(os(std::declval<T>()));
-  return std::visit(
-      overloaded{leftf<R>{},
-                 [&os](LR<Rs...> &&ilr) {
-                   return std::visit(overloaded{leftf<R>{}, os}, ilr);
-                 }},
-      std::forward<LR<LR<Rs...>>>(olr));
+constexpr decltype(auto) flatMap(OSet &&os, LR<Rs...> &&lr) {
+  return std::visit(overloaded{leftf<decltype(os(std::get<1>(lr)))>{},
+                               [&os](auto &&a) { return os(a); }},
+                    lr);
 }
 
 } // namespace lr

@@ -22,7 +22,7 @@ lr::LR<Repo> open(const char *path) {
   return std::unique_ptr<git_repository, D>(repo, D());
 }
 
-Bark::Bark(Repo repo) : repo(std::move(repo)) {}
+Bark::Bark(Repo &&repo) : repo(std::forward<Repo>(repo)) {}
 void Bark::Ray::operator()(Name n, Mode, lr::LR<Id>) const {
   std::cout << n.get() << &this->bark.repo << '\n';
 }
