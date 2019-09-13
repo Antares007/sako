@@ -3,15 +3,12 @@
 #include <tuple>
 using namespace git;
 
-lr::LR<Id> run(Repo &repo) {
+lr::LR<Id> run(UPtr<git_repository> &repo) {
   auto bark = Bark(std::move(repo));
   auto id = bark([](Bark::Ray &&o) {
     for (auto &e : o.entries) {
-      auto [name, mode, id] = e;
-      o(git::name = name, mode, id);
+      // auto [name, mode, id] = e;
     }
-    o(name = "folder", TREE,
-      o.bark([](Bark::Ray &&o) { o(git::name = "a", BLOB, lr::L{""}); }));
   });
   return std::move(id);
 }

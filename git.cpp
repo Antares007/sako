@@ -8,21 +8,18 @@
 
 namespace git {
 
-void D::operator()(git_repository *repo) const noexcept {
-  git_repository_free(repo);
-}
-
-lr::LR<Repo> open(const char *path) {
+lr::LR<UPtr<git_repository>> open(const char *path) {
   static int initCount = git_libgit2_init();
   if (initCount < 1)
     return lr::L{"initCount < 1"};
   git_repository *repo;
   if (git_repository_open(&repo, path) < 0)
     return lr::L{"git_repository_open(&repo, path) < 0"};
-  return std::unique_ptr<git_repository, D>(repo, D());
+  return UPtr<git_repository>(repo, D(git_repository_free));
 }
 
-Bark::Bark(Repo &&repo) : repo(std::forward<Repo>(repo)) {}
+Bark::Bark(UPtr<git_repository> &&repo)
+    : repo(std::forward<UPtr<git_repository>>(repo)) {}
 void Bark::Ray::operator()(Name n, Mode, lr::LR<Id>) const {
   std::cout << n.get() << &this->bark.repo << '\n';
 }
@@ -33,6 +30,22 @@ lr::LR<Id> Bark::operator()(Pith pith) const {
   pith(std::move(ray));
   return id = git_oid{};
 }
+lr::LR<int> lookup(const UPtr<git_repository> &repo, const git_oid &oid) {
+  git_tree *tree = NULL;
+  int error = git_tree_lookup(&tree, &*repo, &oid);
+  git_tree_free(tree);
+  return 42;
+}
+// void test() {
+//  auto repo = open(".");
+//  lr::map(
+//      [](UPtr<git_repository> &repo) {
+//        auto oid = git_oid{};
+//        git_tree *tree = NULL;
+//        int error = git_tree_lookup(&tree, &*repo, &oid);
+//      },
+//      std::move(repo));
+//}
 
 } // namespace git
 

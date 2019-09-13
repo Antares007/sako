@@ -13,6 +13,11 @@ namespace git {
 using Name = nt::NamedType<std::string_view, struct NameTag>;
 
 using Id = nt::NamedType<git_oid, struct IdTag>;
+using TreeId = nt::NamedType<git_oid, struct TreeIdTag>;
+using BlobId = nt::NamedType<git_oid, struct BlobIdTag>;
+using ExecId = nt::NamedType<git_oid, struct ExecIdTag>;
+using LinkId = nt::NamedType<git_oid, struct LinkIdTag>;
+using CommId = nt::NamedType<git_oid, struct CommIdTag>;
 
 enum Mode {
   UNREADABLE = 0000000,
@@ -25,34 +30,42 @@ enum Mode {
 
 using Entry = std::tuple<Name, Mode, Id>;
 
-struct D {
-  void operator()(git_repository *) const noexcept;
-};
+template <typename T> struct D {
+  using Deleter = void (*)(T *);
+  explicit D(Deleter f) noexcept : f(f) {}
+  void operator()(T *t) const noexcept { f(t); }
 
-using Repo = std::unique_ptr<git_repository, D>;
+private:
+  Deleter f;
+};
+template <typename T> using UPtr = std::unique_ptr<T, D<T>>;
 
 struct Bark {
   struct Ray {
     const std::vector<Entry> &entries;
     const Bark &bark;
     void operator()(Name, Mode, lr::LR<Id>) const;
+    void operator()(
+        lr::LR<std::tuple<
+            Name, std::variant<TreeId, BlobId, ExecId, LinkId, CommId>>>) const
+        noexcept;
     explicit Ray(std::vector<Entry> &&entries, const Bark &bark)
         : entries(std::forward<std::vector<Entry>>(entries)), bark(bark) {}
   };
   using Pith = void (*)(Ray &&);
   lr::LR<Id> operator()(Id, Pith) const;
   lr::LR<Id> operator()(Pith) const;
-  Bark(Repo &&repo);
+  Bark(UPtr<git_repository> &&repo);
 
 private:
-  Repo repo;
+  UPtr<git_repository> repo;
 };
 
 constexpr static Name::argument name;
 constexpr static Id::argument id;
 constexpr static NamedArgument<Mode>::argument mode;
 
-lr::LR<Repo> open(const char *);
+lr::LR<UPtr<git_repository>> open(const char *);
 
 } // namespace git
 
