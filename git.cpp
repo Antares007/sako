@@ -30,11 +30,14 @@ lr::LR<Id> Bark::operator()(Pith pith) const {
   pith(std::move(ray));
   return id = git_oid{};
 }
-lr::LR<int> lookup(const UPtr<git_repository> &repo, const git_oid &oid) {
-  git_tree *tree = NULL;
+
+lr::LR<UPtr<git_tree>> lookup(const UPtr<git_repository> &repo,
+                              const git_oid &oid) {
+  git_tree *tree = nullptr;
   int error = git_tree_lookup(&tree, &*repo, &oid);
-  git_tree_free(tree);
-  return 42;
+  if (error < 0)
+    return lr::L{};
+  return UPtr<git_tree>(tree, D(git_tree_free));
 }
 // void test() {
 //  auto repo = open(".");
