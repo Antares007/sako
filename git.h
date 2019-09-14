@@ -2,7 +2,6 @@
 #define GIT_H 1
 
 #include "lr.h"
-#include "nt.h"
 #include <git2/types.h>
 #include <memory>
 #include <string>

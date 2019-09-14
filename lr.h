@@ -1,5 +1,6 @@
 #ifndef LR_H
 #define LR_H 1
+#include "nt.h"
 #include "overloaded.h"
 #include <string>
 #include <type_traits>
@@ -19,9 +20,7 @@ template <typename T> struct NamedArgument {
 };
 
 namespace lr {
-struct L {
-  const std::string message;
-};
+using L = nt::NamedType<std::string, struct LTag>;
 template <typename... Rs> using LR = std::variant<L, Rs...>;
 
 template <typename R> struct leftf {
