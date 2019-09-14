@@ -3,7 +3,7 @@
 #include <tuple>
 using namespace git;
 
-lr::LR<Id> run(UPtr<git_repository> &repo) {
+lr::LR<TreeId> run(UPtr<git_repository> &repo) {
   auto bark = Bark(std::move(repo));
   auto id = bark([](Bark::Ray &&o) {
     for (auto &e : o.entries) {

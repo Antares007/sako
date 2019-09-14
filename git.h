@@ -53,8 +53,8 @@ struct Bark {
         : entries(std::forward<std::vector<Entry>>(entries)), bark(bark) {}
   };
   using Pith = void (*)(Ray &&);
-  lr::LR<Id> operator()(Id, Pith) const;
-  lr::LR<Id> operator()(Pith) const;
+  lr::LR<TreeId> operator()(TreeId, Pith) const;
+  lr::LR<TreeId> operator()(Pith) const;
   Bark(UPtr<git_repository> &&repo);
 
 private:
@@ -62,7 +62,7 @@ private:
 };
 
 constexpr static Name::argument name;
-constexpr static Id::argument id;
+constexpr static TreeId::argument id;
 constexpr static NamedArgument<Mode>::argument mode;
 
 lr::LR<UPtr<git_repository>> open(const char *);

@@ -1,6 +1,7 @@
 #ifndef LR_H
 #define LR_H 1
 #include "overloaded.h"
+#include <string>
 #include <type_traits>
 #include <variant>
 
@@ -18,11 +19,10 @@ template <typename T> struct NamedArgument {
 };
 
 namespace lr {
-template <typename... Rs> using LR = std::variant<struct L, Rs...>;
-
 struct L {
-  const char *message = "";
+  const std::string message;
 };
+template <typename... Rs> using LR = std::variant<L, Rs...>;
 
 template <typename R> struct leftf {
   R operator()(L &l) { return R(std::move(l)); }

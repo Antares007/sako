@@ -23,9 +23,14 @@ Bark::Bark(UPtr<git_repository> &&repo)
 void Bark::Ray::operator()(Name n, Mode, lr::LR<Id>) const {
   std::cout << n.get() << &this->bark.repo << '\n';
 }
-lr::LR<Id> Bark::operator()(Id, Pith) const { return id = git_oid{}; }
+lr::LR<TreeId> Bark::operator()(TreeId tid, Pith pith) const {
+  auto oid = tid.get();
+  auto repo = &*this->repo;
 
-lr::LR<Id> Bark::operator()(Pith pith) const {
+  return id = git_oid{};
+}
+
+lr::LR<TreeId> Bark::operator()(Pith pith) const {
   auto ray = Bark::Ray(std::vector<Entry>(), *this);
   pith(std::move(ray));
   return id = git_oid{};
@@ -35,8 +40,10 @@ lr::LR<UPtr<git_tree>> lookup(const UPtr<git_repository> &repo,
                               const git_oid &oid) {
   git_tree *tree = nullptr;
   int error = git_tree_lookup(&tree, &*repo, &oid);
-  if (error < 0)
-    return lr::L{};
+  if (error < 0) {
+    char buff[41] = {};
+    return lr::L{"lookup " + std::string(git_oid_tostr_s(&oid))};
+  }
   return UPtr<git_tree>(tree, D(git_tree_free));
 }
 // void test() {
