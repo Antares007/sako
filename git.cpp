@@ -43,8 +43,7 @@ lr::LR<UPtr<git_tree>> lookup(const UPtr<git_repository> &repo,
                               const TreeId &tid) {
   git_tree *tree = nullptr;
   const git_oid &oid = tid.get();
-  int error = git_tree_lookup(&tree, &*repo, &oid);
-  if (error < 0)
+  if (git_tree_lookup(&tree, &*repo, &oid) < 0)
     return lr::L{"lookup " + std::string(git_oid_tostr_s(&oid))};
   return UPtr<git_tree>(tree, D(git_tree_free));
 }
