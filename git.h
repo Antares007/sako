@@ -27,7 +27,8 @@ enum Mode {
   COMMIT = 0160000,
 };
 
-using Entry = std::tuple<Name, Mode, Id>;
+using Entry =
+    std::tuple<Name, std::variant<TreeId, BlobId, ExecId, LinkId, CommId>>;
 
 template <typename T> struct D {
   using Deleter = void (*)(T *);
@@ -44,10 +45,7 @@ struct Bark {
     const std::vector<Entry> &entries;
     const Bark &bark;
     void operator()(Name, Mode, lr::LR<Id>) const;
-    void operator()(
-        lr::LR<std::tuple<
-            Name, std::variant<TreeId, BlobId, ExecId, LinkId, CommId>>>) const
-        noexcept;
+    void operator()(lr::LR<Entry>) const noexcept;
     explicit Ray(std::vector<Entry> &&entries, const Bark &bark)
         : entries(std::forward<std::vector<Entry>>(entries)), bark(bark) {}
   };
@@ -65,6 +63,8 @@ constexpr static TreeId::argument id;
 constexpr static NamedArgument<Mode>::argument mode;
 
 lr::LR<UPtr<git_repository>> open(const char *);
+lr::LR<UPtr<git_tree>> lookup(const UPtr<git_repository> &repo,
+                              const git_oid &oid);
 
 } // namespace git
 
