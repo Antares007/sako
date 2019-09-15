@@ -10,7 +10,7 @@ lr::LR<TreeId> run(UPtr<git_repository> &repo) {
       // auto [name, mode, id] = e;
     }
   });
-  return std::move(id);
+  return (id);
 }
 
 int main() {

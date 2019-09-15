@@ -58,13 +58,9 @@ private:
   UPtr<git_repository> repo;
 };
 
-constexpr static Name::argument name;
-constexpr static TreeId::argument id;
-constexpr static NamedArgument<Mode>::argument mode;
-
 lr::LR<UPtr<git_repository>> open(const char *);
-lr::LR<UPtr<git_tree>> lookup(const UPtr<git_repository> &repo,
-                              const git_oid &oid);
+lr::LR<UPtr<git_tree>> lookup(const UPtr<git_repository> &, const TreeId &);
+std::vector<Entry> getEntries(const UPtr<git_tree> &);
 
 } // namespace git
 
