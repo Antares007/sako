@@ -1,14 +1,19 @@
 #ifndef LR_H
 #define LR_H 1
-#include "nt.h"
 #include "overloaded.h"
 #include <string>
-#include <type_traits>
 #include <variant>
 
 namespace lr {
 
-using L = nt::NamedType<std::string, struct LTag>;
+struct L {
+  template <typename T,
+            typename = std::enable_if_t<std::is_convertible_v<T, std::string>>>
+  L(T &&a) : message(std::forward<T>(a)) {}
+
+private:
+  std::string message;
+};
 
 template <typename... Rights> using LR = std::variant<L, Rights...>;
 
