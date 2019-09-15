@@ -15,7 +15,22 @@ lr::LR<TreeId> run(UPtr<git_repository> &repo) {
 
 int main() {
   // auto init = git_libgit2_init();
-  auto rez = lr::flatMap(run, open("."));
+  auto rez = lr::map(
+      [](const git::UPtr<git_tree> &tree) {
+        auto entries = getEntries(tree);
+        for (const auto &e : entries) {
+          auto [name, id] = e;
+          puts(name.get().data());
+        }
+        return 1;
+      },
+      lr::flatMap(
+          [](const git::UPtr<git_repository> &x) {
+            git_oid id;
+            git_oid_fromstr(&id, "037917ef8d264163e048c994e529ec78352de1d9");
+            return lookup(x, TreeId(id));
+          },
+          open(".")));
 
   // print<decltype(rez3)> p;
 }
