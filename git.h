@@ -9,9 +9,8 @@
 
 namespace git {
 
-using Name = nt::NamedType<std::string_view, struct NameTag>;
+using Name = nt::NamedType<std::string, struct NameTag>;
 
-using Id = nt::NamedType<git_oid, struct IdTag>;
 using TreeId = nt::NamedType<git_oid, struct TreeIdTag>;
 using BlobId = nt::NamedType<git_oid, struct BlobIdTag>;
 using ExecId = nt::NamedType<git_oid, struct ExecIdTag>;
