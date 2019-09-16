@@ -20,9 +20,7 @@ lr::LR<UPtr<git_repository>> open(const char *path) {
 
 Bark::Bark(UPtr<git_repository> &&repo)
     : repo(std::forward<UPtr<git_repository>>(repo)) {}
-void Bark::Ray::operator()(Name n, Mode, lr::LR<Id>) const {
-  std::cout << n.get() << &this->bark.repo << '\n';
-}
+
 lr::LR<TreeId> Bark::operator()(TreeId tid, Pith pith) const {
   auto tree = lr::map(
       [this, &pith](const UPtr<git_tree> &x) {

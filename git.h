@@ -18,15 +18,6 @@ using ExecId = nt::NamedType<git_oid, struct ExecIdTag>;
 using LinkId = nt::NamedType<git_oid, struct LinkIdTag>;
 using CommId = nt::NamedType<git_oid, struct CommIdTag>;
 
-enum Mode {
-  UNREADABLE = 0000000,
-  TREE = 0040000,
-  BLOB = 0100644,
-  BLOB_EXECUTABLE = 0100755,
-  LINK = 0120000,
-  COMMIT = 0160000,
-};
-
 using Entry =
     std::tuple<Name, std::variant<TreeId, BlobId, ExecId, LinkId, CommId>>;
 
@@ -44,7 +35,6 @@ struct Bark {
   struct Ray {
     const std::vector<Entry> &entries;
     const Bark &bark;
-    void operator()(Name, Mode, lr::LR<Id>) const;
     void operator()(lr::LR<Entry>) const noexcept;
     explicit Ray(std::vector<Entry> &&entries, const Bark &bark)
         : entries(std::forward<std::vector<Entry>>(entries)), bark(bark) {}
