@@ -18,25 +18,6 @@ lr::LR<UPtr<git_repository>> open(const char *path) {
   return UPtr<git_repository>(repo, D(git_repository_free));
 }
 
-Bark::Bark(UPtr<git_repository> &&repo)
-    : repo(std::forward<UPtr<git_repository>>(repo)) {}
-
-lr::LR<TreeId> Bark::operator()(TreeId tid, Pith pith) const {
-  auto tree = lr::map(
-      [this, &pith](const UPtr<git_tree> &x) {
-        pith(Bark::Ray(getEntries(x), *this));
-        return 1;
-      },
-      lookup(this->repo, tid));
-  return TreeId(git_oid{});
-}
-
-lr::LR<TreeId> Bark::operator()(Pith pith) const {
-  auto ray = Bark::Ray(std::vector<Entry>(), *this);
-  pith(std::move(ray));
-  return TreeId(git_oid{});
-}
-
 lr::LR<UPtr<git_tree>> lookup(const UPtr<git_repository> &repo,
                               const TreeId &tid) {
   git_tree *tree = nullptr;
@@ -95,3 +76,22 @@ std::vector<Entry> getEntries(const UPtr<git_tree> &tree) {
 //   }
 //   ~S() noexcept { puts("~S()"); }
 // };
+
+// Bark::Bark(UPtr<git_repository> &&repo)
+//     : repo(std::forward<UPtr<git_repository>>(repo)) {}
+
+// lr::LR<TreeId> Bark::operator()(TreeId tid, Pith pith) const {
+//   auto tree = lr::map(
+//       [this, &pith](const UPtr<git_tree> &x) {
+//         pith(Bark::Ray(getEntries(x), *this));
+//         return 1;
+//       },
+//       lookup(this->repo, tid));
+//   return TreeId(git_oid{});
+// }
+
+// lr::LR<TreeId> Bark::operator()(Pith pith) const {
+//   auto ray = Bark::Ray(std::vector<Entry>(), *this);
+//   pith(std::move(ray));
+//   return TreeId(git_oid{});
+// }

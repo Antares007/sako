@@ -3,16 +3,19 @@
 #include <tuple>
 using namespace git;
 
-lr::LR<TreeId> run(UPtr<git_repository> &repo) {
-  auto bark = Bark(std::move(repo));
-  auto id = bark([](Bark::Ray &&o) {
-    for (auto &e : o.entries) {
-      // auto [name, mode, id] = e;
-    }
-  });
-  return (id);
-}
+auto fn(const char *id) {
+  return [id](const auto &o, const git::Repo &repo) {
+    lr::map(
+        [](const Tree) {
+          // for (auto &e : getEntries(tree)) {
+          //  o(e);
+          //}
+        },
+        lookup(repo, TreeId(git_oid{})));
 
+    o(Name(""), id);
+  };
+}
 int main() {
   // auto init = git_libgit2_init();
   auto rez = lr::map(

@@ -30,27 +30,41 @@ private:
 };
 template <typename T> using UPtr = std::unique_ptr<T, D<T>>;
 
-struct Bark {
-  struct Ray {
-    const std::vector<Entry> &entries;
-    const Bark &bark;
-    void operator()(lr::LR<Entry>) const noexcept;
-    explicit Ray(std::vector<Entry> &&entries, const Bark &bark)
-        : entries(std::forward<std::vector<Entry>>(entries)), bark(bark) {}
-  };
-  using Pith = void (*)(Ray &&);
-  lr::LR<TreeId> operator()(TreeId, Pith) const;
-  lr::LR<TreeId> operator()(Pith) const;
-  Bark(UPtr<git_repository> &&repo);
+using Repo = UPtr<git_repository>;
+using Tree = UPtr<git_tree>;
 
-private:
-  UPtr<git_repository> repo;
+lr::LR<Repo> open(const char *);
+lr::LR<Tree> lookup(const UPtr<git_repository> &, const TreeId &);
+std::vector<Entry> getEntries(const Tree &);
+
+struct writeConvertableTostring {
+  void operator()(const Name &, std::string &&);
 };
-
-lr::LR<UPtr<git_repository>> open(const char *);
-lr::LR<UPtr<git_tree>> lookup(const UPtr<git_repository> &, const TreeId &);
-std::vector<Entry> getEntries(const UPtr<git_tree> &);
-
+template <typename Pith> constexpr decltype(auto) bark2(Pith pith) {
+  return [pith](const Repo &repo) {
+    pith(overloaded{writeConvertableTostring{}, [](const Entry &) {},
+                    [&repo](auto b) { b(repo); }},
+         repo);
+    return TreeId(git_oid{});
+  };
+}
 } // namespace git
 
 #endif
+
+// struct Bark {
+//   struct Ray {
+//     const std::vector<Entry> &entries;
+//     const Bark &bark;
+//     void operator()(lr::LR<Entry>) const noexcept;
+//     explicit Ray(std::vector<Entry> &&entries, const Bark &bark)
+//         : entries(std::forward<std::vector<Entry>>(entries)), bark(bark) {}
+//   };
+//   using Pith = void (*)(Ray &&);
+//   lr::LR<TreeId> operator()(TreeId, Pith) const;
+//   lr::LR<TreeId> operator()(Pith) const;
+//   Bark(UPtr<git_repository> &&repo);
+
+// private:
+//   UPtr<git_repository> repo;
+// };
