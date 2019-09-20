@@ -9,7 +9,7 @@ int main() {
   std::lock_guard a(g_i_mutex);
   lr::map(
       [](const Repo &repo) {
-        git::Bark{[](O &, I &) { //
+        git::Bark{[](O o, I i) { //
         }}(repo);
         return 42;
       },

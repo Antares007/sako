@@ -23,7 +23,7 @@ using Entry =
 
 template <typename T> struct D {
   using Deleter = void (*)(T *);
-  explicit D(Deleter f) noexcept : fn(f) {}
+  D(Deleter f) noexcept : fn(f) {}
   void operator()(T *t) const noexcept { fn(t); }
 
 private:
