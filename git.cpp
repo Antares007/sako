@@ -8,6 +8,8 @@
 
 namespace git {
 
+O::O(const Builder &b) : builder(b) {}
+
 lr::LR<UPtr<git_repository>> open(const char *path) {
   static int initCount = git_libgit2_init();
   if (initCount < 1)

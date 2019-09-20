@@ -5,6 +5,7 @@
 #include "nt.h"
 #include <git2/types.h>
 #include <memory>
+#include <type_traits>
 #include <vector>
 
 namespace git {
@@ -22,32 +23,57 @@ using Entry =
 
 template <typename T> struct D {
   using Deleter = void (*)(T *);
-  explicit D(Deleter f) noexcept : f(f) {}
-  void operator()(T *t) const noexcept { f(t); }
+  explicit D(Deleter f) noexcept : fn(f) {}
+  void operator()(T *t) const noexcept { fn(t); }
 
 private:
-  Deleter f;
+  Deleter fn;
 };
 template <typename T> using UPtr = std::unique_ptr<T, D<T>>;
 
 using Repo = UPtr<git_repository>;
 using Tree = UPtr<git_tree>;
+using Builder = UPtr<git_treebuilder>;
 
 lr::LR<Repo> open(const char *);
+lr::LR<Builder> makeBulder(const Repo &);
+lr::LR<TreeId> writeTree(const Builder &);
 lr::LR<Tree> lookup(const UPtr<git_repository> &, const TreeId &);
 std::vector<Entry> getEntries(const Tree &);
 
-struct writeConvertableTostring {
-  void operator()(const Name &, std::string &&);
+struct O {
+  O(const Builder &);
+
+private:
+  const Builder &builder;
 };
-template <typename Pith> constexpr decltype(auto) bark2(Pith pith) {
-  return [pith](const Repo &repo) {
-    pith(overloaded{writeConvertableTostring{}, [](const Entry &) {},
-                    [&repo](auto b) { b(repo); }},
-         repo);
-    return TreeId(git_oid{});
-  };
-}
+
+struct I {
+  I(const Repo &r) : repo(r) {}
+
+private:
+  const Repo &repo;
+};
+
+template <typename Pith> struct Bark {
+  template <typename U,
+            typename = std::enable_if_t<std::is_invocable_r_v<void, U, O, I>>>
+  Bark(U &&u) : pith(std::forward<U>(u)) {}
+
+  lr::LR<TreeId> operator()(const Repo &repo) const {
+    return lr::flatMap(
+        [&](const Builder &builder) {
+          pith(O{builder}, I{repo});
+          return writeTree(builder);
+        },
+        makeBulder(repo));
+  }
+
+private:
+  Pith pith;
+};
+template <typename... Pith> Bark(Pith...)->Bark<Pith...>;
+
 } // namespace git
 
 #endif

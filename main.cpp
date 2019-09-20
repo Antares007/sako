@@ -1,23 +1,19 @@
 #include "git.h"
 #include <git2.h>
+#include <mutex>
 #include <tuple>
 using namespace git;
 
-auto fn(const char *id) {
-  return [id](const auto &o, const git::Repo &repo) {
-    lr::map(
-        [](const Tree) {
-          // for (auto &e : getEntries(tree)) {
-          //  o(e);
-          //}
-        },
-        lookup(repo, TreeId(git_oid{})));
-
-    o(Name(""), id);
-  };
-}
 int main() {
-  // auto init = git_libgit2_init();
+  std::mutex g_i_mutex;
+  std::lock_guard a(g_i_mutex);
+  lr::map(
+      [](const Repo &repo) {
+        git::Bark{[](O &, I &) { //
+        }}(repo);
+        return 42;
+      },
+      open("."));
   auto rez = lr::map(
       [](const git::UPtr<git_tree> &tree) {
         auto entries = getEntries(tree);
