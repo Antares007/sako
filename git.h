@@ -10,17 +10,6 @@
 
 namespace git {
 
-using Name = nt::NamedType<std::string, struct NameTag>;
-
-using TreeId = nt::NamedType<git_oid, struct TreeIdTag>;
-using BlobId = nt::NamedType<git_oid, struct BlobIdTag>;
-using ExecId = nt::NamedType<git_oid, struct ExecIdTag>;
-using LinkId = nt::NamedType<git_oid, struct LinkIdTag>;
-using CommitId = nt::NamedType<git_oid, struct CommIdTag>;
-
-using Entry =
-    std::tuple<Name, std::variant<TreeId, BlobId, ExecId, LinkId, CommitId>>;
-
 template <typename T> struct D {
   using Deleter = void (*)(T *);
   D(Deleter f) : fn(f) {}
@@ -40,10 +29,11 @@ constexpr lr::LR<UPtr<T>> make(int (*f)(T **, Args...), void (*g)(T *),
   return UPtr<T>(p, D(g));
 }
 
-lr::LR<TreeId> writeTree(const UPtr<git_treebuilder> &);
-lr::LR<UPtr<git_tree>> lookup(const UPtr<git_repository> &, const TreeId &);
-std::vector<Entry> getEntries(const UPtr<git_tree> &);
-
+using TreeId = nt::NamedType<git_oid, struct TreeIdTag>;
+using BlobId = nt::NamedType<git_oid, struct BlobIdTag>;
+using ExecId = nt::NamedType<git_oid, struct ExecIdTag>;
+using LinkId = nt::NamedType<git_oid, struct LinkIdTag>;
+using CommitId = nt::NamedType<git_oid, struct CommIdTag>;
 using Ref = nt::NamedType<std::string, struct RefTag>;
 
 struct TreeBark;
@@ -58,7 +48,7 @@ struct CommitBark {
   CommitId operator()(const Ref, const UPtr<git_signature> &author,
                       const UPtr<git_signature> &committer,
                       const char *message_encoding, const char *message,
-                      void (*o)(O, const TreeBark &, const CommitBark &),
+                      void (*o)(const O &, const TreeBark &),
                       const TreeId &tree, size_t parent_count,
                       const git_commit **parents) const noexcept;
 };
@@ -73,9 +63,19 @@ struct TreeBark : CommitBark {
   };
   using CommitBark::CommitBark;
   using CommitBark::operator();
-  TreeId operator()(void (*o)(const O &, const TreeBark &,
-                              const CommitBark &)) const noexcept;
+  TreeId operator()(void (*o)(const O &, const TreeBark &)) const noexcept;
 };
+
+lr::LR<size_t> lookup(const UPtr<git_repository> &, const TreeId &,
+                      const TreeBark::O &);
+
+using Name = nt::NamedType<std::string, struct NameTag>;
+using Entry =
+    std::tuple<Name, std::variant<TreeId, BlobId, ExecId, LinkId, CommitId>>;
+lr::LR<TreeId> writeTree(const UPtr<git_treebuilder> &);
+// lr::LR<UPtr<git_tree>> lookup(const UPtr<git_repository> &, const TreeId &);
+std::vector<Entry> getEntries(const UPtr<git_tree> &);
+
 } // namespace git
 
 #endif

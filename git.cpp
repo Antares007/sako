@@ -8,18 +8,37 @@
 
 namespace git {
 
-TreeId TreeBark::operator()(void (*)(const O &, const TreeBark &,
-                                     const CommitBark &)) const noexcept {
-  return TreeId(git_oid{});
+TreeId TreeBark::operator()(void (*)(const O &, const TreeBark &)) const
+    noexcept {
+  return TreeId{git_oid{}};
 }
 
-lr::LR<UPtr<git_tree>> lookup(const UPtr<git_repository> &repo,
-                              const TreeId &tid) {
-  git_tree *tree = nullptr;
-  const git_oid &oid = tid.get();
-  if (git_tree_lookup(&tree, &*repo, &oid) < 0)
-    return lr::L{"lookup " + std::string(git_oid_tostr_s(&oid))};
-  return UPtr<git_tree>(tree, D(git_tree_free));
+lr::LR<size_t> lookup(const UPtr<git_repository> &repo, const TreeId &tid,
+                      const TreeBark::O &o) {
+  return lr::map(
+      [&o](const UPtr<git_tree> &pTree) {
+        const auto tree = pTree.get();
+        auto count = git_tree_entrycount(tree);
+        for (size_t i = 0; i < count; i++) {
+          auto entry = git_tree_entry_byindex(tree, i);
+          auto oid = git_tree_entry_id(entry);
+          auto mode = git_tree_entry_filemode(entry);
+          auto name = git_tree_entry_name(entry);
+
+          if (mode == GIT_FILEMODE_TREE)
+            o(name, TreeId(*oid));
+          else if (mode == GIT_FILEMODE_COMMIT)
+            o(name, CommitId(*oid));
+          else if (mode == GIT_FILEMODE_BLOB_EXECUTABLE)
+            o(name, ExecId(*oid));
+          else if (mode == GIT_FILEMODE_LINK)
+            o(name, LinkId(*oid));
+          else
+            o(name, BlobId(*oid));
+        }
+        return count;
+      },
+      git::make(git_tree_lookup, git_tree_free, repo.get(), &tid.get()));
 }
 
 std::vector<Entry> getEntries(const UPtr<git_tree> &tree) {
