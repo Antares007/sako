@@ -4,25 +4,7 @@
 #include <tuple>
 using namespace git;
 
-auto lstree(const TreeId &id) {
-  return [&](const O &o, const Repo &r) { //
-    lr::map(
-        [](const Tree &tree) { //
-          return getEntries(tree);
-        },
-        lookup(r, id));
-    // o(1);
-  };
-}
 int main() {
-  lr::map(
-      [](const Repo &repo) {
-        git::Bark{[](const O &o, const Repo &r) { //
-          // o(1);
-        }}(repo);
-        return 42;
-      },
-      open("."));
   auto rez = lr::map(
       [](const git::UPtr<git_tree> &tree) {
         auto entries = getEntries(tree);
@@ -38,7 +20,7 @@ int main() {
             git_oid_fromstr(&id, "037917ef8d264163e048c994e529ec78352de1d9");
             return lookup(x, TreeId(id));
           },
-          open(".")));
+          make(git_repository_open, git_repository_free, ".")));
 
   // print<decltype(rez3)> p;
 }

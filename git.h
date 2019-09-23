@@ -16,14 +16,14 @@ using TreeId = nt::NamedType<git_oid, struct TreeIdTag>;
 using BlobId = nt::NamedType<git_oid, struct BlobIdTag>;
 using ExecId = nt::NamedType<git_oid, struct ExecIdTag>;
 using LinkId = nt::NamedType<git_oid, struct LinkIdTag>;
-using CommId = nt::NamedType<git_oid, struct CommIdTag>;
+using CommitId = nt::NamedType<git_oid, struct CommIdTag>;
 
 using Entry =
-    std::tuple<Name, std::variant<TreeId, BlobId, ExecId, LinkId, CommId>>;
+    std::tuple<Name, std::variant<TreeId, BlobId, ExecId, LinkId, CommitId>>;
 
 template <typename T> struct D {
   using Deleter = void (*)(T *);
-  D(Deleter f) noexcept : fn(f) {}
+  D(Deleter f) : fn(f) {}
   void operator()(T *t) const noexcept { fn(t); }
 
 private:
@@ -31,43 +31,51 @@ private:
 };
 template <typename T> using UPtr = std::unique_ptr<T, D<T>>;
 
-using Repo = UPtr<git_repository>;
-using Tree = UPtr<git_tree>;
-using Builder = UPtr<git_treebuilder>;
+template <typename T, typename... Args>
+constexpr lr::LR<UPtr<T>> make(int (*f)(T **, Args...), void (*g)(T *),
+                               Args... args) {
+  T *p = nullptr;
+  if (f(&p, args...))
+    return lr::L{""};
+  return UPtr<T>(p, D(g));
+}
 
-lr::LR<Repo> open(const char *);
-lr::LR<Builder> makeBulder(const Repo &);
-lr::LR<TreeId> writeTree(const Builder &);
-lr::LR<Tree> lookup(const UPtr<git_repository> &, const TreeId &);
-std::vector<Entry> getEntries(const Tree &);
+lr::LR<TreeId> writeTree(const UPtr<git_treebuilder> &);
+lr::LR<UPtr<git_tree>> lookup(const UPtr<git_repository> &, const TreeId &);
+std::vector<Entry> getEntries(const UPtr<git_tree> &);
 
-struct O {
-  O(const Builder &);
-  void operator()(int) const;
+using Ref = nt::NamedType<std::string, struct RefTag>;
 
-private:
-  const Builder &builder;
+struct TreeBark;
+
+struct CommitBark {
+  struct O {
+    void operator()(const TreeId &) const noexcept;
+    void operator()(const CommitId &) const noexcept;
+  };
+  CommitBark(const UPtr<git_repository> &rhs) : repo(rhs) {}
+  const UPtr<git_repository> &repo;
+  CommitId operator()(const Ref, const UPtr<git_signature> &author,
+                      const UPtr<git_signature> &committer,
+                      const char *message_encoding, const char *message,
+                      void (*o)(O, const TreeBark &, const CommitBark &),
+                      const TreeId &tree, size_t parent_count,
+                      const git_commit **parents) const noexcept;
 };
 
-template <typename Pith> struct Bark {
-  template <typename U, typename = std::enable_if_t<std::is_invocable_r_v<
-                            void, U, const O &, const Repo &>>>
-  Bark(U &&u) : pith(std::forward<U>(u)) {}
-
-  lr::LR<TreeId> operator()(const Repo &repo) const {
-    return lr::flatMap(
-        [&](const Builder &builder) {
-          pith(O{builder}, repo);
-          return writeTree(builder);
-        },
-        makeBulder(repo));
-  }
-
-private:
-  Pith pith;
+struct TreeBark : CommitBark {
+  struct O {
+    void operator()(const char *name, const TreeId &) const noexcept;
+    void operator()(const char *name, const BlobId &) const noexcept;
+    void operator()(const char *name, const ExecId &) const noexcept;
+    void operator()(const char *name, const LinkId &) const noexcept;
+    void operator()(const char *name, const CommitId &) const noexcept;
+  };
+  using CommitBark::CommitBark;
+  using CommitBark::operator();
+  TreeId operator()(void (*o)(const O &, const TreeBark &,
+                              const CommitBark &)) const noexcept;
 };
-template <typename... Pith> Bark(Pith...)->Bark<Pith...>;
-
 } // namespace git
 
 #endif

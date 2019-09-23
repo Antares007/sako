@@ -8,16 +8,9 @@
 
 namespace git {
 
-O::O(const Builder &b) : builder(b) {}
-
-lr::LR<Repo> open(const char *path) {
-  static int initCount = git_libgit2_init();
-  if (initCount < 1)
-    return lr::L{"initCount < 1"};
-  git_repository *repo;
-  if (git_repository_open(&repo, path) < 0)
-    return lr::L{"git_repository_open(&repo, path) < 0"};
-  return Repo(repo, git_repository_free);
+TreeId TreeBark::operator()(void (*)(const O &, const TreeBark &,
+                                     const CommitBark &)) const noexcept {
+  return TreeId(git_oid{});
 }
 
 lr::LR<UPtr<git_tree>> lookup(const UPtr<git_repository> &repo,
@@ -41,7 +34,7 @@ std::vector<Entry> getEntries(const UPtr<git_tree> &tree) {
     if (mode == GIT_FILEMODE_TREE)
       entries.emplace_back(name, TreeId(oid));
     else if (mode == GIT_FILEMODE_COMMIT)
-      entries.emplace_back(name, CommId(oid));
+      entries.emplace_back(name, CommitId(oid));
     else if (mode == GIT_FILEMODE_BLOB_EXECUTABLE)
       entries.emplace_back(name, ExecId(oid));
     else if (mode == GIT_FILEMODE_LINK)
@@ -52,19 +45,6 @@ std::vector<Entry> getEntries(const UPtr<git_tree> &tree) {
   return entries;
 }
 
-lr::LR<Builder> makeBulder(const Repo &repo) {
-  git_treebuilder *bld;
-  if (git_treebuilder_new(&bld, repo.get(), nullptr))
-    return lr::L{"git_treebuilder_new"};
-  return Builder(bld, git_treebuilder_free);
-}
-
-lr::LR<TreeId> writeTree(const Builder &bld) {
-  git_oid oid;
-  if (git_treebuilder_write(&oid, bld.get()))
-    return lr::L{"git_treebuilder_write"};
-  return TreeId(std::move(oid));
-}
 // void test() {
 //  auto repo = open(".");
 //  lr::map(
