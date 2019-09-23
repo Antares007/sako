@@ -43,27 +43,21 @@ std::vector<Entry> getEntries(const Tree &);
 
 struct O {
   O(const Builder &);
+  void operator()(int) const;
 
 private:
   const Builder &builder;
 };
 
-struct I {
-  I(const Repo &r) : repo(r) {}
-
-private:
-  const Repo &repo;
-};
-
 template <typename Pith> struct Bark {
-  template <typename U,
-            typename = std::enable_if_t<std::is_invocable_r_v<void, U, O, I>>>
+  template <typename U, typename = std::enable_if_t<std::is_invocable_r_v<
+                            void, U, const O &, const Repo &>>>
   Bark(U &&u) : pith(std::forward<U>(u)) {}
 
   lr::LR<TreeId> operator()(const Repo &repo) const {
     return lr::flatMap(
         [&](const Builder &builder) {
-          pith(O{builder}, I{repo});
+          pith(O{builder}, repo);
           return writeTree(builder);
         },
         makeBulder(repo));

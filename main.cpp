@@ -4,12 +4,21 @@
 #include <tuple>
 using namespace git;
 
+auto lstree(const TreeId &id) {
+  return [&](const O &o, const Repo &r) { //
+    lr::map(
+        [](const Tree &tree) { //
+          return getEntries(tree);
+        },
+        lookup(r, id));
+    // o(1);
+  };
+}
 int main() {
-  std::mutex g_i_mutex;
-  std::lock_guard a(g_i_mutex);
   lr::map(
       [](const Repo &repo) {
-        git::Bark{[](O o, I i) { //
+        git::Bark{[](const O &o, const Repo &r) { //
+          // o(1);
         }}(repo);
         return 42;
       },
