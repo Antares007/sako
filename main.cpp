@@ -1,11 +1,24 @@
 #include "git.h"
+#include <functional>
 #include <git2.h>
-#include <mutex>
 #include <tuple>
+
 using namespace git;
 
 int main() {
-  auto rez = lr::map(
+  auto f2 = lr::fmap([](const git::UPtr<git_repository> &repo) { //
+    auto commit = CommitBark(repo);
+    const auto tree = TreeBark(repo);
+    auto sig = make(git_signature_now, git_signature_free, "const char *name",
+                    "const char *email");
+    tree([](const TreeBark::O &o, const TreeBark &tree) { //
+      lookup(tree.repo, TreeId{git_oid{}}, o);
+    });
+
+    return 1;
+  });
+  auto r = f2(make(git_repository_open, git_repository_free, "."));
+  auto rez = lr::map<lr::LR<git::UPtr<git_repository>>>(
       [](const git::UPtr<git_repository> &repo) { //
         auto commit = CommitBark(repo);
         const auto tree = TreeBark(repo);
