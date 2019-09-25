@@ -10,43 +10,35 @@ namespace git {
 
 TreeId TreeBark::operator()(void (*)(const O &, const TreeBark &)) const
     noexcept {
-  return TreeId{git_oid{}};
+  return TreeId{""};
 }
+void lookup(const TreeBark::O &o, const UPtr<git_tree> &pTree) {
+  const auto tree = pTree.get();
+  auto count = git_tree_entrycount(tree);
+  for (size_t i = 0; i < count; i++) {
+    auto entry = git_tree_entry_byindex(tree, i);
+    const auto oid = git_oid_tostr_s(git_tree_entry_id(entry));
+    auto mode = git_tree_entry_filemode(entry);
+    auto name = git_tree_entry_name(entry);
 
-lr::LR<size_t> lookup(const UPtr<git_repository> &repo, const TreeId &tid,
-                      const TreeBark::O &o) {
-  return lr::map(
-      [&o](const UPtr<git_tree> &pTree) {
-        const auto tree = pTree.get();
-        auto count = git_tree_entrycount(tree);
-        for (size_t i = 0; i < count; i++) {
-          auto entry = git_tree_entry_byindex(tree, i);
-          auto oid = git_tree_entry_id(entry);
-          auto mode = git_tree_entry_filemode(entry);
-          auto name = git_tree_entry_name(entry);
-
-          if (mode == GIT_FILEMODE_TREE)
-            o(name, TreeId(*oid));
-          else if (mode == GIT_FILEMODE_COMMIT)
-            o(name, CommitId(*oid));
-          else if (mode == GIT_FILEMODE_BLOB_EXECUTABLE)
-            o(name, ExecId(*oid));
-          else if (mode == GIT_FILEMODE_LINK)
-            o(name, LinkId(*oid));
-          else
-            o(name, BlobId(*oid));
-        }
-        return count;
-      },
-      git::make(git_tree_lookup, git_tree_free, repo.get(), &tid.get()));
+    if (mode == GIT_FILEMODE_TREE)
+      o(name, TreeId(oid));
+    else if (mode == GIT_FILEMODE_COMMIT)
+      o(name, CommitId(oid));
+    else if (mode == GIT_FILEMODE_BLOB_EXECUTABLE)
+      o(name, ExecId(oid));
+    else if (mode == GIT_FILEMODE_LINK)
+      o(name, LinkId(oid));
+    else
+      o(name, BlobId(oid));
+  }
 }
-
 std::vector<Entry> getEntries(const UPtr<git_tree> &tree) {
   const git_tree *ptree = tree.get();
   std::vector<Entry> entries;
   for (size_t i = 0; i < git_tree_entrycount(ptree); i++) {
     auto entry = git_tree_entry_byindex(ptree, i);
-    auto oid = *git_tree_entry_id(entry);
+    auto oid = git_oid_tostr_s(git_tree_entry_id(entry));
     auto mode = git_tree_entry_filemode(entry);
     auto name = git_tree_entry_name(entry);
 

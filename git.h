@@ -21,12 +21,14 @@ constexpr lr::LR<UPtr<T>> make(int (*f)(T **, Args...), void (*g)(T *),
   return UPtr<T>(ptr, g);
 }
 
-using TreeId = nt::NamedType<git_oid, struct TreeIdTag>;
-using BlobId = nt::NamedType<git_oid, struct BlobIdTag>;
-using ExecId = nt::NamedType<git_oid, struct ExecIdTag>;
-using LinkId = nt::NamedType<git_oid, struct LinkIdTag>;
-using CommitId = nt::NamedType<git_oid, struct CommIdTag>;
-using Ref = nt::NamedType<std::string, struct RefTag>;
+using TreeId = nt::NamedType<std::string, struct TreeIdTag>;
+using BlobId = nt::NamedType<std::string, struct BlobIdTag>;
+using TagId = nt::NamedType<std::string, struct TagIdTag>;
+using ExecId = nt::NamedType<std::string, struct ExecIdTag>;
+using LinkId = nt::NamedType<std::string, struct LinkIdTag>;
+using CommitId = nt::NamedType<std::string, struct CommIdTag>;
+
+using Ref = nt::NamedType<int, struct RefTag>;
 
 struct TreeBark;
 
@@ -58,8 +60,7 @@ struct TreeBark : CommitBark {
   TreeId operator()(void (*o)(const O &, const TreeBark &)) const noexcept;
 };
 
-lr::LR<size_t> lookup(const UPtr<git_repository> &, const TreeId &,
-                      const TreeBark::O &);
+void lookup(const TreeBark::O &o, const UPtr<git_tree> &pTree);
 
 using Name = nt::NamedType<std::string, struct NameTag>;
 using Entry =

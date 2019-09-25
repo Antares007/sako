@@ -45,11 +45,11 @@ template <typename OSet> struct fmap {
 
 template <class... Ts> fmap(Ts...)->fmap<Ts...>;
 
-static void test() { //
-  auto f = fmap(overloaded{[](int a) { return 1; }, [](float a) { return 2; }})(
-      lr::LR<int, float>{1.f});
-  std::string a;
-};
+// static void test() { //
+//  auto f = fmap(overloaded{[](int) { return 1; }, [](float) { return 2; }})(
+//      lr::LR<int, float>{1.f});
+//  std::string a;
+//};
 
 template <typename LRType, typename OSet>
 constexpr decltype(auto) map(OSet &&os, LRType &&lr) {
