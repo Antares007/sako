@@ -10,23 +10,15 @@
 
 namespace git {
 
-template <typename T> struct D {
-  using Deleter = void (*)(T *);
-  D(Deleter f) : fn(f) {}
-  void operator()(T *t) const noexcept { fn(t); }
-
-private:
-  Deleter fn;
-};
-template <typename T> using UPtr = std::unique_ptr<T, D<T>>;
+template <typename T> using UPtr = std::unique_ptr<T, void (*)(T *)>;
 
 template <typename T, typename... Args>
 constexpr lr::LR<UPtr<T>> make(int (*f)(T **, Args...), void (*g)(T *),
                                Args... args) {
-  T *p = nullptr;
-  if (f(&p, args...))
+  T *ptr = nullptr;
+  if (f(&ptr, args...))
     return lr::L{""};
-  return UPtr<T>(p, D(g));
+  return UPtr<T>(ptr, g);
 }
 
 using TreeId = nt::NamedType<git_oid, struct TreeIdTag>;
