@@ -32,28 +32,28 @@ using Ref = nt::NamedType<int, struct RefTag>;
 
 struct TreeBark;
 
+lr::LR<git_oid> commit(const char *message, lr::LR<git_oid> &&tree,
+                       std::vector<lr::LR<git_oid>> &&parents);
+
 struct CommitBark {
   struct O {
-    void operator()(const TreeId &) const noexcept;
-    void operator()(const CommitId &) const noexcept;
+    void tree(const git_oid *) const;
+    void parent(const git_oid *) const;
   };
   CommitBark(const UPtr<git_repository> &rhs) : repo(rhs) {}
   const UPtr<git_repository> &repo;
-  CommitId operator()(const Ref, const UPtr<git_signature> &author,
-                      const UPtr<git_signature> &committer,
-                      const char *message_encoding, const char *message,
-                      void (*o)(const O &, const TreeBark &),
-                      const TreeId &tree, size_t parent_count,
-                      const git_commit **parents) const noexcept;
+
+  template <typename T, typename... C>
+  lr::LR<git_oid> operator()(const char *message, T &&t, C &&... cs) const
+      noexcept {
+    return commit(message, std::forward<T>(t),
+                  std::vector<lr::LR<git_oid>>{std::forward<C>(cs)...});
+  }
 };
 
 struct TreeBark : CommitBark {
   struct O {
-    void operator()(const char *name, const TreeId &) const noexcept;
-    void operator()(const char *name, const BlobId &) const noexcept;
-    void operator()(const char *name, const ExecId &) const noexcept;
-    void operator()(const char *name, const LinkId &) const noexcept;
-    void operator()(const char *name, const CommitId &) const noexcept;
+    void operator()(const git_tree_entry *) const noexcept;
   };
   using CommitBark::CommitBark;
   using CommitBark::operator();

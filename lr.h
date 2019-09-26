@@ -50,6 +50,7 @@ template <class... Ts> fmap(Ts...)->fmap<Ts...>;
 //      lr::LR<int, float>{1.f});
 //  std::string a;
 //};
+template <typename... LRType> constexpr auto all(LRType &&... lr) {}
 
 template <typename LRType, typename OSet>
 constexpr decltype(auto) map(OSet &&os, LRType &&lr) {

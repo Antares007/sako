@@ -6,16 +6,17 @@
 using namespace git;
 
 int main() {
+  git_libgit2_init();
   auto f2 = lr::fmap([](const git::UPtr<git_repository> &repo) { //
-    auto tree = TreeBark(repo);
-    tree([](const TreeBark::O &, const TreeBark &) { //
-      //      lookup(tree.repo, TreeId{git_oid{}}, o);
-    });
+    //    auto tree = TreeBark(repo);
+    //    tree([](const TreeBark::O &, const TreeBark &) { //
+    //      //      lookup(tree.repo, TreeId{git_oid{}}, o);
+    //    });
 
     return 1;
   });
-
   auto rez = f2(make(git_repository_open, git_repository_free, "."));
+  return 11;
 }
 /*
 #include "lr.h"
