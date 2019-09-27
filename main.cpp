@@ -5,17 +5,20 @@
 
 using namespace git;
 
+template <typename A, typename F> decltype(auto) operator|(A &&a, F &&f) {
+  return f(std::forward<A>(a));
+}
+
 int main() {
   git_libgit2_init();
-  auto f2 = lr::fmap([](const git::UPtr<git_repository> &repo) { //
-    //    auto tree = TreeBark(repo);
-    //    tree([](const TreeBark::O &, const TreeBark &) { //
-    //      //      lookup(tree.repo, TreeId{git_oid{}}, o);
-    //    });
+  auto f2 = make(git_repository_open, git_repository_free, ".")    //
+            | lr::fmap([](const git::UPtr<git_repository> &repo) { //
+                return 1;
+              })                 //
+            | lr::fmap([](int) { //
+                return 1.f;
+              });
 
-    return 1;
-  });
-  auto rez = f2(make(git_repository_open, git_repository_free, "."));
   return 11;
 }
 /*

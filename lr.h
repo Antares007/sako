@@ -21,62 +21,28 @@ private:
 
 template <typename... Rights> using LR = std::variant<L, Rights...>;
 
-template <typename OSet> struct fmap {
-  using O = OSet;
-  O o;
-  template <typename U> fmap(U &&rhs) : o(std::forward<U>(rhs)) {}
+template <typename T> struct islr : std::false_type {};
+template <typename... R> struct islr<std::variant<L, R...>> : std::true_type {};
+template <typename T> using islr_t = typename islr<T>::type;
+template <typename T> inline constexpr bool islr_v = islr<T>::value;
 
-  template <typename... As,
-            typename A1 = decltype(std::get<1>(std::declval<lr::LR<As...>>())),
-            typename R = decltype(std::declval<OSet>()(std::declval<A1>()))>
-  constexpr decltype(auto) operator()(LR<As...> &&lr) const noexcept {
+template <typename F> struct fmap {
+  F f;
+  fmap(F &&r) : f(std::forward<F>(r)) {}
+
+  template <typename T, typename = std::enable_if_t<islr_v<T>>>
+  constexpr decltype(auto) operator()(T &&lr) const {
+    using R = decltype(std::declval<F>()(std::get<1>(std::declval<T>())));
     return std::visit(
-        [&](auto &&a) {
-          using Any = decltype(a);
-          using T = std::decay_t<Any>;
-          if constexpr (std::is_same_v<T, L>)
-            return LR<R>(std::forward<Any>(a));
-          else
-            return LR<R>(o(std::forward<Any>(a)));
-        },
-        std::forward<LR<As...>>(lr));
+        overloaded{
+            [](L &&l) { return LR<R>(std::forward<L>(l)); },
+            [&](auto &&a) { return LR<R>(f(std::forward<decltype(a)>(a))); }},
+        std::forward<T>(lr));
   }
 };
+template <typename F> fmap(F)->fmap<F>;
 
-template <class... Ts> fmap(Ts...)->fmap<Ts...>;
-
-// static void test() { //
-//  auto f = fmap(overloaded{[](int) { return 1; }, [](float) { return 2; }})(
-//      lr::LR<int, float>{1.f});
-//  std::string a;
-//};
-template <typename... LRType> constexpr auto all(LRType &&... lr) {}
-
-template <typename LRType, typename OSet>
-constexpr decltype(auto) map(OSet &&os, LRType &&lr) {
-  using R = decltype(std::declval<OSet>()(std::get<1>(std::declval<LRType>())));
-  return std::visit(overloaded{[](L &&l) { return LR<R>(std::forward<L>(l)); },
-                               [&os](auto &&a) {
-                                 return LR<R>(os(std::forward<decltype(a)>(a)));
-                               }},
-                    std::forward<LRType>(lr));
-}
-
-template <typename OSet, typename LRType0, typename LRType1>
-constexpr decltype(auto) map2(OSet &&os, LRType0 &&lr0, LRType1 &&lr1) {
-  using R =
-      decltype(std::declval<OSet>()(std::get<1>(std::declval<LRType0>()),
-                                    std::get<1>(std::declval<LRType1>())));
-  return std::visit(
-      overloaded{[](L &&l, auto) { return LR<R>(std::forward<L>(l)); },
-                 [](auto, L &&l) { return LR<R>(std::forward<L>(l)); },
-                 [](L &&l0, L &&l1) { return LR<R>(l0 + l1); },
-                 [&os](auto &&a, auto &&b) {
-                   return LR<R>(os(std::forward<decltype(a)>(a),
-                                   std::forward<decltype(b)>(b)));
-                 }},
-      std::forward<LRType0>(lr0), std::forward<LRType1>(lr1));
-}
+// template <typename... LRType> constexpr auto all(LRType &&... lr) {}
 
 template <typename OSet, typename LRType>
 constexpr decltype(auto) flatMap(OSet &&os, LRType &&lr) {
@@ -89,20 +55,5 @@ constexpr decltype(auto) flatMap(OSet &&os, LRType &&lr) {
       std::forward<LRType>(lr));
 }
 
-template <typename OSet, typename LRType0, typename LRType1>
-constexpr decltype(auto) flatMap2(OSet &&os, LRType0 &&lr0, LRType1 &&lr1) {
-  using R =
-      decltype(std::declval<OSet>()(std::get<1>(std::declval<LRType0>()),
-                                    std::get<1>(std::declval<LRType1>())));
-  return std::visit(
-      overloaded{[](L &&l, auto) { return R(std::forward<L>(l)); },
-                 [](auto, L &&l) { return R(std::forward<L>(l)); },
-                 [](L &&l0, L &&l1) { return R(l0 + l1); },
-                 [&os](auto &&a, auto &&b) {
-                   return os(std::forward<decltype(a)>(a),
-                             std::forward<decltype(b)>(b));
-                 }},
-      std::forward<LRType0>(lr0), std::forward<LRType1>(lr1));
-}
 } // namespace lr
 #endif
