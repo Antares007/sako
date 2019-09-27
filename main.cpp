@@ -13,12 +13,21 @@ int main() {
   git_libgit2_init();
   auto f2 = make(git_repository_open, git_repository_free, ".")    //
             | lr::fmap([](const git::UPtr<git_repository> &repo) { //
+                static auto bark = TreeBark{repo};
+                auto rez = bark(+[](const TreeBark::O &) {
+                  //
+                  //                  return LR<int>{1};
+                });
                 return 1;
               })                 //
             | lr::fmap([](int) { //
                 return 1.f;
               });
 
+  auto f = lr::fmap(+[](int) { return LR<std::string>{std::string{""}}; });
+  auto v = f(LR<int>(1));
+  auto v2 = f(lr::create(1));
+  std::cout << "hi";
   return 11;
 }
 /*
