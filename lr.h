@@ -6,6 +6,10 @@
 
 namespace lr {
 
+template <typename A, typename F> decltype(auto) operator|(A &&a, F &&f) {
+  return f(std::forward<A>(a));
+}
+
 struct L {
   L() = delete;
   L(const L &) = delete;
@@ -15,7 +19,6 @@ struct L {
   L(T &&a) : message(std::forward<T>(a)) {}
   L operator+(const L &other) { return L(this->message + other.message); }
 
-private:
   std::string message;
 };
 

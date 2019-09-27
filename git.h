@@ -4,7 +4,6 @@
 #include "lr.h"
 #include "nt.h"
 #include <git2/types.h>
-#include <iostream>
 #include <memory>
 #include <type_traits>
 #include <vector>
@@ -40,18 +39,19 @@ template <typename R> using LR = lr::LR<R>;
 
 struct TreeBark {
   struct O {
-    void operator()(const git_tree_entry *) const noexcept;
+    void operator()(const git_tree_entry *) const;
   };
+
   const UPtr<git_repository> &repo;
   TreeBark(const UPtr<git_repository> &rhs) : repo(rhs) {}
-  template <typename Pith>
-  LR<git_oid> inline operator()(Pith &&pith) const noexcept {
+
+  template <typename Pith> LR<git_oid> operator()(Pith &&pith) const {
     const auto o = O{};
     if constexpr (lr::islr_v<decltype(pith(o))>) {
-      std::cout << "a";
-      return lr::fmap([](auto) { return lr::L{"a"}; })(pith(o));
+      return pith(o) //
+             | lr::fmap([](auto) { return LR<git_oid>(lr::L{"a"}); });
     } else {
-      std::cout << "b";
+      pith(o);
       return LR<git_oid>(lr::L{"b"});
     }
   }

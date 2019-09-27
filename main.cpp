@@ -1,34 +1,23 @@
 #include "git.h"
 #include <functional>
 #include <git2.h>
+#include <iostream>
 #include <tuple>
 
 using namespace git;
 
-template <typename A, typename F> decltype(auto) operator|(A &&a, F &&f) {
-  return f(std::forward<A>(a));
-}
-
 int main() {
   git_libgit2_init();
-  auto f2 = make(git_repository_open, git_repository_free, ".")    //
-            | lr::fmap([](const git::UPtr<git_repository> &repo) { //
+  auto f2 = make(git_repository_open, git_repository_free, ".") //
+            | lr::fmap([](const git::UPtr<git_repository> &repo) {
                 static auto bark = TreeBark{repo};
-                auto rez = bark(+[](const TreeBark::O &) {
-                  //
-                  //                  return LR<int>{1};
+                return bark(+[](const TreeBark::O &) {
+                  // return LR<int>{lr::L{"acho"}};
                 });
-                return 1;
-              })                 //
-            | lr::fmap([](int) { //
-                return 1.f;
-              });
+              }) //
+            | lr::fmap([](auto &&a) { return a; });
 
-  auto f = lr::fmap(+[](int) { return LR<std::string>{std::string{""}}; });
-  auto v = f(LR<int>(1));
-  auto v2 = f(lr::create(1));
-  std::cout << "hi";
-  return 11;
+  std::cout << "hi" << std::get<lr::L>(std::move(f2)).message;
 }
 /*
 #include "lr.h"
