@@ -6,18 +6,44 @@
 
 using namespace git;
 
+static auto lookupTree = make(git_tree_lookup, git_tree_free);
+static auto openRepository = make(git_repository_open, git_repository_free);
+static auto oidFromStr = make2(git_oid_fromstr);
+
 int main() {
   git_libgit2_init();
-  auto f2 = make(git_repository_open, git_repository_free, ".") //
-            | lr::fmap([](const git::UPtr<git_repository> &repo) {
-                static auto bark = TreeBark{repo};
-                return bark(+[](const TreeBark::O &) {
-                  // return LR<int>{lr::L{"acho"}};
-                });
-              }) //
+  auto f2 = openRepository(".") //
+            |
+            lr::fmap([](const git::UPtr<git_repository> &repo) {
+              static auto bark = TreeBark{repo};
+              return bark([&repo](const TreeBark::O &o) {
+                return oidFromStr("02b583822cfe94fde7ff6485dddf745dc534de22") |
+                       lr::fmap([&](const auto &id) {
+                         return lookupTree(repo.get(), &id);
+                       }) |
+                       lr::fmap([&o](const auto &pTree) {
+                         const auto tree = pTree.get();
+                         auto count = git_tree_entrycount(tree);
+                         for (size_t i = 0; i < count; i++) {
+                           const auto entry = git_tree_entry_byindex(tree, i);
+
+                           std::cout << i << git_tree_entry_name(entry) << "\n";
+                           //                               o(git_tree_entry_byindex(tree,
+                           //                               i));
+                         }
+                         return count;
+                       });
+              });
+            }) //
             | lr::fmap([](auto &&a) { return a; });
 
-  std::cout << "hi" << std::get<lr::L>(std::move(f2)).message;
+  std::visit(overloaded{
+                 [](lr::L &&l) { std::cout << "L: " << l.message; },
+                 [](git_oid &&l) { std::cout << "R: " << git_oid_tostr_s(&l); },
+             },
+             std::move(f2));
+  std::cout << '\n';
+  return 0;
 }
 /*
 #include "lr.h"

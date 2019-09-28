@@ -3,7 +3,6 @@
 #include "overloaded.h"
 #include <string>
 #include <variant>
-
 namespace lr {
 
 template <typename A, typename F> decltype(auto) operator|(A &&a, F &&f) {

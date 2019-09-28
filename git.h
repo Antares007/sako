@@ -12,14 +12,37 @@ namespace git {
 
 template <typename T> using UPtr = std::unique_ptr<T, void (*)(T *)>;
 
-template <typename T, typename... Args>
-inline constexpr lr::LR<UPtr<T>> make(int (*f)(T **, Args...), void (*g)(T *),
-                                      Args... args) {
-  T *ptr = nullptr;
-  if (f(&ptr, args...))
-    return lr::L{""};
-  return UPtr<T>(ptr, g);
-}
+template <typename T, typename... Args> struct make {
+  using C = int (*)(T **, Args...);
+  using D = void (*)(T *);
+  make(C _c, D _d) : c(_c), d(_d) {}
+
+  lr::LR<UPtr<T>> operator()(Args &&... args) const {
+    T *ptr = nullptr;
+    if (c(&ptr, args...))
+      return lr::L{__PRETTY_FUNCTION__};
+    return UPtr<T>(ptr, d);
+  }
+
+private:
+  C c;
+  D d;
+};
+
+template <typename T, typename... Args> struct make2 {
+  using C = int (*)(T *, Args...);
+  make2(C _c) : c(_c) {}
+
+  lr::LR<T> operator()(Args &&... args) const {
+    T t;
+    if (c(&t, args...))
+      return lr::L{__PRETTY_FUNCTION__};
+    return std::forward<T>(t);
+  }
+
+private:
+  C c;
+};
 
 using TreeId = nt::NamedType<std::string, struct TreeIdTag>;
 using BlobId = nt::NamedType<std::string, struct BlobIdTag>;
@@ -49,7 +72,7 @@ struct TreeBark {
     const auto o = O{};
     if constexpr (lr::islr_v<decltype(pith(o))>) {
       return pith(o) //
-             | lr::fmap([](auto) { return LR<git_oid>(lr::L{"a"}); });
+             | lr::fmap([](auto) { return LR<git_oid>(lr::L{"9"}); });
     } else {
       pith(o);
       return LR<git_oid>(lr::L{"b"});
