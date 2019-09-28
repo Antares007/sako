@@ -1,4 +1,4 @@
-#include "git.h"
+#include "git.hpp"
 #include <functional>
 #include <git2.h>
 #include <iostream>
@@ -12,21 +12,20 @@ static auto oidFromStr = make2(git_oid_fromstr);
 
 int main() {
   git_libgit2_init();
-  auto f2 = openRepository(".") //
-            |
+  auto f2 = openRepository(".") |
             lr::fmap([](const git::UPtr<git_repository> &repo) {
               static auto bark = TreeBark{repo};
-              return bark([&repo](const TreeBark::O &o) {
+              return bark([&repo](const TreeBark::O &) {
                 return oidFromStr("02b583822cfe94fde7ff6485dddf745dc534de22") |
                        lr::fmap([&](const auto &id) {
                          return lookupTree(repo.get(), &id);
                        }) |
-                       lr::fmap([&o](const auto &pTree) {
+                       lr::fmap([](const auto &pTree) {
                          const auto tree = pTree.get();
                          auto count = git_tree_entrycount(tree);
                          for (size_t i = 0; i < count; i++) {
                            const auto entry = git_tree_entry_byindex(tree, i);
-
+                           git_tree_entry_name(entry);
                            std::cout << i << git_tree_entry_name(entry) << "\n";
                            //                               o(git_tree_entry_byindex(tree,
                            //                               i));

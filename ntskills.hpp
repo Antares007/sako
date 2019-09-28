@@ -1,7 +1,7 @@
 #ifndef UNDERLYING_FUNCTIONALITIES_HPP
 #define UNDERLYING_FUNCTIONALITIES_HPP
 
-#include "nt.h"
+#include "nt.hpp"
 #include <functional>
 
 namespace nt {

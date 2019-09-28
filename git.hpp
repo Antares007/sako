@@ -1,8 +1,8 @@
 #ifndef GIT_H
 #define GIT_H 1
 
-#include "lr.h"
-#include "nt.h"
+#include "lr.hpp"
+#include "nt.hpp"
 #include <git2/types.h>
 #include <memory>
 #include <type_traits>

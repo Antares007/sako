@@ -1,4 +1,4 @@
-#include "git.h"
+#include "git.hpp"
 #include <cstdio>
 #include <git2.h>
 #include <iostream>
@@ -9,8 +9,8 @@
 
 namespace git {
 
-lr::LR<git_oid> commit(const char *message, lr::LR<git_oid> &&tree,
-                       std::vector<lr::LR<git_oid>> &&p) { //
+lr::LR<git_oid> commit(const char *, lr::LR<git_oid> &&tree,
+                       std::vector<lr::LR<git_oid>> &&) {
   auto f = lr::fmap{[](git_oid &&) { return 1; }};
   auto rez = f(std::move(tree));
   return git_oid{};
