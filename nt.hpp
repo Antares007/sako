@@ -14,19 +14,6 @@
 
 namespace nt {
 
-template <typename T, typename Tag> struct NewType {
-  template <typename U,
-            typename = std::enable_if_t<std::is_convertible_v<U, T>>>
-  constexpr NewType(U &&a) : value(std::forward<T>(a)) {}
-  constexpr T &get() noexcept {
-    puts(__PRETTY_FUNCTION__);
-    return value;
-  }
-
-private:
-  T value;
-};
-
 template <typename T>
 using IsNotReference =
     typename std::enable_if<!std::is_reference<T>::value, void>::type;
