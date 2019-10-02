@@ -1,5 +1,5 @@
--std=c++17
--Weverything
+-std=c++2a
+-fconcepts
 -Wno-newline-eof
 -Wno-c++98-compat-pedantic
 -Wno-global-constructors
