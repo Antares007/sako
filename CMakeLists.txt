@@ -9,11 +9,11 @@ add_subdirectory(extern/libgit2)
 
 add_executable(main
   main.cpp
-  git.h git.cpp
-  lr.h
-  overloaded.h
-  nt.h
-  ntskills.h
+  git.hpp git.cpp
+  lr.hpp
+  overloaded.hpp
+  nt.hpp
+  ntskills.hpp
   )
 target_compile_features(main PRIVATE cxx_std_17)
 #target_compile_options(main PRIVATE -std=c++2a)

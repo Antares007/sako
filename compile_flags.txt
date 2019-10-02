@@ -2,3 +2,5 @@
 -Weverything
 -Wno-newline-eof
 -Wno-c++98-compat-pedantic
+-Wno-global-constructors
+/usr/lib/libgit2.so
