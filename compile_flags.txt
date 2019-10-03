@@ -1,7 +1,7 @@
 -std=c++2a
--Isub/cmcstl2/include
+-Iinclude
 -fconcepts
--Wno-newline-eof
--Wno-c++98-compat-pedantic
--Wno-global-constructors
+-Wall
+-Wextra
+-Wpedantic
 /usr/lib/libgit2.so

@@ -1,5 +1,5 @@
-#include "git.hpp"
 #include <functional>
+#include <git.hpp>
 #include <git2.h>
 #include <iostream>
 #include <tuple>

@@ -1,9 +1,9 @@
-#include "union.hpp"
 #include <functional>
 #include <git2.h>
 #include <iostream>
 #include <memory>
 #include <tuple>
+#include <union.hpp>
 
 using namespace abo;
 
