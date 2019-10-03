@@ -797,7 +797,7 @@ __anon4d52a68a0702	sub/cmcstl2/test/algorithm/find_if.cpp	/^	auto pj = find_if(s
 __anon4d52a68a0802	sub/cmcstl2/test/algorithm/find_if.cpp	/^	pj = find_if(subrange(ia), [](int i){return i == 10;});$/;"	f	function:main	file:
 __anon4d52a68a0902	sub/cmcstl2/test/algorithm/find_if.cpp	/^	S *ps = find_if(sa, [](int i){return i == 3;}, &S::i_);$/;"	f	function:main	file:
 __anon4d52a68a0a02	sub/cmcstl2/test/algorithm/find_if.cpp	/^	ps = find_if(sa, [](int i){return i == 10;}, &S::i_);$/;"	f	function:main	file:
-__anon50b6bbe40102	union.hpp	/^    return pith([&o](auto &&... x) {$/;"	f	struct:abo::union_fn	file:
+__anon50b6bbe40102	union.hpp	/^    return pith([&o, &firstrun](auto &&... x) {$/;"	f	struct:abo::union_fn	file:
 __anon5316a72f0110	sub/cmcstl2/test/view/filter_view.cpp	/^namespace {$/;"	n	file:
 __anon5316a72f0202	sub/cmcstl2/test/view/filter_view.cpp	/^	auto f = [flag](int) mutable { return flag = !flag;};$/;"	f	function:main	file:
 __anon5316a72f0302	sub/cmcstl2/test/view/filter_view.cpp	/^	auto mutable_rng = views::filter(rgi, [flag](int) mutable { return flag = !flag;});$/;"	f	function:main	file:
@@ -823,14 +823,17 @@ __anon6bf3ac920302	sub/cmcstl2/test/algorithm/includes.cpp	/^auto includes_fn = 
 __anon6f5cd86e0110	sub/cmcstl2/test/view/take_view.cpp	/^namespace {$/;"	n	file:
 __anon6f5cd86e0202	sub/cmcstl2/test/view/take_view.cpp	/^		auto evens = [](int i) { return i % 2 == 0; };$/;"	f	function:main	file:
 __anon6f5cd86e0302	sub/cmcstl2/test/view/take_view.cpp	/^		auto odds = [](int i) { return i % 2 == 1; };$/;"	f	function:main	file:
-__anon748ef1b10102	oset.cpp	/^  return union_fn{[c, d, &args...](auto o) {$/;"	f	function:makeuptr	file:
-__anon748ef1b10202	oset.cpp	/^  union_fn{[](auto o) {$/;"	f	function:main	file:
-__anon748ef1b10302	oset.cpp	/^        [&](int err, const char *p) { o(err, p); },$/;"	f	function:main::__anon748ef1b10202	file:
-__anon748ef1b10402	oset.cpp	/^        [&](UPtr<git_repository> &&repo) {$/;"	f	function:main::__anon748ef1b10202	file:
-__anon748ef1b10502	oset.cpp	/^  }}([](float) {}, [](int, const char *) {}, [](int) {}, [](const char *) {});$/;"	f	function:main	file:
-__anon748ef1b10602	oset.cpp	/^  }}([](float) {}, [](int, const char *) {}, [](int) {}, [](const char *) {});$/;"	f	function:main	file:
-__anon748ef1b10702	oset.cpp	/^  }}([](float) {}, [](int, const char *) {}, [](int) {}, [](const char *) {});$/;"	f	function:main	file:
-__anon748ef1b10802	oset.cpp	/^  }}([](float) {}, [](int, const char *) {}, [](int) {}, [](const char *) {});$/;"	f	function:main	file:
+__anon748ef1b10102	oset.cpp	/^      [c, d, args = std::tuple{std::forward<Args>(args)...}](auto o) {$/;"	f	function:makeuptr	file:
+__anon748ef1b10202	oset.cpp	/^  return union_fn{[c, args = std::tuple{std::forward<Args>(args)...}](auto o) {$/;"	f	function:run	file:
+__anon748ef1b10302	oset.cpp	/^  constexpr static auto left = []() {$/;"	f	function:main	file:
+__anon748ef1b10402	oset.cpp	/^    return [](int, std::string s) { std::cout << s << '\\n'; };$/;"	f	function:main::__anon748ef1b10302	file:
+__anon748ef1b10502	oset.cpp	/^  oid(left(), [](auto x) { std::cout << pf(x) << '\\n'; });$/;"	f	function:main	file:
+__anon748ef1b10602	oset.cpp	/^  union_fn{[](auto o) {$/;"	f	function:main	file:
+__anon748ef1b10702	oset.cpp	/^                                             [&](UPtr<git_repository> &&repo) {$/;"	f	function:main::__anon748ef1b10602	file:
+__anon748ef1b10802	oset.cpp	/^  }}([](float) {},$/;"	f	function:main	file:
+__anon748ef1b10902	oset.cpp	/^     [](int i, std::string &&m) { std::cout << i << ' ' << m << '\\n'; },$/;"	f	function:main	file:
+__anon748ef1b10a02	oset.cpp	/^     [](int) {}, [](const char *) {});$/;"	f	function:main	file:
+__anon748ef1b10b02	oset.cpp	/^     [](int) {}, [](const char *) {});$/;"	f	function:main	file:
 __anon77584a840102	sub/cmcstl2/include/stl2/detail/algorithm/minmax.hpp	/^			auto pred = [&](auto& lhs, auto& rhs) -> bool {$/;"	f	typeref:typename:bool	file:
 __anon77584a840202	sub/cmcstl2/include/stl2/detail/algorithm/minmax.hpp	/^			{$/;"	f	typeref:typename:bool{};	file:
 __anon77d4ad1a0102	sub/cmcstl2/include/stl2/detail/randutils.hpp	/^			thread_local default_random_engine engine = []{$/;"	f	file:
@@ -2283,7 +2286,7 @@ floating_point	sub/cmcstl2/test/concepts/fundamental.cpp	/^		regular, scalar, ar
 fmap	lr.hpp	/^  fmap(F &&r) : f(std::forward<F>(r)) {}$/;"	f	struct:lr::fmap
 fmap	lr.hpp	/^template <typename F> struct fmap {$/;"	s	namespace:lr
 fn_t	sub/cmcstl2/test/concepts/iterator.cpp	/^	using fn_t = R(Args...);$/;"	t	namespace:indirect_invoke_result_test	file:
-foo	sub/cmcstl2/examples/simple.cpp	/^template <ranges::readable T> void foo(T &) {}$/;"	f	typeref:typename:void
+foo	sub/cmcstl2/examples/simple.cpp	/^void foo(T&) {}$/;"	f	typeref:typename:void
 foo	sub/cmcstl2/test/algorithm/equal_range.cpp	/^		struct foo { int i; };$/;"	s	function:main	file:
 foo	sub/cmcstl2/test/concepts/fundamental.cpp	/^			struct A { void foo() {} };$/;"	f	struct:scalar_types::test::A	typeref:typename:void	file:
 foo	sub/cmcstl2/test/concepts/iterator.cpp	/^	struct foo {};$/;"	s	namespace:associated_type_test	file:
@@ -3078,7 +3081,6 @@ output_iterator	sub/cmcstl2/test/test_iterators.hpp	/^	constexpr output_iterator
 output_iterator	sub/cmcstl2/test/test_iterators.hpp	/^	output_iterator(const output_iterator<U>& u) :it_(u.it_) {}$/;"	f	class:output_iterator	typeref:typename:requires __stl2::convertible_to<U,It> 
 output_iterator	sub/cmcstl2/test/test_iterators.hpp	/^class output_iterator$/;"	c
 overloaded	overloaded.hpp	/^template <class... Ts> struct overloaded : Ts... { using Ts::operator()...; };$/;"	s
-p	sub/cmcstl2/examples/simple.cpp	/^template <typename... Ts> void p(Ts &&...) {$/;"	f	typeref:typename:void
 p	sub/cmcstl2/test/algorithm/all_of.cpp	/^	bool p() const { return test; }$/;"	f	struct:S	typeref:typename:bool	file:
 p	sub/cmcstl2/test/algorithm/any_of.cpp	/^	bool p() const { return test; }$/;"	f	struct:S	typeref:typename:bool	file:
 p	sub/cmcstl2/test/algorithm/for_each.cpp	/^	void p() const { *p_ += i_; }$/;"	f	struct:S	typeref:typename:void	file:
@@ -3088,6 +3090,7 @@ p	sub/cmcstl2/test/algorithm/none_of.cpp	/^	bool p() const { return test; }$/;"	
 p	sub/cmcstl2/test/algorithm/stable_partition.cpp	/^	std::pair<int,int> p;$/;"	m	struct:S	typeref:typename:std::pair<int,int>	file:
 p_	sub/cmcstl2/test/algorithm/for_each.cpp	/^	int *p_;$/;"	m	struct:S	typeref:typename:int *	file:
 pathological_explicit_default_constructor	sub/cmcstl2/test/concepts/object.cpp	/^namespace pathological_explicit_default_constructor {$/;"	n	file:
+pf	oset.cpp	/^template <typename... Args> std::string pf(Args &&...) {$/;"	f	typeref:typename:std::string
 pith	git_.hpp	/^  Pith pith;$/;"	m	struct:abo::Bark	typeref:typename:Pith
 pith	union.hpp	/^  P pith;$/;"	m	struct:abo::union_fn	typeref:typename:P
 plus	sub/cmcstl2/include/meta/meta.hpp	/^        using plus = defer<plus, T, U>;$/;"	t	namespace:meta::lazy	typeref:typename:defer<plus,T,U>
@@ -3187,6 +3190,7 @@ result	sub/cmcstl2/test/iterator/ostreambuf_iterator.cpp	/^	struct result {$/;"	
 result	sub/cmcstl2/test/meta.cpp	/^		using result = meta::invoke<lambda, long, l>;$/;"	t	function:main	typeref:typename:meta::invoke<lambda,long,l>	file:
 rev	sub/cmcstl2/test/meta.cpp	/^using rev = reverse_fold<List, list<>, lambda<_a, _b, defer<push_back, _a, _b>>>;$/;"	t	typeref:typename:reverse_fold<List,list<>,lambda<_a,_b,defer<push_back,_a,_b>>>	file:
 ridiculously_exhaustive_range_property_test	sub/cmcstl2/test/concepts/range.cpp	/^void ridiculously_exhaustive_range_property_test() {$/;"	f	typeref:typename:void
+run	oset.cpp	/^constexpr auto run(int (*c)(T *, Args...), Args &&... args) {$/;"	f	typeref:typename:auto
 rvalue_if	sub/cmcstl2/test/test_utils.hpp	/^typename std::conditional<B, T, T const &>::type rvalue_if(T const &t) {$/;"	f	typeref:typename:std::conditional<B,T,T const &>::type
 scalar	sub/cmcstl2/test/concepts/fundamental.cpp	/^		regular, scalar, arithmetic, floating_point,$/;"	e	enum:scalar_types::t	file:
 scalar_types	sub/cmcstl2/test/concepts/fundamental.cpp	/^namespace scalar_types {$/;"	n	file:

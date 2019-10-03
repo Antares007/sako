@@ -9,8 +9,8 @@ template <typename P> struct union_fn {
   template <typename... Fns, typename O = overloaded<Fns...>>
   auto operator()(Fns &&... fns) const -> decltype(pith(std::declval<O>())) {
     const O o = overloaded{std::forward<Fns>(fns)...};
-    static bool firstrun = true;
-    return pith([&o](auto &&... x) {
+    bool firstrun = true;
+    return pith([&o, &firstrun](auto &&... x) {
       if (firstrun) {
         firstrun = false;
         o(std::forward<decltype(x)>(x)...);
