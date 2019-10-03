@@ -1,6 +1,5 @@
 -std=c++2a
 -Iinclude
--fconcepts
 -Wall
 -Wextra
 -Wpedantic

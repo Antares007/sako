@@ -6,9 +6,8 @@ namespace abo {
 
 template <typename P> struct union_fn {
   P pith;
-  template <typename... Fns, typename O = overloaded<Fns...>>
-  auto operator()(Fns &&... fns) const -> decltype(pith(std::declval<O>())) {
-    const O o = overloaded{std::forward<Fns>(fns)...};
+  template <typename O>
+  auto operator()(O &&o) const -> decltype(pith(std::declval<O>())) {
     bool firstrun = true;
     return pith([&o, &firstrun](auto &&... x) {
       if (firstrun) {

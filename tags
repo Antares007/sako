@@ -59,7 +59,7 @@ UPtr	test/oset.cpp	/^template <typename T> using UPtr = std::unique_ptr<T, void 
 UnderlyingType	include/nt.hpp	/^  using UnderlyingType = T;$/;"	t	class:nt::NamedType	typeref:typename:T
 __anon139f36490102	test/git.cpp	/^  auto f = lr::fmap{[](git_oid &&) { return 1; }};$/;"	f	function:git::commit	file:
 __anon320e76b20102	include/git.hpp	/^             | lr::fmap([](auto) { return LR<git_oid>(lr::L{"9"}); });$/;"	f	function:git::TreeBark::operator ()	file:
-__anon34c545170102	include/union.hpp	/^    return pith([&o, &firstrun](auto &&... x) {$/;"	f	struct:abo::union_fn	file:
+__anon34c545170102	include/union.hpp	/^    return pith([&o, &firstrun](auto &&... x) {$/;"	f	function:abo::union_fn::operator ()	file:
 __anon5b3ef2ec0102	include/lr.hpp	/^          overloaded{[](L &&l) { return R(std::forward<L>(l)); },$/;"	f	struct:lr::fmap	file:
 __anon5b3ef2ec0202	include/lr.hpp	/^                     [&](auto &&a) { return f(std::forward<decltype(a)>(a)); }},$/;"	f	struct:lr::fmap	file:
 __anon5b3ef2ec0302	include/lr.hpp	/^              [](L &&l) { return LR<R>(std::forward<L>(l)); },$/;"	f	struct:lr::fmap	file:
@@ -75,13 +75,13 @@ __anoncd3310e00102	test/oset.cpp	/^      [c, d, args = std::tuple{std::forward<A
 __anoncd3310e00202	test/oset.cpp	/^  return union_fn{[c, args = std::tuple{std::forward<Args>(args)...}](auto o) {$/;"	f	function:run	file:
 __anoncd3310e00302	test/oset.cpp	/^  constexpr static auto left = []() {$/;"	f	function:main	file:
 __anoncd3310e00402	test/oset.cpp	/^    return [](int, std::string s) { std::cout << s << '\\n'; };$/;"	f	function:main::__anoncd3310e00302	file:
-__anoncd3310e00502	test/oset.cpp	/^  oid(left(), [](auto x) { std::cout << pf(x) << '\\n'; });$/;"	f	function:main	file:
+__anoncd3310e00502	test/oset.cpp	/^  oid(overloaded{left(), [](auto x) { std::cout << pf(x) << '\\n'; }});$/;"	f	function:main	file:
 __anoncd3310e00602	test/oset.cpp	/^  union_fn{[](auto o) {$/;"	f	function:main	file:
-__anoncd3310e00702	test/oset.cpp	/^                                             [&](UPtr<git_repository> &&repo) {$/;"	f	function:main::__anoncd3310e00602	file:
-__anoncd3310e00802	test/oset.cpp	/^  }}([](float) {},$/;"	f	function:main	file:
-__anoncd3310e00902	test/oset.cpp	/^     [](int i, std::string &&m) { std::cout << i << ' ' << m << '\\n'; },$/;"	f	function:main	file:
-__anoncd3310e00a02	test/oset.cpp	/^     [](int) {}, [](const char *) {});$/;"	f	function:main	file:
-__anoncd3310e00b02	test/oset.cpp	/^     [](int) {}, [](const char *) {});$/;"	f	function:main	file:
+__anoncd3310e00702	test/oset.cpp	/^        left(), [&](UPtr<git_repository> &&repo) {$/;"	f	function:main::__anoncd3310e00602	file:
+__anoncd3310e00802	test/oset.cpp	/^      [](float) {},$/;"	f	function:main	file:
+__anoncd3310e00902	test/oset.cpp	/^      [](int i, std::string &&m) { std::cout << i << ' ' << m << '\\n'; },$/;"	f	function:main	file:
+__anoncd3310e00a02	test/oset.cpp	/^      [](int) {}, [](const char *) {}});$/;"	f	function:main	file:
+__anoncd3310e00b02	test/oset.cpp	/^      [](int) {}, [](const char *) {}});$/;"	f	function:main	file:
 abo	include/git_.hpp	/^namespace abo {$/;"	n
 abo	include/newtype.hpp	/^namespace abo::nt {$/;"	n
 abo	include/union.hpp	/^namespace abo {$/;"	n
@@ -135,6 +135,7 @@ operator ()	include/git.hpp	/^  lr::LR<T> operator()(Args &&... args) const {$/;
 operator ()	include/git.hpp	/^  lr::LR<UPtr<T>> operator()(Args &&... args) const {$/;"	f	struct:git::make	typeref:typename:lr::LR<UPtr<T>>
 operator ()	include/git.hpp	/^  template <typename Pith> LR<git_oid> operator()(Pith &&pith) const {$/;"	f	struct:git::TreeBark	typeref:typename:LR<git_oid>
 operator ()	include/git_.hpp	/^  LR<TreeSha> operator()(const Repo &) const {$/;"	f	struct:abo::Bark	typeref:typename:LR<TreeSha>
+operator ()	include/union.hpp	/^  auto operator()(O &&o) const -> decltype(pith(std::declval<O>())) {$/;"	f	struct:abo::union_fn	typeref:typename:decltype (pith (std::declval<O> ()))
 operator *	include/ntskills.hpp	/^  T operator*(T const &other) const {$/;"	f	struct:nt::Multiplicable	typeref:typename:T
 operator +	include/lr.hpp	/^  L operator+(const L &other) { return L(this->message + other.message); }$/;"	f	struct:lr::L	typeref:typename:L
 operator +	include/newtype.hpp	/^  T operator+(T const &other) const {$/;"	f	struct:abo::nt::Addable	typeref:typename:T

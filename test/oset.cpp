@@ -48,20 +48,27 @@ int main() {
   constexpr static auto left = []() {
     return [](int, std::string s) { std::cout << s << '\n'; };
   };
-  oid(left(), [](auto x) { std::cout << pf(x) << '\n'; });
+  oid(overloaded{left(), [](auto x) { std::cout << pf(x) << '\n'; }});
 
   union_fn{[](auto o) {
     makeuptr(git_repository_open, git_repository_free,
-             static_cast<const char *>("."))(left(),
-                                             [&](UPtr<git_repository> &&repo) {
-                                               std::cout << &repo << '\n';
-                                               o("");
-                                               o(1);
-                                               o(1.f);
-                                               //
-                                               //
-                                             });
-  }}([](float) {},
-     [](int i, std::string &&m) { std::cout << i << ' ' << m << '\n'; },
-     [](int) {}, [](const char *) {});
+             static_cast<const char *>("."))(overloaded{
+        left(), [&](UPtr<git_repository> &&repo) {
+          std::cout << &repo << '\n';
+
+          git_oid id = git_oid{};
+          //  print<decltype(git_tree_lookup)> p;
+          auto r = makeuptr(git_tree_lookup, git_tree_free, repo.get(),
+                            static_cast<const git_oid *>(&id));
+
+          o("");
+          o(1);
+          o(1.f);
+          //
+          //
+        }});
+  }}(overloaded{
+      [](float) {},
+      [](int i, std::string &&m) { std::cout << i << ' ' << m << '\n'; },
+      [](int) {}, [](const char *) {}});
 }
