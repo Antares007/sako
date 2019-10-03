@@ -1361,12 +1361,12 @@ __anon8c726b6b0110	include/range/v3/utility/optional.hpp	/^    {$/;"	n	namespace
 __anon8c726b6b020a	include/range/v3/utility/optional.hpp	/^                {$/;"	u	struct:ranges::detail::optional_adl::optional_storage
 __anon8c726b6b030a	include/range/v3/utility/optional.hpp	/^                {$/;"	u	struct:ranges::detail::optional_adl::optional_storage
 __anon8d9c7e340102	example/any_all_none_of.cpp	/^auto is_six = [](int i) { return i == 6; };$/;"	f	file:
-__anon8f48c67e0102	example/comprehensions.cpp	/^    auto triples = views::for_each(views::iota(1), [](int z) {$/;"	f	function:main	file:
-__anon8f48c67e0202	example/comprehensions.cpp	/^        return views::for_each(views::iota(1, z + 1), [=](int x) {$/;"	f	function:main::__anon8f48c67e0102	file:
-__anon8f48c67e0302	example/comprehensions.cpp	/^            return views::for_each(views::iota(x, z + 1), [=](int y) {$/;"	f	function:main::__anon8f48c67e0102::__anon8f48c67e0202	file:
-__anon8f48c67e0402	example/comprehensions.cpp	/^    auto triples = views::for_each(views::iota(1), [](int z) {$/;"	f	function:benchmark	file:
-__anon8f48c67e0502	example/comprehensions.cpp	/^        return views::for_each(views::iota(1, z + 1), [=](int x) {$/;"	f	function:benchmark::__anon8f48c67e0402	file:
-__anon8f48c67e0602	example/comprehensions.cpp	/^            return views::for_each(views::iota(x, z + 1), [=](int y) {$/;"	f	function:benchmark::__anon8f48c67e0402::__anon8f48c67e0502	file:
+__anon8f48c67e0102	example/comprehensions.cpp	/^  auto triples = views::iota(1) >>= [](int z) {$/;"	f	function:main	file:
+__anon8f48c67e0202	example/comprehensions.cpp	/^    return views::iota(1, z + 1) >>= [=](int x) {$/;"	f	function:main::__anon8f48c67e0102	file:
+__anon8f48c67e0302	example/comprehensions.cpp	/^      return views::iota(x, z + 1) >>= [=](int y) {$/;"	f	function:main::__anon8f48c67e0102::__anon8f48c67e0202	file:
+__anon8f48c67e0402	example/comprehensions.cpp	/^  auto triples = views::for_each(views::iota(1), [](int z) {$/;"	f	function:benchmark	file:
+__anon8f48c67e0502	example/comprehensions.cpp	/^    return views::for_each(views::iota(1, z + 1), [=](int x) {$/;"	f	function:benchmark::__anon8f48c67e0402	file:
+__anon8f48c67e0602	example/comprehensions.cpp	/^      return views::for_each(views::iota(x, z + 1), [=](int y) {$/;"	f	function:benchmark::__anon8f48c67e0402::__anon8f48c67e0502	file:
 __anon932a87a70110	include/range/v3/view/view.hpp	/^        {$/;"	n	namespace:ranges::views
 __anon93ff310a0102	test/main.cpp	/^            lr::fmap([](const git::UPtr<git_repository> &repo) {$/;"	f	function:main	file:
 __anon93ff310a0202	test/main.cpp	/^              return bark([&repo](const TreeBark::O &) {$/;"	f	function:main::__anon93ff310a0102	file:
@@ -1913,7 +1913,7 @@ begin_random_access_	include/range/v3/view/take.hpp	/^        static auto begin_
 begin_random_access_	include/range/v3/view/take.hpp	/^        static auto begin_random_access_(Take & take, std::true_type)$/;"	f	struct:ranges::take_view	typeref:typename:auto
 begin_sized_	include/range/v3/view/take.hpp	/^        static auto begin_sized_(Take & take, std::false_type)$/;"	f	struct:ranges::take_view	typeref:typename:auto
 begin_sized_	include/range/v3/view/take.hpp	/^        static auto begin_sized_(Take & take, std::true_type)$/;"	f	struct:ranges::take_view	typeref:typename:auto
-benchmark	example/comprehensions.cpp	/^benchmark()$/;"	f	typeref:typename:void
+benchmark	example/comprehensions.cpp	/^void benchmark() {$/;"	f	typeref:typename:void
 bidi	include/range/v3/view/drop_last.hpp	/^                bidi,$/;"	e	enum:ranges::detail::drop_last_view::mode_enum
 bidirectional	include/range/v3/view/any_view.hpp	/^        bidirectional = 7,    \/\/\/<\\brief satisfies ranges::concepts::bidirectional_range$/;"	e	enum:ranges::category
 bidirectional_cursor_tag	include/range/v3/detail/range_access.hpp	/^        using bidirectional_cursor_tag =$/;"	t	namespace:ranges::detail	typeref:typename:concepts::tag<bidirectional_cursor_concept,forward_cursor_tag>
@@ -2656,7 +2656,7 @@ dummy_	include/range/v3/utility/optional.hpp	/^                    char dummy_;$
 dummy_	include/range/v3/utility/optional.hpp	/^                    char dummy_;$/;"	m	union:ranges::detail::optional_adl::optional_storage::__anon8c726b6b030a	typeref:typename:char
 dynamic_extent	include/range/v3/view/span.hpp	/^    constexpr detail::span_index_t dynamic_extent = -1;$/;"	v	namespace:ranges	typeref:typename:detail::span_index_t
 ebo	include/range/v3/utility/box.hpp	/^            ebo,  \/\/ Apply Empty Base Optimization: get() returns a reference to a T base$/;"	e	enum:ranges::detail::box_compress
-elapsed	example/comprehensions.cpp	/^    std::chrono::milliseconds elapsed() const$/;"	f	class:timer	typeref:typename:std::chrono::milliseconds	file:
+elapsed	example/comprehensions.cpp	/^  std::chrono::milliseconds elapsed() const {$/;"	f	class:timer	typeref:typename:std::chrono::milliseconds	file:
 elem_t	include/range/v3/detail/variant.hpp	/^                using elem_t = meta::_t<$/;"	t	function:ranges::detail::variant_get::get	typeref:typename:meta::_t<std::remove_reference<meta::at_c<meta::as_list<Variant>,N> const>>
 elem_t	include/range/v3/detail/variant.hpp	/^                using elem_t = meta::_t<$/;"	t	function:ranges::detail::variant_get::get	typeref:typename:meta::_t<std::remove_reference<meta::at_c<meta::as_list<Variant>,N>>>
 element_assign_	include/range/v3/utility/common_tuple.hpp	/^        struct element_assign_$/;"	s	struct:ranges::common_tuple
@@ -3698,7 +3698,7 @@ main	example/any_all_none_of.cpp	/^main()$/;"	f	typeref:typename:int
 main	example/calendar.cpp	/^main()$/;"	f	typeref:typename:int
 main	example/calendar.cpp	/^main(int argc, char *argv[]) try$/;"	f	typeref:typename:int
 main	example/comprehension_conversion.cpp	/^int main()$/;"	f	typeref:typename:int
-main	example/comprehensions.cpp	/^main()$/;"	f	typeref:typename:int
+main	example/comprehensions.cpp	/^int main() {$/;"	f	typeref:typename:int
 main	example/count.cpp	/^main()$/;"	f	typeref:typename:int
 main	example/count_if.cpp	/^main()$/;"	f	typeref:typename:int
 main	example/filter_transform.cpp	/^int main()$/;"	f	typeref:typename:int
@@ -4592,7 +4592,7 @@ operator <	include/range/v3/utility/optional.hpp	/^            constexpr auto op
 operator <	include/range/v3/utility/optional.hpp	/^            constexpr bool operator<(nullopt_t, optional<T> const & x) noexcept$/;"	f	namespace:ranges::detail::optional_adl	typeref:typename:bool
 operator <	include/range/v3/utility/optional.hpp	/^            constexpr bool operator<(optional<T> const &, nullopt_t) noexcept$/;"	f	namespace:ranges::detail::optional_adl	typeref:typename:bool
 operator <	include/range/v3/view/span.hpp	/^        auto operator<(span<U, M> const & that) const -> CPP_ret(bool)( \/\/$/;"	f	struct:ranges::span	typeref:typename:CPP_ret (bool)(requires totally_ordered_with<T,U>)
-operator <<	example/comprehensions.cpp	/^    friend std::ostream &operator<<(std::ostream &sout, timer const &t)$/;"	f	typeref:typename:std::ostream &	file:
+operator <<	example/comprehensions.cpp	/^  friend std::ostream &operator<<(std::ostream &sout, timer const &t) {$/;"	f	typeref:typename:std::ostream &	file:
 operator <<	include/ntskills.hpp	/^std::ostream &operator<<(std::ostream &os,$/;"	f	namespace:nt	typeref:typename:std::ostream &
 operator <<	include/range/v3/iterator/diffmax_t.hpp	/^            friend auto operator<<(Ostream & sout, diffmax_t a)$/;"	f	namespace:ranges::detail	typeref:typename:CPP_broken_friend_ret (std::ostream &)(requires derived_from<Ostream,std::basic_ostream<typename Ostream::char_type,typename Ostream::traits_type>>)
 operator <<	include/range/v3/iterator/diffmax_t.hpp	/^            friend constexpr diffmax_t operator<<(diffmax_t a, diffmax_t b) noexcept$/;"	f	namespace:ranges::detail	typeref:typename:diffmax_t
@@ -5434,7 +5434,7 @@ requires_	include/concepts/concepts.hpp	/^        constexpr bool requires_()$/;"
 requires_	include/concepts/concepts.hpp	/^    CPP_INLINE_VAR constexpr std::enable_if_t<B, int> requires_ = 0;$/;"	v	namespace:concepts	typeref:typename:CPP_INLINE_VAR std::enable_if_t<B,int>
 requires_	include/concepts/concepts.hpp	/^    std::enable_if_t<B> requires_()$/;"	f	namespace:concepts	typeref:typename:std::enable_if_t<B>
 res_t	include/range/v3/detail/variant.hpp	/^                using res_t = meta::_t<$/;"	t	function:ranges::detail::variant_get::get	typeref:typename:meta::_t<std::add_rvalue_reference<meta::at_c<meta::as_list<Variant>,N>>>
-reset	example/comprehensions.cpp	/^    void reset()$/;"	f	class:timer	typeref:typename:void	file:
+reset	example/comprehensions.cpp	/^  void reset() { start_ = std::chrono::high_resolution_clock::now(); }$/;"	f	class:timer	typeref:typename:void	file:
 reset	include/range/v3/utility/optional.hpp	/^                constexpr void reset() noexcept$/;"	f	struct:ranges::detail::optional_adl::optional_base	typeref:typename:void
 reset	include/range/v3/utility/optional.hpp	/^                constexpr void reset() noexcept$/;"	f	struct:ranges::detail::optional_adl::optional_storage	typeref:typename:void
 reset	include/range/v3/utility/optional.hpp	/^                void reset() noexcept$/;"	f	struct:ranges::detail::optional_adl::optional_storage	typeref:typename:void
@@ -5808,7 +5808,7 @@ stable_partition_impl	include/range/v3/algorithm/stable_partition.hpp	/^        
 stable_partition_impl	include/range/v3/algorithm/stable_partition.hpp	/^        I stable_partition_impl(I first, S last, C pred, P proj,$/;"	f	namespace:ranges::detail	typeref:typename:I
 stable_sort_adaptive	include/range/v3/algorithm/stable_sort.hpp	/^        void stable_sort_adaptive(I first, I last, V * buffer, std::ptrdiff_t buffer_size,$/;"	f	namespace:ranges::detail	typeref:typename:void
 stable_sort_fn	include/range/v3/action/stable_sort.hpp	/^        struct stable_sort_fn$/;"	s	namespace:ranges::actions
-start_	example/comprehensions.cpp	/^    std::chrono::high_resolution_clock::time_point start_;$/;"	m	class:timer	typeref:typename:std::chrono::high_resolution_clock::time_point	file:
+start_	example/comprehensions.cpp	/^  std::chrono::high_resolution_clock::time_point start_;$/;"	m	class:timer	typeref:typename:std::chrono::high_resolution_clock::time_point	file:
 state	include/range/v3/view/set_algorithm.hpp	/^            } state;$/;"	m	struct:ranges::detail::set_symmetric_difference_cursor	typeref:enum:ranges::detail::set_symmetric_difference_cursor::state_t
 state	include/range/v3/view/set_algorithm.hpp	/^            } state;$/;"	m	struct:ranges::detail::set_union_cursor	typeref:enum:ranges::detail::set_union_cursor::state_t
 state_t	include/range/v3/view/set_algorithm.hpp	/^            enum class state_t$/;"	g	struct:ranges::detail::set_symmetric_difference_cursor
@@ -5920,8 +5920,8 @@ test	include/range/v3/range/concepts.hpp	/^            static constexpr auto tes
 test	include/range/v3/range/concepts.hpp	/^            static constexpr auto test(void const *) -> bool$/;"	f	struct:ranges::detail::enable_view_helper_	typeref:typename:bool
 there	include/range/v3/view/split.hpp	/^        struct there$/;"	s	namespace:ranges::detail
 throw_bad_optional_access	include/range/v3/utility/optional.hpp	/^        [[noreturn]] bool throw_bad_optional_access()$/;"	f	namespace:ranges::detail	typeref:typename:[[noreturn]]bool
-timer	example/comprehensions.cpp	/^    timer()$/;"	f	class:timer	file:
-timer	example/comprehensions.cpp	/^class timer$/;"	c	file:
+timer	example/comprehensions.cpp	/^  timer() { reset(); }$/;"	f	class:timer	file:
+timer	example/comprehensions.cpp	/^class timer {$/;"	c	file:
 tinyness_before	include/range/v3/iterator/diffmax_t.hpp	/^        static constexpr bool tinyness_before = false;$/;"	m	struct:std::numeric_limits	typeref:typename:bool
 tinyness_before	include/range/v3/iterator/diffmax_t.hpp	/^    inline constexpr bool numeric_limits<::ranges::detail::diffmax_t>::tinyness_before;$/;"	m	class:std::numeric_limits<::ranges::detail::diffmax_t>	typeref:typename:bool
 tmp1	include/range/v3/iterator/basic_iterator.hpp	/^            using tmp1 = meta::list<value_t_, R1>;$/;"	t	struct:ranges::detail::cursor_traits_	typeref:typename:meta::list<value_t_,R1>
