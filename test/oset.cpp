@@ -9,8 +9,7 @@ using namespace abo;
 
 template <typename T> using UPtr = std::unique_ptr<T, void (*)(T *)>;
 template <typename... Args> std::string pf(Args &&...) {
-  std::string s = {__PRETTY_FUNCTION__};
-  return s.substr(40, s.size() - 89);
+  return {__PRETTY_FUNCTION__};
 }
 template <typename T, typename... Args>
 constexpr auto makeuptr(int (*c)(T **, Args...), void (*d)(T *),

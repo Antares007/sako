@@ -7,7 +7,7 @@ namespace abo {
 template <typename P> struct union_fn {
   P pith;
   template <typename O>
-  auto operator()(O &&o) const -> decltype(pith(std::declval<O>())) {
+  constexpr auto operator()(O &&o) const -> decltype(pith(std::declval<O>())) {
     bool firstrun = true;
     return pith([&o, &firstrun](auto &&... x) {
       if (firstrun) {
