@@ -1,0 +1,3 @@
+[submodule "sub/cmcstl2"]
+	path = sub/cmcstl2
+	url = git@github.com:Antares007/cmcstl2.git
