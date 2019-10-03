@@ -1336,6 +1336,8 @@ __anon1cbd4b800202	example/for_each_assoc.cpp	/^auto printm = [](std::pair<strin
 __anon2f64190e0102	include/range/v3/view/sample.hpp	/^                                                        URNG &> {$/;"	f	function:ranges::views::sample_fn::CPP_fun	typeref:typename:invoke_result_t<sample_base_fn,decltype (rng),range_difference_t<decltype (rng)>,URNG &>	file:
 __anon320e76b20102	include/git.hpp	/^             | lr::fmap([](auto) { return LR<git_oid>(lr::L{"9"}); });$/;"	f	function:git::TreeBark::operator ()	file:
 __anon34c545170102	include/union.hpp	/^    return pith([&o, &firstrun](auto &&... x) {$/;"	f	function:abo::union_fn::operator ()	file:
+__anon34c545170202	include/union.hpp	/^    return union_fn{[l = pith, r = r.pith](auto) {$/;"	f	function:abo::union_fn::operator +	file:
+__anon34c545170302	include/union.hpp	/^      l([](auto r) {});$/;"	f	function:abo::union_fn::operator +::__anon34c545170202	file:
 __anon387ca4c40102	include/range/v3/view/concat.hpp	/^                                [](auto && r) -> size_type { return ranges::size(r); }),$/;"	f	function:ranges::concat_view::CPP_fun	typeref:typename:size_type	file:
 __anon387ca4c40202	include/range/v3/view/concat.hpp	/^                                [](auto && r) -> size_type { return ranges::size(r); }),$/;"	f	function:ranges::concat_view::CPP_fun	typeref:typename:size_type	file:
 __anon43832ae80102	example/count_if.cpp	/^auto is_six = [](int i) -> bool { return i == 6; };$/;"	f	typeref:typename:bool	file:
@@ -4487,6 +4489,7 @@ operator +	include/range/v3/iterator/diffmax_t.hpp	/^            friend constexp
 operator +	include/range/v3/iterator/move_iterators.hpp	/^        auto operator+(difference_type n) const -> CPP_ret(move_iterator)( \/\/$/;"	f	struct:ranges::move_iterator	typeref:typename:CPP_ret (move_iterator)(requires random_access_iterator<I>)
 operator +	include/range/v3/iterator/move_iterators.hpp	/^        friend auto operator+(iter_difference_t<I> n,$/;"	f	namespace:ranges	typeref:typename:CPP_broken_friend_ret (move_iterator)(requires random_access_iterator<I>)
 operator +	include/range/v3/range/conversion.hpp	/^            friend auto operator+(to_container_iterator i, difference_type n) \/\/$/;"	f	namespace:ranges::detail	typeref:typename:CPP_broken_friend_ret (to_container_iterator)(requires derived_from<iterator_category,std::random_access_iterator_tag>)
+operator +	include/union.hpp	/^  template <typename R> decltype(auto) operator+(union_fn<R> &&r) const {$/;"	f	struct:abo::union_fn	typeref:typename:decltype (auto)
 operator ++	example/calendar.cpp	/^        date &operator++(date &d)$/;"	f	namespace:boost::gregorian	typeref:typename:date &
 operator ++	example/calendar.cpp	/^        date operator++(date &d, int)$/;"	f	namespace:boost::gregorian	typeref:typename:date
 operator ++	include/ntskills.hpp	/^  T &operator++() {$/;"	f	struct:nt::PreIncrementable	typeref:typename:T &

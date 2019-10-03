@@ -6,6 +6,7 @@ namespace abo {
 
 template <typename P> struct union_fn {
   P pith;
+
   template <typename O>
   constexpr auto operator()(O &&o) const -> decltype(pith(std::declval<O>())) {
     bool firstrun = true;
@@ -15,6 +16,14 @@ template <typename P> struct union_fn {
         o(std::forward<decltype(x)>(x)...);
       }
     });
+  }
+
+  template <typename R> decltype(auto) operator+(union_fn<R> &&r) const {
+
+    return union_fn{[l = pith, r = r.pith](auto) {
+      l([](auto r) {});
+      //
+    }};
   }
 };
 template <typename P> union_fn(P)->union_fn<P>;
