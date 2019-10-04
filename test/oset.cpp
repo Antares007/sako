@@ -14,15 +14,16 @@ template <typename... Args> std::string pf(Args &&...) {
 template <typename T, typename... Args>
 constexpr auto makeuptr(int (*c)(T **, Args...), void (*d)(T *),
                         Args &&... args) {
-  return union_fn{
-      [c, d, args = std::tuple{std::forward<Args>(args)...}](auto o) {
-        T *ptr = nullptr;
-        int error = std::apply(std::bind_front(c, &ptr), args);
-        if (error)
-          o(error, pf(c));
-        else
-          o(UPtr<T>(ptr, d));
-      }};
+  return union_fn{[c, d,
+                   args = std::tuple<std::decay_t<Args>...>{
+                       std::forward<Args>(args)...}](auto o) {
+    T *ptr = nullptr;
+    int error = std::apply(std::bind_front(c, &ptr), args);
+    if (error)
+      o(error, pf(c));
+    else
+      o(UPtr<T>(ptr, d));
+  }};
 }
 // {int (&)(git_oid*, const char*)}
 template <typename T, typename... Args>
@@ -37,37 +38,12 @@ constexpr auto run(int (*c)(T *, Args...), Args &&... args) {
   }};
 }
 
-#include <cstdio>
 int main() {
-  git_libgit2_init();
-  auto oid = run(
-      git_oid_fromstr,
-      static_cast<const char *>("84d43a3be66fb3262f178278c1d748c798785b2e"));
+  auto u1 = abo::union_fn{[](auto o) { o(1); }};
+  auto u2 = abo::union_fn{[](auto o) { o("B"); }};
+  auto u3 = u1 + u2 + u1;
 
-  constexpr static auto left = []() {
-    return [](int, std::string s) { std::cout << s << '\n'; };
-  };
-  oid(overloaded{left(), [](auto x) { std::cout << pf(x) << '\n'; }});
-
-  union_fn{[](auto o) {
-    makeuptr(git_repository_open, git_repository_free,
-             static_cast<const char *>("."))(overloaded{
-        left(), [&](UPtr<git_repository> &&repo) {
-          std::cout << &repo << '\n';
-
-          git_oid id = git_oid{};
-          //  print<decltype(git_tree_lookup)> p;
-          auto r = makeuptr(git_tree_lookup, git_tree_free, repo.get(),
-                            static_cast<const git_oid *>(&id));
-
-          o("");
-          o(1);
-          o(1.f);
-          //
-          //
-        }});
-  }}(overloaded{
-      [](float) {},
-      [](int i, std::string &&m) { std::cout << i << ' ' << m << '\n'; },
-      [](int) {}, [](const char *) {}});
+  u3(overloaded{
+      [](int i, const char *m, int) { std::cout << i << " " << m << '\n'; },
+  });
 }
