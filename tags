@@ -1397,11 +1397,14 @@ __anonbc46ca120102	example/find.cpp	/^auto is_six = [](int i) -> bool { return i
 __anoncd3310e00102	test/oset.cpp	/^  return [c, d](Args... args, auto o) {$/;"	f	function:m1	file:
 __anoncd3310e00202	test/oset.cpp	/^  return [c](Args... args, auto o) {$/;"	f	function:m2	file:
 __anoncd3310e00302	test/oset.cpp	/^  return overloaded{[](int err) { std::cout << "Error" << err << '\\n'; },$/;"	f	function:o	file:
-__anoncd3310e00402	test/oset.cpp	/^  open(".", o([](auto &&repo) { \/\/$/;"	f	function:main	file:
-__anoncd3310e00502	test/oset.cpp	/^  auto u1 = [](auto o) { o(A{1}); };$/;"	f	function:main	file:
-__anoncd3310e00602	test/oset.cpp	/^  auto u2 = [](auto o) {$/;"	f	function:main	file:
-__anoncd3310e00702	test/oset.cpp	/^      [](A, B) {},$/;"	f	function:main	file:
-__anoncd3310e00802	test/oset.cpp	/^      [](A, git_oid &&) {},$/;"	f	function:main	file:
+__anoncd3310e00402	test/oset.cpp	/^  overloaded{[](int, int) {}, [](int, auto) {}, [](auto, int) {},$/;"	f	function:main	file:
+__anoncd3310e00502	test/oset.cpp	/^  overloaded{[](int, int) {}, [](int, auto) {}, [](auto, int) {},$/;"	f	function:main	file:
+__anoncd3310e00602	test/oset.cpp	/^  overloaded{[](int, int) {}, [](int, auto) {}, [](auto, int) {},$/;"	f	function:main	file:
+__anoncd3310e00702	test/oset.cpp	/^             [](auto &&repo, auto) { \/\/$/;"	f	function:main	file:
+__anoncd3310e00802	test/oset.cpp	/^  auto u1 = [](auto o) { o(A{1}); };$/;"	f	function:main	file:
+__anoncd3310e00902	test/oset.cpp	/^  auto u2 = [](auto o) {$/;"	f	function:main	file:
+__anoncd3310e00a02	test/oset.cpp	/^      [](A, B) {},$/;"	f	function:main	file:
+__anoncd3310e00b02	test/oset.cpp	/^      [](A, git_oid &&) {},$/;"	f	function:main	file:
 __anond12401700102	example/comprehension_conversion.cpp	/^                              [](int i) { return yield_from(views::repeat_n(i, i)); }) |$/;"	f	function:main	file:
 __anone8c48cc60102	include/range/v3/utility/random.hpp	/^                ranges::generate(seeds, [&] { return dist(rd); });$/;"	f	function:ranges::detail::randutils::get_entropy	file:
 __anone8c48cc60202	include/range/v3/utility/random.hpp	/^                    auto hash = [&](IntRep value) RANGES_INTENDED_MODULAR_ARITHMETIC {$/;"	f	function:ranges::detail::randutils::seed_seq_fe::mix_entropy	file:

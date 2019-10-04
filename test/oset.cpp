@@ -1,5 +1,7 @@
+#include "overloaded.hpp"
 #include <functional>
 #include <git2.h>
+#include <git2/oid.h>
 #include <iostream>
 #include <memory>
 #include <newtype.hpp>
@@ -32,7 +34,9 @@ constexpr auto m2(int (*c)(T *, Args...)) {
   };
 }
 constexpr decltype(auto) open = m1(git_repository_open, git_repository_free);
+constexpr decltype(auto) oid_fromstr = m2(git_oid_fromstr);
 
+;
 NewType(A, int);
 NewType(B, int);
 NewType(O, int);
@@ -52,9 +56,12 @@ template <typename... Fns> constexpr decltype(auto) o(Fns &&... fns) {
 
 int main() {
   git_libgit2_init();
-  open(".", o([](auto &&repo) { //
-         std::cout << "repo" << repo.get();
-       }));
+  overloaded{[](int, int) {}, [](int, auto) {}, [](auto, int) {},
+             [](auto &&repo, auto) { //
+               std::cout << "repo"
+                         << "\n";
+             }} |
+      std::bind_front(open, ".") * std::bind_front(oid_fromstr, "");
 
   auto u1 = [](auto o) { o(A{1}); };
   auto u2 = [](auto o) {
