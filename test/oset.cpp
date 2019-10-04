@@ -2,48 +2,68 @@
 #include <git2.h>
 #include <iostream>
 #include <memory>
+#include <newtype.hpp>
 #include <tuple>
 #include <union.hpp>
 
 using namespace abo;
 
 template <typename T> using UPtr = std::unique_ptr<T, void (*)(T *)>;
-template <typename... Args> std::string pf(Args &&...) {
-  return {__PRETTY_FUNCTION__};
-}
+
 template <typename T, typename... Args>
-constexpr auto makeuptr(int (*c)(T **, Args...), void (*d)(T *),
-                        Args &&... args) {
-  return union_fn{[c, d,
-                   args = std::tuple<std::decay_t<Args>...>{
-                       std::forward<Args>(args)...}](auto o) {
+constexpr auto m1(int (*c)(T **, Args...), void (*d)(T *)) {
+  return [c, d](Args... args, auto o) {
     T *ptr = nullptr;
-    int error = std::apply(std::bind_front(c, &ptr), args);
-    if (error)
-      o(error, pf(c));
+    if (int error = c(&ptr, args...))
+      o(error);
     else
       o(UPtr<T>(ptr, d));
-  }};
+  };
 }
-// {int (&)(git_oid*, const char*)}
+
 template <typename T, typename... Args>
-constexpr auto run(int (*c)(T *, Args...), Args &&... args) {
-  return union_fn{[c, args = std::tuple{std::forward<Args>(args)...}](auto o) {
+constexpr auto m2(int (*c)(T *, Args...)) {
+  return [c](Args... args, auto o) {
     T v = {};
-    int error = std::apply(std::bind_front(c, &v), args);
-    if (error)
-      o(error, pf(c));
+    if (int error = c(&v, args...))
+      o(error);
     else
       o(std::move(v));
-  }};
+  };
+}
+constexpr decltype(auto) open = m1(git_repository_open, git_repository_free);
+
+NewType(A, int);
+NewType(B, int);
+NewType(O, int);
+
+template <typename A, typename F>
+constexpr auto operator|(A &&a, F &&f) -> decltype(f(std::forward<A>(a))) {
+  return f(std::forward<A>(a));
 }
 
-int main() {
-  auto u1 = abo::union_fn{[](auto o) { o(1); }};
-  auto u2 = abo::union_fn{[](auto o) { o("B"); }};
-  auto u3 = u1 + u2 + u1;
+#define G(T, O) m1(T##_##O, T##_free, G_NEXT_
+#define G_NEXT_(...) __VA_ARGS__)
 
+template <typename... Fns> constexpr decltype(auto) o(Fns &&... fns) {
+  return overloaded{[](int err) { std::cout << "Error" << err << '\n'; },
+                    std::forward<Fns>(fns)...};
+};
+
+int main() {
+  git_libgit2_init();
+  open(".", o([](auto &&repo) { //
+         std::cout << "repo" << repo.get();
+       }));
+
+  auto u1 = [](auto o) { o(A{1}); };
+  auto u2 = [](auto o) {
+    o(B{0});
+    o(git_oid{});
+  };
+  auto u3 = u1 * u2;
   u3(overloaded{
-      [](int i, const char *m, int) { std::cout << i << " " << m << '\n'; },
+      [](A, B) {},
+      [](A, git_oid &&) {},
   });
 }
