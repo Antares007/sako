@@ -7,9 +7,7 @@
 namespace abo {
 
 template <typename... T> struct ray;
-template <typename T> struct ray<T> {
-  void operator()(T &&) const {}
-};
+template <typename T> struct ray<T> { void operator()(T &&) const {}; };
 template <typename T, typename... Rest>
 struct ray<T, Rest...> : ray<T>, ray<Rest...> {
   using ray<T>::operator();

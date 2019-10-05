@@ -2,12 +2,14 @@
 #include <functional>
 #include <git2.h>
 #include <git2/oid.h>
+#include <ios>
 #include <iostream>
 #include <memory>
 #include <newtype.hpp>
 #include <tuple>
 #include <type_traits>
 #include <union.hpp>
+#include <utility>
 
 using namespace abo;
 
@@ -66,11 +68,36 @@ NewType(A, int);
 NewType(B, int);
 NewType(O, int);
 
+template <typename Pith, typename... Rights>
+using is_pith_for_t =
+    std::enable_if_t<std::is_invocable_r_v<void, Pith, ray<Rights...>>, Pith>;
+
+template <typename F> struct lrrayF : ray<L> {
+  F f;
+  using ray<L>::operator();
+  template <typename U, typename = decltype(f(std::declval<U>()))>
+  constexpr void operator()(U &&) const {};
+};
+template <typename F> lrrayF(F)->lrrayF<F>;
+
+template <
+    typename F, typename Pith,
+    typename = std::enable_if_t<std::is_invocable_r_v<void, Pith, lrrayF<F>>>>
+constexpr decltype(auto) map(F &&fn, Pith &&pith) {
+  return [p = std::forward<Pith>(pith), f = std::forward<F>(fn)](auto &&o) {
+    p(overloaded{[&o](L l) { o(std::move(l)); },
+                 [&f, &o](auto &&a) { o(f(std::forward<decltype(a)>(a))); }});
+  };
+}
+
 int main() {
-  auto o = ray<A, B, O>();
-  o(A{0});
-  o(B{0});
-  o(O{0});
+  auto lrp = [](auto o) {
+    o(L{""});
+    if (false)
+      o(1);
+  };
+  map([](int) { return 2; }, std::move(lrp))([](auto) {});
+
   git_libgit2_init();
 
   (([](auto o) {
