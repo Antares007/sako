@@ -2,6 +2,7 @@
 #include <functional>
 #include <git2.h>
 #include <git2/oid.h>
+#include <git2/types.h>
 #include <ios>
 #include <iostream>
 #include <memory>
@@ -14,13 +15,23 @@
 using namespace abo;
 
 template <typename T> using UPtr = std::unique_ptr<T, void (*)(T *)>;
+struct L {
+  L() = delete;
+  L(const L &) = delete;
+  L(L &&) = default;
+  template <typename T,
+            typename = std::enable_if_t<std::is_convertible_v<T, std::string>>>
+  L(T &&a) : message(std::forward<T>(a)) {}
+  L operator+(const L &other) { return L(this->message + other.message); }
+  std::string message;
+};
 
 template <typename T, typename... Args>
 constexpr auto m1(int (*c)(T **, Args...), void (*d)(T *)) {
   return [c, d](Args... args, auto o) {
     T *ptr = nullptr;
     if (int error = c(&ptr, args...))
-      o(error);
+      o(L{""});
     else
       o(UPtr<T>(ptr, d));
   };
@@ -31,7 +42,7 @@ constexpr auto m2(int (*c)(T *, Args...)) {
   return [c](Args... args, auto o) {
     T v = {};
     if (int error = c(&v, args...))
-      o(error);
+      o(L{""});
     else
       o(std::move(v));
   };
@@ -53,17 +64,6 @@ template <typename... Fns> constexpr decltype(auto) o(Fns &&... fns) {
                     std::forward<Fns>(fns)...};
 };
 
-struct L {
-  L() = delete;
-  L(const L &) = delete;
-  L(L &&) = default;
-  template <typename T,
-            typename = std::enable_if_t<std::is_convertible_v<T, std::string>>>
-  L(T &&a) : message(std::forward<T>(a)) {}
-  L operator+(const L &other) { return L(this->message + other.message); }
-  std::string message;
-};
-
 NewType(A, int);
 NewType(B, int);
 NewType(O, int);
@@ -80,23 +80,43 @@ template <typename F> struct lrrayF : ray<L> {
 };
 template <typename F> lrrayF(F)->lrrayF<F>;
 
-template <
-    typename F, typename Pith,
-    typename = std::enable_if_t<std::is_invocable_r_v<void, Pith, lrrayF<F>>>>
-constexpr decltype(auto) map(F &&fn, Pith &&pith) {
-  return [p = std::forward<Pith>(pith), f = std::forward<F>(fn)](auto &&o) {
-    p(overloaded{[&o](L l) { o(std::move(l)); },
-                 [&f, &o](auto &&a) { o(f(std::forward<decltype(a)>(a))); }});
-  };
-}
+template <typename F> struct fmap {
+  F f;
+
+  template <typename Pith, typename = std::enable_if_t<
+                               std::is_invocable_r_v<void, Pith, lrrayF<F>>>>
+  constexpr decltype(auto) operator()(Pith &&pith) const {
+    return [p = std::forward<Pith>(pith), f = std::move(this->f)](auto &&o) {
+      p(overloaded{[&o](L l) { o(std::move(l)); },
+                   [&f, &o](auto &&a) { o(f(std::forward<decltype(a)>(a))); }});
+    };
+  }
+};
+template <typename F> fmap(F)->fmap<F>;
 
 int main() {
-  auto lrp = [](auto o) {
-    o(L{""});
-    if (false)
-      o(1);
-  };
-  map([](int) { return 2; }, std::move(lrp))([](auto) {});
+  auto rez =
+      [](auto o) {
+        if (false)
+          o(L{"hello"});
+        o(1);
+      } |
+      fmap{[](int i) {
+        //
+        return ++i;
+      }} |
+      fmap{[](int i) {
+        //
+        return ++i;
+      }};
+
+  std::bind_front(open, ".") | fmap{[](UPtr<git_repository> &&i) {
+    //
+    return 1;
+  }};
+
+  rez(overloaded{[](L &&l) { std::cout << l.message << '\n'; },
+                 [](int i) { std::cout << i << '\n'; }});
 
   git_libgit2_init();
 
