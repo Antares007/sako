@@ -1,16 +1,4 @@
-#include "overloaded.hpp"
-#include <functional>
-#include <git2.h>
-#include <git2/oid.h>
-#include <git2/types.h>
-#include <ios>
-#include <iostream>
-#include <memory>
-#include <newtype.hpp>
-#include <tuple>
-#include <type_traits>
-#include <union.hpp>
-#include <utility>
+#include "oset.hpp"
 
 using namespace abo;
 
@@ -49,7 +37,7 @@ constexpr auto m2(int (*c)(T *, Args...)) {
 }
 
 constexpr decltype(auto) open = m1(git_repository_open, git_repository_free);
-constexpr decltype(auto) oid_fromstr = m2(git_oid_fromstr);
+// constexpr decltype(auto) oid_fromstr = m2(git_oid_fromstr);
 
 template <typename A, typename F>
 constexpr auto operator|(A &&a, F &&f) -> decltype(f(std::forward<A>(a))) {
@@ -95,51 +83,13 @@ template <typename F> struct fmap {
 template <typename F> fmap(F)->fmap<F>;
 
 int main() {
-  auto rez =
-      [](auto o) {
-        if (false)
-          o(L{"hello"});
-        o(1);
-      } |
-      fmap{[](int i) {
-        //
-        return ++i;
-      }} |
-      fmap{[](int i) {
-        //
-        return ++i;
-      }};
-
-  std::bind_front(open, ".") | fmap{[](UPtr<git_repository> &&i) {
-    //
-    return 1;
-  }};
-
-  rez(overloaded{[](L &&l) { std::cout << l.message << '\n'; },
-                 [](int i) { std::cout << i << '\n'; }});
-
   git_libgit2_init();
 
-  (([](auto o) {
-     o(A{1});
-     o(O{2});
-   }) *
-   ([](auto o) {
-     o(B{3});
-     o(O{4});
-   }))([](auto &&a, auto &&b) {
-    std::cout << a.get() << " - " << b.get() << '\n';
-  });
+  auto a = std::bind_front(open, ".") | fmap{[](UPtr<git_repository> &&) {
+             //
+             return 11;
+           }};
 
-  // std::bind_front(open, ".")
-  auto u1 = [](auto o) { o(A{1}); };
-  auto u2 = [](auto o) {
-    o(B{0});
-    o(git_oid{});
-  };
-  auto u3 = u1 * u2;
-  u3(overloaded{
-      [](A, B) {},
-      [](A, git_oid &&) {},
-  });
+  a(overloaded{[](L &&l) { std::cout << l.message << '\n'; },
+               [](int i) { std::cout << i << '\n'; }});
 }
