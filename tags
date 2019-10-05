@@ -501,6 +501,7 @@ IsConst	include/range/v3/view/cartesian_product.hpp	/^            using IsConst 
 IsNotReference	include/nt.hpp	/^using IsNotReference =$/;"	t	namespace:nt	typeref:typename:std::enable_if<!std::is_reference<T> void>::type
 It	include/range/v3/view/split.hpp	/^        using split_view_base = meta::invoke<here_or_there_<!forward_iterator<It>>, It>;$/;"	t	namespace:ranges::detail	typeref:typename:meta::invoke<here_or_there_<!forward_iterator<>>
 L	include/lr.hpp	/^struct L {$/;"	s	namespace:lr
+L	test/oset.cpp	/^struct L {$/;"	s	file:
 LOGICAL_OP	include/range/v3/utility/common_tuple.hpp	/^#define LOGICAL_OP(/;"	d
 LR	include/git.hpp	/^template <typename R> using LR = lr::LR<R>;$/;"	t	namespace:git	typeref:typename:lr::LR<R>
 LR	include/lr.hpp	/^template <typename... Rights> using LR = std::variant<L, Rights...>;$/;"	t	namespace:lr	typeref:typename:std::variant<L,Rights...>
@@ -1397,14 +1398,13 @@ __anonbc46ca120102	example/find.cpp	/^auto is_six = [](int i) -> bool { return i
 __anoncd3310e00102	test/oset.cpp	/^  return [c, d](Args... args, auto o) {$/;"	f	function:m1	file:
 __anoncd3310e00202	test/oset.cpp	/^  return [c](Args... args, auto o) {$/;"	f	function:m2	file:
 __anoncd3310e00302	test/oset.cpp	/^  return overloaded{[](int err) { std::cout << "Error" << err << '\\n'; },$/;"	f	function:o	file:
-__anoncd3310e00402	test/oset.cpp	/^  overloaded{[](int, int) {}, [](int, auto) {}, [](auto, int) {},$/;"	f	function:main	file:
-__anoncd3310e00502	test/oset.cpp	/^  overloaded{[](int, int) {}, [](int, auto) {}, [](auto, int) {},$/;"	f	function:main	file:
-__anoncd3310e00602	test/oset.cpp	/^  overloaded{[](int, int) {}, [](int, auto) {}, [](auto, int) {},$/;"	f	function:main	file:
-__anoncd3310e00702	test/oset.cpp	/^             [](auto &&repo, auto) { \/\/$/;"	f	function:main	file:
-__anoncd3310e00802	test/oset.cpp	/^  auto u1 = [](auto o) { o(A{1}); };$/;"	f	function:main	file:
-__anoncd3310e00902	test/oset.cpp	/^  auto u2 = [](auto o) {$/;"	f	function:main	file:
-__anoncd3310e00a02	test/oset.cpp	/^      [](A, B) {},$/;"	f	function:main	file:
-__anoncd3310e00b02	test/oset.cpp	/^      [](A, git_oid &&) {},$/;"	f	function:main	file:
+__anoncd3310e00402	test/oset.cpp	/^  (([](auto o) {$/;"	f	function:main	file:
+__anoncd3310e00502	test/oset.cpp	/^   ([](auto o) {$/;"	f	function:main	file:
+__anoncd3310e00602	test/oset.cpp	/^   }))([](auto &&a, auto &&b) {$/;"	f	function:main	file:
+__anoncd3310e00702	test/oset.cpp	/^  auto u1 = [](auto o) { o(A{1}); };$/;"	f	function:main	file:
+__anoncd3310e00802	test/oset.cpp	/^  auto u2 = [](auto o) {$/;"	f	function:main	file:
+__anoncd3310e00902	test/oset.cpp	/^      [](A, B) {},$/;"	f	function:main	file:
+__anoncd3310e00a02	test/oset.cpp	/^      [](A, git_oid &&) {},$/;"	f	function:main	file:
 __anond12401700102	example/comprehension_conversion.cpp	/^                              [](int i) { return yield_from(views::repeat_n(i, i)); }) |$/;"	f	function:main	file:
 __anone8c48cc60102	include/range/v3/utility/random.hpp	/^                ranges::generate(seeds, [&] { return dist(rd); });$/;"	f	function:ranges::detail::randutils::get_entropy	file:
 __anone8c48cc60202	include/range/v3/utility/random.hpp	/^                    auto hash = [&](IntRep value) RANGES_INTENDED_MODULAR_ARITHMETIC {$/;"	f	function:ranges::detail::randutils::seed_seq_fe::mix_entropy	file:
@@ -3785,6 +3785,7 @@ merge_sort_chunk_size	include/range/v3/algorithm/stable_sort.hpp	/^        const
 merge_sort_loop	include/range/v3/algorithm/stable_sort.hpp	/^        void merge_sort_loop(I1 first, I1 last, I2 result, D step_size, C & pred,$/;"	f	namespace:ranges::detail	typeref:typename:void
 merge_sort_with_buffer	include/range/v3/algorithm/stable_sort.hpp	/^        void merge_sort_with_buffer(I first, I last, V * buffer, C & pred, P & proj)$/;"	f	namespace:ranges::detail	typeref:typename:void
 message	include/lr.hpp	/^  std::string message;$/;"	m	struct:lr::L	typeref:typename:std::string
+message	test/oset.cpp	/^  std::string message;$/;"	m	struct:L	typeref:typename:std::string	file:
 meta	include/meta/meta.hpp	/^namespace meta$/;"	n
 meta	include/meta/meta_fwd.hpp	/^namespace meta$/;"	n
 min	include/range/v3/algorithm/result_types.hpp	/^            T min;$/;"	m	struct:ranges::detail::min_max_result	typeref:typename:T
@@ -4457,6 +4458,7 @@ operator ()	include/range/v3/view/zip_with.hpp	/^            constexpr auto oper
 operator ()	include/range/v3/view/zip_with.hpp	/^            constexpr auto operator()(T const & t, U const & u) const$/;"	f	struct:ranges::detail::_min_	typeref:typename:decltype (true?t:u)
 operator ()	include/range/v3/view/zip_with.hpp	/^            void operator()(T & t) const$/;"	f	struct:ranges::detail::dec_	typeref:typename:void
 operator ()	include/range/v3/view/zip_with.hpp	/^            void operator()(T & t) const$/;"	f	struct:ranges::detail::inc_	typeref:typename:void
+operator ()	include/union.hpp	/^  void operator()(T &&) const {}$/;"	f	struct:abo::ray	typeref:typename:void
 operator *	include/ntskills.hpp	/^  T operator*(T const &other) const {$/;"	f	struct:nt::Multiplicable	typeref:typename:T
 operator *	include/range/v3/iterator/basic_iterator.hpp	/^            constexpr Value const & operator*() const noexcept$/;"	f	struct:ranges::postfix_increment_proxy	typeref:typename:Value const &
 operator *	include/range/v3/iterator/basic_iterator.hpp	/^        constexpr auto operator*() const$/;"	f	struct:basic_iterator	typeref:typename:CPP_member auto
@@ -4498,6 +4500,7 @@ operator +	include/range/v3/iterator/move_iterators.hpp	/^        auto operator+
 operator +	include/range/v3/iterator/move_iterators.hpp	/^        friend auto operator+(iter_difference_t<I> n,$/;"	f	namespace:ranges	typeref:typename:CPP_broken_friend_ret (move_iterator)(requires random_access_iterator<I>)
 operator +	include/range/v3/range/conversion.hpp	/^            friend auto operator+(to_container_iterator i, difference_type n) \/\/$/;"	f	namespace:ranges::detail	typeref:typename:CPP_broken_friend_ret (to_container_iterator)(requires derived_from<iterator_category,std::random_access_iterator_tag>)
 operator +	include/union.hpp	/^constexpr decltype(auto) operator+(const L &l, const R &r) {$/;"	f	namespace:abo	typeref:typename:decltype (auto)
+operator +	test/oset.cpp	/^  L operator+(const L &other) { return L(this->message + other.message); }$/;"	f	struct:L	typeref:typename:L	file:
 operator ++	example/calendar.cpp	/^        date &operator++(date &d)$/;"	f	namespace:boost::gregorian	typeref:typename:date &
 operator ++	example/calendar.cpp	/^        date operator++(date &d, int)$/;"	f	namespace:boost::gregorian	typeref:typename:date
 operator ++	include/ntskills.hpp	/^  T &operator++() {$/;"	f	struct:nt::PreIncrementable	typeref:typename:T &
@@ -5306,6 +5309,8 @@ raw_buffer	include/range/v3/utility/memory.hpp	/^        explicit raw_buffer(Val
 raw_buffer	include/range/v3/utility/memory.hpp	/^    struct raw_buffer$/;"	s	namespace:ranges
 raw_storage_iterator	include/range/v3/utility/memory.hpp	/^        explicit raw_storage_iterator(O out)$/;"	f	struct:ranges::raw_storage_iterator
 raw_storage_iterator	include/range/v3/utility/memory.hpp	/^    struct raw_storage_iterator$/;"	s	namespace:ranges
+ray	include/union.hpp	/^struct ray<T, Rest...> : ray<T>, ray<Rest...> {$/;"	s	namespace:abo
+ray	include/union.hpp	/^template <typename T> struct ray<T> {$/;"	s	namespace:abo
 rbegin	include/range/v3/view/span.hpp	/^        constexpr reverse_iterator rbegin() const noexcept$/;"	f	struct:ranges::span	typeref:typename:reverse_iterator
 read	example/calendar.cpp	/^    decltype(auto) read() const$/;"	f	struct:interleave_view::cursor	typeref:typename:decltype (auto)	file:
 read	include/range/v3/experimental/utility/generator.hpp	/^                Reference read() const$/;"	f	struct:ranges::experimental::generator::cursor	typeref:typename:Reference

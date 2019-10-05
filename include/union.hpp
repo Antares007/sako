@@ -6,6 +6,16 @@
 #include <utility>
 namespace abo {
 
+template <typename... T> struct ray;
+template <typename T> struct ray<T> {
+  void operator()(T &&) const {}
+};
+template <typename T, typename... Rest>
+struct ray<T, Rest...> : ray<T>, ray<Rest...> {
+  using ray<T>::operator();
+  using ray<Rest...>::operator();
+};
+
 template <typename T>
 using is_pith_t =
     std::enable_if_t<std::is_invocable_r_v<void, T, void (*)(...)>>;
