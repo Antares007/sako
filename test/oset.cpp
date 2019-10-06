@@ -59,9 +59,9 @@ NewType(A, int);
 NewType(B, int);
 NewType(O, int);
 
-template <typename Pith, typename... Rights>
-using is_pith_for_t =
-    std::enable_if_t<std::is_invocable_r_v<void, Pith, ray<Rights...>>, Pith>;
+template <typename Pith, typename... Rays>
+constexpr inline auto is_pith_v =
+    std::is_invocable_r_v<void, Pith, abo::o<Rays...>>;
 
 template <typename F> struct lrrayF : ray<L> {
   F f;
@@ -86,8 +86,8 @@ struct any_ray {
 
 template <typename F> struct fmap {
   F f;
-  template <typename Pith, typename = std::enable_if_t<std::is_invocable_r_v<
-                               void, Pith, abo::o<abo::ray<L>, proxy_ray<F>>>>>
+  template <typename Pith, typename = std::enable_if_t<
+                               is_pith_v<Pith, abo::ray<L>, proxy_ray<F>>>>
   constexpr decltype(auto) operator()(Pith &&_pith) const {
     return [pith = std::forward<Pith>(_pith), f = this->f](auto &&o) {
       pith(abo::o{
