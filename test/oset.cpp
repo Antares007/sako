@@ -1,4 +1,7 @@
 #include "oset.hpp"
+#include "overloaded.hpp"
+#include <type_traits>
+#include <utility>
 
 using namespace abo;
 
@@ -68,33 +71,62 @@ template <typename F> struct lrrayF : ray<L> {
 };
 template <typename F> lrrayF(F)->lrrayF<F>;
 
+template <typename F> struct proxy_ray {
+  F f;
+  template <typename U, typename = decltype(f(std::declval<U>()))>
+  constexpr void operator()(U &&u) const {
+    f(std::forward<U>(u));
+  };
+};
+template <typename F> proxy_ray(F)->proxy_ray<F>;
+
+struct any_ray {
+  template <typename U> constexpr void operator()(U &&) const {};
+};
+
 template <typename F> struct fmap {
   F f;
-
-  template <typename Pith, typename = std::enable_if_t<
-                               std::is_invocable_r_v<void, Pith, lrrayF<F>>>>
-  constexpr decltype(auto) operator()(Pith &&pith) const {
-    return [p = std::forward<Pith>(pith), f = std::move(this->f)](auto &&o) {
-      p(overloaded{[&o](L l) { o(std::move(l)); },
-                   [&f, &o](auto &&a) { o(f(std::forward<decltype(a)>(a))); }});
+  template <typename Pith, typename = std::enable_if_t<std::is_invocable_r_v<
+                               void, Pith, abo::o<abo::ray<L>, proxy_ray<F>>>>>
+  constexpr decltype(auto) operator()(Pith &&_pith) const {
+    return [pith = std::forward<Pith>(_pith), f = this->f](auto &&o) {
+      pith(abo::o{
+          [&o](L &&l) { o(std::forward<decltype(l)>(l)); },
+          [&f, &o](auto &&a) {
+            using A = decltype(a);
+            using R = decltype(f(std::forward<A>(a)));
+            if constexpr (std::is_invocable_r_v<void, R,
+                                                abo::o<abo::ray<L>, any_ray>>)
+              f(std::forward<A>(a))(o);
+            else
+              o(f(std::forward<A>(a)));
+          }});
     };
   }
 };
 template <typename F> fmap(F)->fmap<F>;
 
 int main() {
-  ///
-  auto o2 = abo::o(ray<A, B>{}, [](O) { std::cout << "hi"; });
+  auto p =
+      [](auto o) {
+        if (true)
+          o(L{"hi"});
+        else
+          o(1);
+      } //
+      | fmap{[](int) { return "hello"; }};
 
-  o2(O{0});
+  p(abo::o{[](L &&) {}, [](const char *i) { std::cout << i << '\n'; }});
 
   git_libgit2_init();
-
   auto a = std::bind_front(open, ".") | fmap{[](UPtr<git_repository> &&) {
              //
-             return 11;
+             return [](auto o) {
+               if (false)
+                 o(L{""});
+               o(11);
+             };
            }};
 
-  a(overloaded{[](L &&l) { std::cout << l.message << '\n'; },
-               [](int i) { std::cout << i << '\n'; }});
+  a(abo::o{[](L &&) {}, [](int i) { std::cout << i << '\n'; }});
 }
