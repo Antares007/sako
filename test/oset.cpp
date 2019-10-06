@@ -63,14 +63,6 @@ template <typename Pith, typename... Rays>
 constexpr inline auto is_pith_v =
     std::is_invocable_r_v<void, Pith, abo::o<Rays...>>;
 
-template <typename F> struct lrrayF : ray<L> {
-  F f;
-  using ray<L>::operator();
-  template <typename U, typename = decltype(f(std::declval<U>()))>
-  constexpr void operator()(U &&) const {};
-};
-template <typename F> lrrayF(F)->lrrayF<F>;
-
 template <typename F> struct proxy_ray {
   F f;
   template <typename U, typename = decltype(f(std::declval<U>()))>
@@ -86,9 +78,9 @@ struct any_ray {
 
 template <typename F> struct fmap {
   F f;
-  template <typename Pith, typename = std::enable_if_t<
-                               is_pith_v<Pith, abo::ray<L>, proxy_ray<F>>>>
-  constexpr decltype(auto) operator()(Pith &&_pith) const {
+  template <typename Pith, typename = std::enable_if_t<std::is_invocable_r_v<
+                               void, Pith, abo::o<abo::ray<L>, proxy_ray<F>>>>>
+  constexpr auto operator()(Pith &&_pith) const {
     return [pith = std::forward<Pith>(_pith), f = this->f](auto &&o) {
       pith(abo::o{
           [&o](L &&l) { o(std::forward<decltype(l)>(l)); },
@@ -109,7 +101,7 @@ template <typename F> fmap(F)->fmap<F>;
 int main() {
   auto p =
       [](auto o) {
-        if (true)
+        if (false)
           o(L{"hi"});
         else
           o(1);
