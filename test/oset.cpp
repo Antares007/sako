@@ -83,6 +83,11 @@ template <typename F> struct fmap {
 template <typename F> fmap(F)->fmap<F>;
 
 int main() {
+  ///
+  auto o2 = abo::o(ray<A, B>{}, [](O) { std::cout << "hi"; });
+
+  o2(O{0});
+
   git_libgit2_init();
 
   auto a = std::bind_front(open, ".") | fmap{[](UPtr<git_repository> &&) {

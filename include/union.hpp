@@ -6,6 +6,25 @@
 #include <utility>
 namespace abo {
 
+template <typename... O> struct o;
+template <typename O> struct o<O> : O {
+  O _o;
+  using O::operator();
+  template <typename U> o(U &&u) : _o(std::forward<U>(u)) {}
+};
+template <typename O, typename... Rest>
+struct o<O, Rest...> : o<O>, o<Rest...> {
+  using o<O>::operator();
+  using o<Rest...>::operator();
+  template <typename U, typename... Us>
+  o(U &&u, Us &&... us)
+      : o<O>(std::forward<U>(u)), o<Rest...>(std::forward<Us>(us)...) {}
+};
+template <typename... O> o(O...)->o<O...>;
+
+// template <typename O> struct o<void (*)(O &&)> {};
+// template <typename O, typename... Rest> struct o<void (*)(O &&), Rest...> {};
+
 template <typename... T> struct ray;
 template <typename T> struct ray<T> { void operator()(T &&) const {}; };
 template <typename T, typename... Rest>
