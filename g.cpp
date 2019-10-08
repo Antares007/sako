@@ -8,7 +8,8 @@ template <class... O> o(O...)->o<O...>;
 template <typename... Ts> struct print;
 
 template <typename A, typename F>
-constexpr decltype(auto) operator|(A &&a, F &&f) {
+constexpr auto operator|(A &&a, F &&f)
+    -> decltype(std::invoke(std::forward<F>(f), std::forward<A>(a))) {
   return std::invoke(std::forward<F>(f), std::forward<A>(a));
 }
 } // namespace abo
@@ -24,12 +25,12 @@ struct lift<L, T *, Args...> {
       typename O,
       typename = std::enable_if_t<std::conjunction_v<
           std::is_invocable_r<void, O, L>, std::is_invocable_r<void, O, T *>>>>
-  constexpr void operator()(Args... args, const O &o) const {
+  constexpr void operator()(Args... args, O &&o) const {
     T *ptr = nullptr;
-    if (L error = ctor(&ptr, std::move(args)...))
-      o(std::move(error));
+    if (L l = ctor(&ptr, std::move(args)...))
+      std::invoke(std::forward<O>(o), std::move(l));
     else {
-      o(ptr);
+      std::invoke(std::forward<O>(o), ptr);
       dtor(ptr);
     }
   }
@@ -40,12 +41,12 @@ template <typename L, typename T, typename... Args> struct lift<L, T, Args...> {
       typename O,
       typename = std::enable_if_t<std::conjunction_v<
           std::is_invocable_r<void, O, L>, std::is_invocable_r<void, O, T>>>>
-  constexpr void operator()(Args... args, const O &o) const {
+  constexpr void operator()(Args... args, O &&o) const {
     T t;
     if (L error = f(&t, std::move(args)...))
-      o(error);
+      std::invoke(std::forward<O>(o), error);
     else {
-      o(std::move(t));
+      std::invoke(std::forward<O>(o), std::move(t));
     }
   }
 };
