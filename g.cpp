@@ -1,6 +1,5 @@
 #include <functional>
 #include <git2.h>
-#include <memory>
 
 namespace abo {
 template <class... O> struct o : O... { using O::operator()...; };
@@ -17,41 +16,43 @@ constexpr decltype(auto) operator|(A &&a, F &&f) {
 namespace abo::git {
 
 template <typename... Args> struct lift;
-template <typename T, typename... Args> struct lift<T *, Args...> {
-  int (*ctor)(T **, Args...);
+template <typename L, typename T, typename... Args>
+struct lift<L, T *, Args...> {
+  L (*ctor)(T **, Args...);
   void (*dtor)(T *);
-  template <typename O, typename = std::enable_if_t<std::conjunction_v<
-                            std::is_invocable_r<void, O, int>,
-                            std::is_invocable_r<void, O, T *>>>>
-  constexpr void operator()(Args &&... args, const O &o) const {
+  template <
+      typename O,
+      typename = std::enable_if_t<std::conjunction_v<
+          std::is_invocable_r<void, O, L>, std::is_invocable_r<void, O, T *>>>>
+  constexpr void operator()(Args... args, const O &o) const {
     T *ptr = nullptr;
-    if (int error = ctor(&ptr, std::move(args)...))
-      o(error);
+    if (L error = ctor(&ptr, std::move(args)...))
+      o(std::move(error));
     else {
       o(ptr);
       dtor(ptr);
     }
   }
 };
-template <typename T, typename... Args> struct lift<T, Args...> {
-  int (*f)(T *, Args...);
+template <typename L, typename T, typename... Args> struct lift<L, T, Args...> {
+  L (*f)(T *, Args...);
   template <
       typename O,
       typename = std::enable_if_t<std::conjunction_v<
-          std::is_invocable_r<void, O, int>, std::is_invocable_r<void, O, T>>>>
-  constexpr void operator()(Args &&... args, const O &o) const {
+          std::is_invocable_r<void, O, L>, std::is_invocable_r<void, O, T>>>>
+  constexpr void operator()(Args... args, const O &o) const {
     T t;
-    if (int error = f(&t, std::move(args)...))
+    if (L error = f(&t, std::move(args)...))
       o(error);
     else {
       o(std::move(t));
     }
   }
 };
-template <typename T, typename... Args>
-lift(int (*)(T **, Args...), void (*)(T *))->lift<T *, Args...>;
-template <typename T, typename... Args>
-lift(int (*)(T *, Args...))->lift<T, Args...>;
+template <typename L, typename T, typename... Args>
+lift(L (*)(T **, Args...), void (*)(T *))->lift<L, T *, Args...>;
+template <typename L, typename T, typename... Args>
+lift(L (*)(T *, Args...))->lift<L, T, Args...>;
 
 constexpr inline auto repository_open =
     abo::git::lift{git_repository_open, git_repository_free};
