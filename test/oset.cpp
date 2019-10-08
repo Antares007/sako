@@ -1,7 +1,4 @@
 #include "oset.hpp"
-#include "overloaded.hpp"
-#include <type_traits>
-#include <utility>
 
 using namespace abo;
 
@@ -97,6 +94,10 @@ template <typename F> struct fmap {
   }
 };
 template <typename F> fmap(F)->fmap<F>;
+
+template <typename Pith, typename... T> struct variant_b {
+  variant_b(Pith) {}
+};
 
 int main() {
   auto p =
