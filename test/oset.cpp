@@ -62,9 +62,10 @@ constexpr inline auto is_pith_v =
 
 template <typename F> struct proxy_ray {
   F f;
-  template <typename U, typename = decltype(f(std::declval<U>()))>
-  constexpr void operator()(U &&u) const {
-    f(std::forward<U>(u));
+  template <typename U>
+  constexpr auto operator()(U &&u) const
+      -> std::void_t<decltype(std::invoke(f, std::forward<U>(u)))> {
+    std::invoke(f, std::forward<U>(u));
   };
 };
 template <typename F> proxy_ray(F)->proxy_ray<F>;
@@ -81,14 +82,13 @@ template <typename F> struct fmap {
     return [pith = std::forward<Pith>(_pith), f = this->f](auto &&o) {
       pith(abo::o{
           [&o](L &&l) { o(std::forward<decltype(l)>(l)); },
-          [&f, &o](auto &&a) {
-            using A = decltype(a);
-            using R = decltype(f(std::forward<A>(a)));
+          [&f, &o]<typename A>(A &&a) {
+            using R = decltype(std::invoke(f, std::forward<A>(a)));
             if constexpr (std::is_invocable_r_v<void, R,
                                                 abo::o<abo::ray<L>, any_ray>>)
-              f(std::forward<A>(a))(o);
+              std::invoke(f, std::forward<A>(a))(o);
             else
-              o(f(std::forward<A>(a)));
+              o(std::invoke(f, std::forward<A>(a)));
           }});
     };
   }

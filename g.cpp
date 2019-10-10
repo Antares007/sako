@@ -55,20 +55,25 @@ lift(L (*)(T **, Args...), void (*)(T *))->lift<L, T *, Args...>;
 template <typename L, typename T, typename... Args>
 lift(L (*)(T *, Args...))->lift<L, T, Args...>;
 
-constexpr inline auto repository_open =
-    abo::git::lift{git_repository_open, git_repository_free};
-constexpr inline auto tree_lookup =
-    abo::git::lift{git_tree_lookup, git_tree_free};
-constexpr inline auto oid_fromstr = abo::git::lift{git_oid_fromstr};
+#define LFTP(T, O)                                                             \
+  constexpr inline auto T##_##O = abo::git::lift {                             \
+    git_##T##_##O, git_##T##_free                                              \
+  }
+#define LFT(T, O)                                                              \
+  constexpr inline auto T##_##O = abo::git::lift { git_##T##_##O }
+
+LFTP(repository, open);
+LFTP(tree, lookup);
+LFTP(treebuilder, new);
+
+LFT(treebuilder, write);
+LFT(oid, fromstr);
 
 template <typename Pith> struct bark {
   Pith pith;
-  template <typename U,
-            typename = std::enable_if_t<std::is_invocable_r_v<void, U, int>>>
-  bark(U &&) {}
+  template <typename U> bark(U &&u) : pith(std::forward<U>(u)) {}
 
-  template <typename O,
-            typename = std::enable_if_t<std::is_invocable_r_v<void, O, int>>>
+  template <typename O>
   constexpr void operator()(git_repository *, O &&) const {}
 };
 template <typename Pith> bark(Pith)->bark<Pith>;
@@ -85,9 +90,26 @@ int main() {
              [&](git_oid oid) {
                abo::o{[](int) {},
                       [&](git_tree *tree) {
-                        std::cout << repo << '\n';
-                        std::cout << tree << '\n';
-                        std::cout << oid.id << '\n';
+                        abo::o{[](int) {},
+                               [&](git_treebuilder *tbl) {
+                                 auto count = git_tree_entrycount(tree);
+                                 for (size_t i = 1; i < count; i++) {
+                                   auto e = git_tree_entry_byindex(tree, i);
+                                   git_treebuilder_insert(
+                                       nullptr, tbl, git_tree_entry_name(e),
+                                       git_tree_entry_id(e),
+                                       git_tree_entry_filemode(e));
+                                 }
+                                 abo::o{[](int) {},
+                                        [](git_oid id) {
+                                          std::cout << git_oid_tostr_s(&id)
+                                                    << '\n';
+                                        }} |
+                                     std::bind_front(git::treebuilder_write,
+                                                     tbl);
+                               }} |
+                            std::bind_front(git::treebuilder_new, repo,
+                                            nullptr);
                       }} |
                    std::bind_front(git::tree_lookup, repo, &oid);
              }} |
