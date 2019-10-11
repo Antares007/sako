@@ -15,7 +15,7 @@ template <typename Tag, typename T, template <typename> typename... Skills>
 struct newtype : Skills<newtype<Tag, T, Skills...>>... {
   template <typename U,
             typename = std::enable_if_t<std::is_convertible_v<U, T>>>
-  constexpr newtype(U &&u) : value(std::forward<U>(u)) {}
+  constexpr explicit newtype(U &&u) : value(std::forward<U>(u)) {}
   constexpr T const &get() const { return value; }
 
 private:
