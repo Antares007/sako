@@ -3,4 +3,3 @@
 -Wall
 -Wextra
 -Wpedantic
-/usr/lib/libgit2.so

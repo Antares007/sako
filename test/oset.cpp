@@ -1,53 +1,71 @@
-#include "oset.hpp"
+#include <functional>
+template <typename... Names> struct print;
+template <class... O> struct overloaded : O... { using O::operator()...; };
+template <class... O> overloaded(O...)->overloaded<O...>;
 
-using namespace abo;
-
-template <typename F> struct proxy_ray {
-  F f;
-  template <typename U>
-  constexpr auto operator()(U &&u) const
-      -> std::void_t<decltype(std::invoke(f, std::forward<U>(u)))> {
-    std::invoke(f, std::forward<U>(u));
-  };
+template <typename... T> struct ray;
+template <> struct ray<> {
+  template <typename U> void operator()(U &&) const {}
 };
-template <typename F> proxy_ray(F)->proxy_ray<F>;
-
-struct any_ray {
-  template <typename U> constexpr void operator()(U &&) const {};
+template <typename T> struct ray<T> { void operator()(T &&) const {}; };
+template <typename T, typename... Rest>
+struct ray<T, Rest...> : ray<T>, ray<Rest...> {
+  using ray<T>::operator();
+  using ray<Rest...>::operator();
 };
 
-template <typename... F> struct o_fmap;
-template <typename F> struct o_fmap<int, F> {
+template <typename F, typename... Rays> struct o_fmap;
+template <typename F, typename L> struct o_fmap<F, L> {
   F f;
-  template <typename Pith,
-            typename = std::enable_if_t<std::is_invocable_r_v<
-                void, Pith, abo::o<abo::ray<int>, proxy_ray<F>>>>>
+  template <typename Pith, typename = std::enable_if_t<std::is_invocable_r_v<
+                               void, Pith, overloaded<ray<L>, ray<>>>>>
   constexpr auto operator()(Pith &&_pith) const {
-    return [pith = std::forward<Pith>(_pith), f = this->f](auto &&o) {
-      pith(abo::o{
-          [&o](int i) { o(i); },
-          [&f, &o]<typename A>(A &&a) {
+    return [
+      pith = std::forward<Pith>(_pith), this, &f = this->f
+    ]<typename O,
+      typename = std::enable_if_t<std::is_invocable_r_v<void, O, L>>>(O && o) {
+      pith(overloaded{
+          [&o](L i) { o(i); },
+          [&f, &o, this]<typename A>(A &&a) {
             using R = decltype(std::invoke(f, std::forward<A>(a)));
             if constexpr (std::is_invocable_r_v<void, R,
-                                                abo::o<abo::ray<int>, any_ray>>)
-              std::invoke(f, std::forward<A>(a))(o);
-            else
+                                                overloaded<ray<L>, F>>) {
+              std::invoke(this, std::forward<A>(a))(o);
+            } else
               o(std::invoke(f, std::forward<A>(a)));
           }});
     };
   }
 };
-template <typename F> constexpr o_fmap<int, F> fmap(F &&f) {
-  return o_fmap<int, F>{std::forward<F>(f)};
+template <typename... L, typename F> constexpr o_fmap<F, L...> fmap(F &&f) {
+  return o_fmap<F, L...>{std::forward<F>(f)};
 }
 
-NewType(A, int);
-NewType(B, int);
+#include <cstdio>
+struct A {};
+struct B {};
+struct O {};
+template <typename A, typename F>
+constexpr auto operator|(A &&a, F &&f)
+    -> decltype(std::invoke(std::forward<F>(f), std::forward<A>(a))) {
+  return std::invoke(std::forward<F>(f), std::forward<A>(a));
+}
 int main() {
-  auto p = fmap([](B) { return 1.2; })([](auto o) {
-    if (false)
-      o(1);
-    else
-      o(B{0});
+  auto p =
+      [](auto o) {
+        int i = -1;
+        if (i < 0)
+          o(1);
+        else if (i == 0)
+          o(B{});
+        else if (i > 0)
+          o(O{});
+      } |
+      fmap<int>(overloaded{[](B &&b) { return std::move(b); },
+                           [](O &&) { return A{}; }});
+  p(overloaded{
+      [](A &&) { puts("a"); },
+      [](int) { puts("o"); },
+      [](B &&) { puts("b"); },
   });
 }

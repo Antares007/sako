@@ -10,6 +10,7 @@ template <class... O> struct o : O... { using O::operator()...; };
 template <class... O> o(O...)->o<O...>;
 
 template <typename... T> struct ray;
+template <> struct ray<> { template<typename U> void operator()(U &&) const {}; };
 template <typename T> struct ray<T> { void operator()(T &&) const {}; };
 template <typename T, typename... Rest>
 struct ray<T, Rest...> : ray<T>, ray<Rest...> {
