@@ -35,33 +35,15 @@ template <typename L, typename F> struct fmap {
     };
   }
 };
-template <typename F> fmap(F)->fmap<F>;
 
-NewType(A, int);
-NewType(B, int);
-NewType(O, int);
 
 int main() {
   auto p =
       [](auto o) {
         if (false)
-          o(L{"hi"});
+          o(A{0});
         else
-          o(1);
+          o(B{0});
       } //
-      | fmap{[](int) { return "hello"; }};
-
-  p(abo::o{[](L &&) {}, [](const char *i) { std::cout << i << '\n'; }});
-
-  git_libgit2_init();
-  auto a = std::bind_front(open, ".") | fmap{[](UPtr<git_repository> &&) {
-             //
-             return [](auto o) {
-               if (false)
-                 o(L{""});
-               o(11);
-             };
-           }};
-
-  a(abo::o{[](L &&) {}, [](int i) { std::cout << i << '\n'; }});
+      | fmap([](int) { return "hello"; });
 }
