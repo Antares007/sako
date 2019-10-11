@@ -17,43 +17,49 @@ constexpr auto operator|(A &&a, F &&f)
 namespace abo::git {
 
 template <typename... Args> struct lift;
-template <typename L, typename T, typename... Args>
-struct lift<L, T *, Args...> {
-  L (*ctor)(T **, Args...);
-  void (*dtor)(T *);
-  template <
-      typename O,
+template <typename L, typename R, typename... Args>
+struct lift<L, R *, Args...> {
+  L (*ctor)(R **, Args...);
+  void (*dtor)(R *);
+  constexpr auto operator()(Args... args) const {
+    return [
+      ... args = std::move(args), this
+    ]<typename O,
       typename = std::enable_if_t<std::conjunction_v<
-          std::is_invocable_r<void, O, L>, std::is_invocable_r<void, O, T *>>>>
-  constexpr void operator()(Args... args, O &&o) const {
-    T *ptr = nullptr;
-    if (L l = ctor(&ptr, std::move(args)...))
-      std::invoke(std::forward<O>(o), std::move(l));
-    else {
-      std::invoke(std::forward<O>(o), ptr);
-      dtor(ptr);
-    }
+          std::is_invocable_r<void, O, L>, std::is_invocable_r<void, O, R *>>>>(
+        O && o) {
+      R *r;
+      if (L l = ctor(&r, std::move(args)...))
+        std::invoke(std::forward<O>(o), std::move(l));
+      else {
+        std::invoke(std::forward<O>(o), std::move(r));
+        dtor(r);
+      }
+    };
   }
 };
-template <typename L, typename T, typename... Args> struct lift<L, T, Args...> {
-  L (*f)(T *, Args...);
-  template <
-      typename O,
+template <typename L, typename R, typename... Args> struct lift<L, R, Args...> {
+  L (*f)(R *, Args...);
+  constexpr auto operator()(Args... args) const {
+    return [
+      ... args = std::move(args), this
+    ]<typename O,
       typename = std::enable_if_t<std::conjunction_v<
-          std::is_invocable_r<void, O, L>, std::is_invocable_r<void, O, T>>>>
-  constexpr void operator()(Args... args, O &&o) const {
-    T t;
-    if (L error = f(&t, std::move(args)...))
-      std::invoke(std::forward<O>(o), error);
-    else {
-      std::invoke(std::forward<O>(o), std::move(t));
-    }
+          std::is_invocable_r<void, O, L>, std::is_invocable_r<void, O, R>>>>(
+        O && o) {
+      R r;
+      if (L l = f(&r, std::move(args)...))
+        std::invoke(std::forward<O>(o), std::move(l));
+      else {
+        std::invoke(std::forward<O>(o), std::move(r));
+      }
+    };
   }
 };
-template <typename L, typename T, typename... Args>
-lift(L (*)(T **, Args...), void (*)(T *))->lift<L, T *, Args...>;
-template <typename L, typename T, typename... Args>
-lift(L (*)(T *, Args...))->lift<L, T, Args...>;
+template <typename L, typename R, typename... Args>
+lift(L (*)(R **, Args...), void (*)(R *))->lift<L, R *, Args...>;
+template <typename L, typename R, typename... Args>
+lift(L (*)(R *, Args...))->lift<L, R, Args...>;
 
 #define LFTP(T, O)                                                             \
   constexpr inline auto T##_##O = abo::git::lift {                             \
@@ -105,18 +111,15 @@ int main() {
                                           std::cout << git_oid_tostr_s(&id)
                                                     << '\n';
                                         }} |
-                                     std::bind_front(git::treebuilder_write,
-                                                     tbl);
+                                     git::treebuilder_write(tbl);
                                }} |
-                            std::bind_front(git::treebuilder_new, repo,
-                                            nullptr);
+                            git::treebuilder_new(repo, nullptr);
                       }} |
-                   std::bind_front(git::tree_lookup, repo, &oid);
+                   git::tree_lookup(repo, &oid);
              }} |
-          std::bind_front(git::oid_fromstr,
-                          "f5880cf63a4372dcafb791620731637b4130d9df");
+          git::oid_fromstr("f5880cf63a4372dcafb791620731637b4130d9df");
     }} |
-      std::bind_front(git::repository_open, ".");
+      git::repository_open(".");
 
   return 3;
 }
