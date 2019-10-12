@@ -15,32 +15,33 @@ struct ray<T, Rest...> : ray<T>, ray<Rest...> {
 };
 
 template <typename F, typename... Rays> struct o_fmap;
-template <typename... L, typename F> constexpr o_fmap<F, L...> fmap(F &&f) {
-  return o_fmap<F, L...>{std::forward<F>(f)};
-}
 template <typename F, typename L> struct o_fmap<F, L> {
   F f;
   template <typename Pith, typename = std::enable_if_t<std::is_invocable_r_v<
                                void, Pith, overloaded<ray<L>, F>>>>
   constexpr auto operator()(Pith &&_pith) const {
     return [
-      pith = std::forward<Pith>(_pith), this, &f = this->f
+      pith = std::forward<Pith>(_pith), &f = this->f
     ]<typename O,
       typename = std::enable_if_t<std::is_invocable_r_v<void, O, L>>>(O && o) {
-      pith(overloaded{
+      auto o_ = overloaded{
           [&o](L i) { o(i); },
-          [&f, &o, this]<typename A>(A &&a) {
-            using R = decltype(std::invoke(f, std::forward<A>(a)));
-            if constexpr (std::is_invocable_r_v<void, R,
-                                                overloaded<ray<L>, F>>) {
-              print<decltype(this)> p;
-              
+          [&f, &o]<typename A>(A &&a) {
+            if constexpr (std::is_invocable_r_v<void,
+                                                decltype(std::invoke(
+                                                    f, std::forward<A>(a))),
+                                                ray<>>) {
+              std::invoke(f, std::forward<A>(a))(o);
             } else
               o(std::invoke(f, std::forward<A>(a)));
-          }});
+          }};
+      pith(o_);
     };
   }
 };
+template <typename... L, typename F> constexpr auto fmap(F &&f) {
+  return o_fmap<F, L...>{std::forward<F>(f)};
+}
 
 #include <cstdio>
 struct A {};
