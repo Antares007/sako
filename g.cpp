@@ -121,5 +121,35 @@ int main() {
     }} |
       git::repository_open(".");
 
+  (abo::o{[](int) {},
+          [](auto id) { std::cout << git_oid_tostr_s(&id) << '\n'; }}) |
+      [](auto o) {
+        auto l = [&](int i) { o(i); };
+        git::repository_open(".")(abo::o{
+            l, [&](auto repo) {
+              git::oid_fromstr("f5880cf63a4372dcafb791620731637b4130d9df")(
+                  abo::o{l, [&](auto oid) {
+                           std::cout << "abo\n";
+                           git::tree_lookup(repo, &oid)(abo::o{
+                               l, [&](auto tree) {
+                                 git::treebuilder_new(repo, nullptr)(abo::o{
+                                     l, [&](auto bld) {
+                                       auto count = git_tree_entrycount(tree);
+                                       for (size_t i = 1; i < count; i++) {
+                                         auto e =
+                                             git_tree_entry_byindex(tree, i);
+                                         git_treebuilder_insert(
+                                             nullptr, bld,
+                                             git_tree_entry_name(e),
+                                             git_tree_entry_id(e),
+                                             git_tree_entry_filemode(e));
+                                       }
+                                       git::treebuilder_write(bld)(o);
+                                     }});
+                               }});
+                         }});
+            }});
+      };
+
   return 3;
 }
