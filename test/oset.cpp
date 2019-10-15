@@ -14,6 +14,42 @@ struct ray<T, Rest...> : ray<T>, ray<Rest...> {
   using ray<Rest...>::operator();
 };
 
+template <typename T, typename... R>
+struct is_ray : std::conjunction<std::is_invocable_r<void, T, R>...>::type {};
+
+template <typename T, typename... R>
+struct is_pith : std::is_invocable_r<void, T, ray<R...>>::type {};
+
+template <typename... C> struct if_ {
+  using type = typename std::enable_if<std::conjunction_v<C...>>::type;
+};
+
+template <typename Pith> struct bark {
+  Pith pith;
+
+  template <typename U, typename = typename if_<is_pith<U, int>>::type>
+  bark(U &&u) : pith(std::forward<U>(u)){};
+
+  template <typename U, typename = typename if_<is_ray<U, int>>::type>
+  void operator()(U &&) const {};
+};
+template <typename Pith> bark(Pith)->bark<Pith>;
+
+static void t() {
+  auto b = bark{[](auto &&o) { o(1); }};
+  // b([](int) {});
+
+  auto l = [](auto &&o) {
+    o(1.f);
+    o(1.1);
+    o(1l);
+    o("abc");
+  };
+  auto o = [](const char *) {};
+  static_assert(is_pith<decltype(l), long, const char *, double>::value);
+  static_assert(is_ray<decltype(o), const char *>::value);
+}
+
 template <typename F, typename... Rays> struct o_fmap;
 template <typename F, typename L> struct o_fmap<F, L> {
   F f;

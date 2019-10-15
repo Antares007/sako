@@ -90,37 +90,6 @@ using namespace abo;
 int main() {
   git_libgit2_init();
 
-  o{[](int) {},
-    [](git_repository *repo) {
-      abo::o{[](int) {},
-             [&](git_oid oid) {
-               abo::o{[](int) {},
-                      [&](git_tree *tree) {
-                        abo::o{[](int) {},
-                               [&](git_treebuilder *tbl) {
-                                 auto count = git_tree_entrycount(tree);
-                                 for (size_t i = 1; i < count; i++) {
-                                   auto e = git_tree_entry_byindex(tree, i);
-                                   git_treebuilder_insert(
-                                       nullptr, tbl, git_tree_entry_name(e),
-                                       git_tree_entry_id(e),
-                                       git_tree_entry_filemode(e));
-                                 }
-                                 abo::o{[](int) {},
-                                        [](git_oid id) {
-                                          std::cout << git_oid_tostr_s(&id)
-                                                    << '\n';
-                                        }} |
-                                     git::treebuilder_write(tbl);
-                               }} |
-                            git::treebuilder_new(repo, nullptr);
-                      }} |
-                   git::tree_lookup(repo, &oid);
-             }} |
-          git::oid_fromstr("f5880cf63a4372dcafb791620731637b4130d9df");
-    }} |
-      git::repository_open(".");
-
   (abo::o{[](int) {},
           [](auto id) { std::cout << git_oid_tostr_s(&id) << '\n'; }}) |
       [](auto o) {
