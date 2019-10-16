@@ -14,40 +14,28 @@ struct ray<T, Rest...> : ray<T>, ray<Rest...> {
   using ray<Rest...>::operator();
 };
 
-template <typename T, typename... R>
-struct is_ray : std::conjunction<std::is_invocable_r<void, T, R>...>::type {};
+template <typename Pith, typename... Rays> struct pith {
+  Pith p;
 
-template <typename T, typename... R>
-struct is_pith : std::is_invocable_r<void, T, ray<R...>>::type {};
+  template <typename U, typename = std::enable_if_t<std::conjunction_v<
+                            std::negation<std::is_same<std::decay_t<U>, pith>>,
+                            std::is_invocable_r<void, U, ray<Rays...>>>>>
+  explicit pith(U &&u) : p(std::forward<U>(u)){};
 
-template <typename... C> struct if_ {
-  using type = typename std::enable_if<std::conjunction_v<C...>>::type;
-};
-
-template <typename Pith> struct bark {
-  Pith pith;
-
-  template <typename U, typename = typename if_<is_pith<U, int>>::type>
-  bark(U &&u) : pith(std::forward<U>(u)){};
-
-  template <typename U, typename = typename if_<is_ray<U, int>>::type>
-  void operator()(U &&) const {};
-};
-template <typename Pith> bark(Pith)->bark<Pith>;
-
-static void t() {
-  auto b = bark{[](auto &&o) { o(1); }};
-  // b([](int) {});
-
-  auto l = [](auto &&o) {
-    o(1.f);
-    o(1.1);
-    o(1l);
-    o("abc");
+  template <typename O, typename = std::enable_if_t<std::conjunction_v<
+                            std::is_invocable_r<void, O, Rays>...>>>
+  decltype(auto) operator()(O &&o) const {
+    return std::invoke(p, std::forward<O>(o));
   };
-  auto o = [](const char *) {};
-  static_assert(is_pith<decltype(l), long, const char *, double>::value);
-  static_assert(is_ray<decltype(o), const char *>::value);
+};
+
+template <typename... Rays, typename Pith> auto make_pith(Pith &&p) {
+  return pith<Pith, Rays...>(std::forward<Pith>(p));
+}
+
+
+static void t() { //
+  make_pith([]() {});
 }
 
 template <typename F, typename... Rays> struct o_fmap;
@@ -55,7 +43,7 @@ template <typename F, typename L> struct o_fmap<F, L> {
   F f;
   template <typename Pith, typename = std::enable_if_t<std::is_invocable_r_v<
                                void, Pith, overloaded<ray<L>, F>>>>
-  constexpr auto operator()(Pith &&_pith) const {
+  auto operator()(Pith &&_pith) const {
     return [
       pith = std::forward<Pith>(_pith), &f = this->f
     ]<typename O,
@@ -88,7 +76,8 @@ constexpr auto operator|(A &&a, F &&f)
     -> decltype(std::invoke(std::forward<F>(f), std::forward<A>(a))) {
   return std::invoke(std::forward<F>(f), std::forward<A>(a));
 }
-int main() {
+
+auto main() -> int {
   auto p =
       [](auto o) {
         int i = -1;
