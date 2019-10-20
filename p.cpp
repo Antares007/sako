@@ -43,101 +43,57 @@ template <typename Pl, typename Pr> auto por(Pl &&pl, Pr &&pr) {
 #include <fstream>
 #include <iostream>
 #include <tuple>
-struct zheader {
-  std::uint16_t version = 20;
-  std::uint16_t flags = 0;
-  std::uint16_t compression_type = 8;
-  std::uint16_t stamp_date = 0;
-  std::uint16_t stamp_time = 0;
-  std::uint32_t crc = 0;
-  std::uint32_t compressed_size = 0;
-  std::uint32_t uncompressed_size = 0;
-  std::string filename;
-  std::string comment;
-  std::vector<std::uint8_t> extra;
-  std::uint32_t header_offset = 0;
-};
-
+#include <zlib.h>
 template <class T>
-constexpr inline auto read_int = [](std::istream &stream) -> T {
-  T value;
-  stream.read(reinterpret_cast<char *>(&value), sizeof(T));
-  return value;
-};
-
-constexpr inline auto read_header = [](std::istream &istream,
-                                       auto &&o) -> void {
-  zheader header;
-  auto sig = read_int<std::uint32_t>(istream);
-  if (sig != 0x02014b50)
-    return o("missing global header signature");
-  read_int<std::uint16_t>(istream); // version made by
-  header.version = read_int<std::uint16_t>(istream);
-  header.flags = read_int<std::uint16_t>(istream);
-  header.compression_type = read_int<std::uint16_t>(istream);
-  header.stamp_date = read_int<std::uint16_t>(istream);
-  header.stamp_time = read_int<std::uint16_t>(istream);
-  header.crc = read_int<std::uint32_t>(istream);
-  header.compressed_size = read_int<std::uint32_t>(istream);
-  header.uncompressed_size = read_int<std::uint32_t>(istream);
-  const auto filename_length = read_int<std::uint16_t>(istream);
-  const auto extra_length = read_int<std::uint16_t>(istream);
-  const std::uint16_t comment_length = read_int<std::uint16_t>(istream);
-  /*std::uint16_t disk_number_start = */ read_int<std::uint16_t>(istream);
-  /*std::uint16_t int_file_attrib = */ read_int<std::uint16_t>(istream);
-  /*std::uint32_t ext_file_attrib = */ read_int<std::uint32_t>(istream);
-  header.header_offset = read_int<std::uint32_t>(istream);
-  header.filename.resize(filename_length, '\0');
-  istream.read(&header.filename[0], filename_length);
-  header.extra.resize(extra_length, 0);
-  istream.read(reinterpret_cast<char *>(header.extra.data()), extra_length);
-  header.comment.resize(comment_length, '\0');
-  istream.read(&header.comment[0], comment_length);
-  o(std::move(header));
-};
-
-template <class T>
-inline auto read =
+inline auto v =
     [](const uint8_t *buf) -> T { return *reinterpret_cast<const T *>(buf); };
 
 template <class O>
 void read_entries(const uint8_t *cde, const size_t count, const O &o) {
-  if (read<uint32_t>(cde) != 0x02014b50)
+  if (v<uint32_t>(cde) != 0x02014b50)
     return o("not a central dir entry");
-  const auto n = read<uint16_t>(cde + 28 /* File name length (n) */);
+  const auto n = v<uint16_t>(cde + 28 /* File name length (n) */);
   o(std::string_view(reinterpret_cast<const char *>(cde + 46 /* File name */),
                      n),
-    read<uint32_t>(cde + 42 /* Relative offset of local file header. */));
+    v<uint32_t>(cde + 42 /* Relative offset of local file header. */));
   if (count)
     read_entries(cde + 46 + n +
-                     read<uint16_t>(cde + 30 /* Extra field length (m) */) +
-                     read<uint16_t>(cde + 32 /* File comment length (k) */),
+                     v<uint16_t>(cde + 30 /* Extra field length (m) */) +
+                     v<uint16_t>(cde + 32 /* File comment length (k) */),
                  count - 1, o);
 }
+struct file {
+  std::string_view name;
+  const uint8_t *p;
+  file(std::string_view name, const uint8_t *p) : name(name), p(p) {}
+  template <typename O> void operator()(const O &o) const { ///
+  }
+};
 
 template <class O> void unzip(const uint8_t *buf, const size_t size, O &&o) {
   const uint8_t *eocd = buf + size - 22;
-  if (size < 22 || read<uint32_t>(eocd + 0) != 101010256)
-    return o("not zip");
+  if (size < 22 || v<uint32_t>(eocd + 0) != 101010256)
+    return o("cant find end of central dir entry");
   const auto count =
-      read<uint16_t>(eocd + 10 /* Total number of central directory records */);
-  auto entries = std::vector<std::pair<std::string_view, const uint8_t *>>();
+      v<uint16_t>(eocd + 10 /* Total number of central directory records */);
+  auto entries = std::vector<file>();
   auto ok = true;
-  read_entries(buf + read<uint32_t>(
-                         eocd + 16 /* Offset of start of central directory */),
-               count - 1,
-               _o_{[&](const char *err) {
-                     ok = false;
-                     o(err);
-                   },
-                   [&](auto &&v, auto offset) { ///
-                     entries.emplace_back(v, buf + offset);
-                   }});
+  read_entries(
+      buf + v<uint32_t>(eocd + 16 /* Offset of start of central directory */),
+      count - 1,
+      _o_{[&](const char *err) {
+            ok = false;
+            o(err);
+          },
+          [&](auto name, auto offset) { ///
+            entries.emplace_back(name, buf + offset);
+          }});
 
   if (ok)
     o(entries);
 };
 
+template <typename... Ts> struct print;
 auto main() -> int {
   std::ifstream s("MyTest.xlsx", std::ios::binary);
   s.seekg(0, std::ios_base::end);
@@ -149,9 +105,11 @@ auto main() -> int {
 
   unzip(reinterpret_cast<const uint8_t *>(buf.data()), size,
         _o_{[](const char *err) { std::cout << err << "\n"; },
-            [](std::vector<std::pair<std::string_view, const uint8_t *>> &v) {
-              for (auto [name, ep] : v)
-                std::cout << name << " " << ep << "\n";
+            [](std::vector<file> &v) {
+              for (file f : v) {
+                f([]() {});
+                std::cout << f.name << " " << f.p << "\n";
+              }
             }});
 
   pstr("ა")(cursor{"აბვ"}, _o_{[](int) { std::cout << "error\n"; },
