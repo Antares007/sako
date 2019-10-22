@@ -70,7 +70,7 @@ template <typename L, typename R> auto operator&(par<L> l, par<R> r) {
               }});
   }};
 }
-template <typename P> struct many {
+template <typename P> struct rec {
   par<P> p;
   template <typename O> void operator()(const char *in, const O &o) const {
     p(in, _o_{[&](int) { o("", in); },
@@ -80,15 +80,29 @@ template <typename P> struct many {
               }});
   }
 };
-template <typename P> many(P)->many<P>;
+template <typename P> rec(P)->rec<P>;
 
+template <typename P> auto many(par<P> p) {
+  return par{[=]<typename O>(const char *in, const O &o) {
+    p(in, _o_{[&](int) { o("", in); },
+              [&](auto &&u, const char *in) {
+                auto list = std::vector<std::decay_t<decltype(u)>>();
+                list.push_back(std::forward<decltype(u)>(u));
+                rec{p}(in, [&](auto &&u, const char *in_) {
+                  in = in_;
+                  list.push_back(std::forward<decltype(u)>(u));
+                });
+                o(list, in);
+              }});
+  }};
+};
 template <typename P> auto one_or_many(par<P> p) {
   return par{[=]<typename O>(const char *in, const O &o) {
     p(in, _o_{[&](int err) { o(err); },
               [&](auto &&u, const char *in) {
                 auto list = std::vector<std::decay_t<decltype(u)>>();
                 list.push_back(std::forward<decltype(u)>(u));
-                many{p}(in, [&](auto &&u, const char *in_) {
+                rec{p}(in, [&](auto &&u, const char *in_) {
                   in = in_;
                   list.push_back(std::forward<decltype(u)>(u));
                 });
