@@ -1,8 +1,11 @@
 #include "_o_.hpp"
+#include "utf8.hpp"
 #include <functional>
 
+template <typename... Ts> struct print;
 
-auto pstr(const char *str) {
+namespace parse {
+auto str(const char *str) {
   return [=]<typename O>(const char *in, O &&o) {
     size_t i = 0;
     while (char c = str[i]) {
@@ -13,33 +16,16 @@ auto pstr(const char *str) {
     o(str, in + i);
   };
 };
-auto utf8codepoint(const char *s, uint32_t *out_codepoint) -> const char * {
-  if (0xf0 == (0xf8 & s[0])) {
-    // 4 byte utf8 codepoint
-    *out_codepoint = ((0x07 & s[0]) << 18) | ((0x3f & s[1]) << 12) |
-                     ((0x3f & s[2]) << 6) | (0x3f & s[3]);
-    s += 4;
-  } else if (0xe0 == (0xf0 & s[0])) {
-    // 3 byte utf8 codepoint
-    *out_codepoint =
-        ((0x0f & s[0]) << 12) | ((0x3f & s[1]) << 6) | (0x3f & s[2]);
-    s += 3;
-  } else if (0xc0 == (0xe0 & s[0])) {
-    // 2 byte utf8 codepoint
-    *out_codepoint = ((0x1f & s[0]) << 6) | (0x3f & s[1]);
-    s += 2;
-  } else {
-    // 1 byte utf8 codepoint otherwise
-    *out_codepoint = s[0];
-    s += 1;
-  }
-  return s;
-}
-template <typename F> auto satisfy(F &&f) {
-  return [f = std::forward<F>(f)]<typename O>(const char *, O &&) { ///
-
+template <typename F> auto satisfy(F &&f) noexcept {
+  return [f = std::forward<F>(f)]<typename O>(const char *in, O &&o) { ///
+    if (in && f(utf8::codepoint(in))) {
+      auto n = utf8::next(in);
+      o(std::string_view(in, n - in), n);
+    } else
+      o(-1);
   };
 }
+
 template <typename Pl, typename Pr> auto pand(Pl &&pl, Pr &&pr) {
   return [pl = std::forward<Pl>(pl),
           pr = std::forward<Pr>(pr)]<typename O>(const char *in, O &&o) {
@@ -58,13 +44,48 @@ template <typename Pl, typename Pr> auto por(Pl &&pl, Pr &&pr) {
                [&](const char *m, const char *in) { o(m, in); }});
   };
 }
+template <typename P> struct many {
+  P p;
+  template <typename O> void operator()(const char *in, O &&o) const {
+    p(in, _o_{[](int) {},
+              [&](auto m, const char *in) {
+                o(m, in);
+                this->operator()(in, o);
+              }});
+  }
+};
+template <typename P> many(P)->many<P>;
+
+template <typename P> struct oneOrMany {
+  P p;
+  template <typename O> void operator()(const char *in, O &&o) const {
+    p(in, _o_{[&](int err) { o(err); },
+              [&](auto m, const char *in) {
+                o(m, in);
+                many{p}(in, o);
+              }});
+  }
+};
+template <typename P> oneOrMany(P)->oneOrMany<P>;
+
+} // namespace parse
+
+namespace parse::xml {
+inline auto Char = satisfy([](uint32_t c) {
+  return c == 0x9 || c == 0xA || c == 0xD || (0x20 <= c && c <= 0xD7FF) ||
+         (0xE000 <= c && c <= 0xFFFD) || (0x10000 <= c && c <= 0x10FFFF);
+});
+inline auto S = oneOrMany{satisfy([](uint32_t c) {
+  // S	   ::=   	(#x20 | #x9 | #xD | #xA)+
+  return c == 0x20 || c == 0x9 || c == 0xD || c == 0xA;
+})};
+} // namespace parse::xml
 
 #include "zip.hpp"
 #include <fstream>
 #include <iostream>
 #include <tuple>
 
-template <typename... Ts> struct print;
 auto main() -> int {
   std::ifstream s("MyTest.xlsx", std::ios::binary);
   s.seekg(0, std::ios_base::end);
@@ -78,16 +99,20 @@ auto main() -> int {
              _o_{[](const char *err) { std::cout << err << "\n"; },
                  [](std::string_view name, auto &&p) {
                    p(_o_{[&](auto err) { std::cout << err << "\n"; },
-                         [&](auto buff, auto size) {
-                           std::cout << name << " - " << size << "\n"
-                                     << buff << "\n";
+                         [&](auto, auto size) {
+                           std::cout << name << " - " << size << "\n";
                          }});
                  }});
 
-  pstr("ა")("აბვ", _o_{[](int) { std::cout << "error\n"; },
-                       [](const char *f, const char *rest) {
-                         std::cout << '[' << f << "] [" << rest << "]\n";
-                       }});
+  parse::oneOrMany{parse::xml::Char}(
+      "\00101!`აბAB", _o_{[](int) { std::cout << "error!\n"; },
+                          [](std::string_view f, const char *rest) {
+                            std::cout << '[' << f << "] [" << rest << "]\n";
+                          }});
+  parse::str("ა")("აბვ", _o_{[](int) { std::cout << "error\n"; },
+                             [](std::string_view f, const char *rest) {
+                               std::cout << '[' << f << "] [" << rest << "]\n";
+                             }});
 
   // auto l = pand(pstr("a"), pstr("b"));
   // l("abo", _o_{[](int) { std::cout << "error\n"; },
