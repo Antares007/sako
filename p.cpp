@@ -4,6 +4,7 @@
 
 template <typename... Ts> struct print;
 
+namespace parse {
 template <typename T, typename = void> ///
 struct par;
 
@@ -48,7 +49,7 @@ struct par<Pith, std::enable_if_t<std::is_invocable_r_v<
 };
 template <typename F> par(F)->par<F>;
 
-template <typename L, typename R> constexpr auto operator|(par<L> l, par<R> r) {
+template <typename L, typename R> auto operator|(par<L> l, par<R> r) {
   return par{[=](const char *in, const auto &o) {
     l(in, _o_{[&](int) { r(in, o); },
               [&](auto &&m, const char *in) {
@@ -57,7 +58,7 @@ template <typename L, typename R> constexpr auto operator|(par<L> l, par<R> r) {
   }};
 }
 
-template <typename L, typename R> constexpr auto operator&(par<L> l, par<R> r) {
+template <typename L, typename R> auto operator&(par<L> l, par<R> r) {
   return par{[=](const char *in, const auto &o) {
     l(in, _o_{[&](int err) { o(err); },
               [&]<typename L_>(L_ &&l, const char *rest) {
@@ -69,62 +70,8 @@ template <typename L, typename R> constexpr auto operator&(par<L> l, par<R> r) {
               }});
   }};
 }
-
-namespace parse {
-
-struct str {
-  const char *str;
-  template <typename O> void operator()(const char *in, const O &o) const {
-    size_t i = 0;
-    while (char c = str[i]) {
-      if (c != in[i])
-        return o(-1);
-      i++;
-    }
-    o(str, in + i);
-  }
-};
-
-template <typename F,
-          typename = std::enable_if_t<std::is_convertible_v<
-              decltype(std::declval<F>()(std::declval<uint32_t>())), bool>>>
-struct satisfy {
-  F f;
-  template <typename O> void operator()(const char *in, const O &o) const { ///
-    if (in && f(utf8::codepoint(in))) {
-      auto n = utf8::next(in);
-      o(std::string_view(in, n - in), n);
-    } else
-      o(-1);
-  };
-};
-template <typename F> satisfy(F)->satisfy<F>;
-
-template <typename Pl, typename Pr> struct pand {
-  Pl pl;
-  Pr pr;
-  template <typename O> void operator()(const char *in, const O &o) {
-    pl(in, _o_{o, [&](const char *v1, const char *rest) {
-                 pr(rest, _o_{o, [&](const char *v2, const char *rest) {
-                                o(v1, v2, rest);
-                              }});
-               }});
-  };
-};
-template <typename Pl, typename Pr> pand(Pl, Pr)->pand<Pl, Pr>;
-
-template <typename Pl, typename Pr> struct por {
-  Pl pl;
-  Pr pr;
-  template <typename O> void operator()(const char *in, const O &o) {
-    pl(in, _o_{[&](int) { pr(in, o); },
-               [&](const char *m, const char *in) { o(m, in); }});
-  };
-};
-template <typename Pl, typename Pr> por(Pl, Pr)->por<Pl, Pr>;
-
 template <typename P> struct many {
-  P p;
+  par<P> p;
   template <typename O> void operator()(const char *in, const O &o) const {
     p(in, _o_{[&](int) { o("", in); },
               [&](auto m, const char *in) {
@@ -135,9 +82,8 @@ template <typename P> struct many {
 };
 template <typename P> many(P)->many<P>;
 
-template <typename P> struct oneOrMany {
-  P p;
-  template <typename O> void operator()(const char *in, const O &o) const {
+template <typename P> auto one_or_many(par<P> p) {
+  return par{[=]<typename O>(const char *in, const O &o) {
     p(in, _o_{[&](int err) { o(err); },
               [&](auto &&u, const char *in) {
                 auto list = std::vector<std::decay_t<decltype(u)>>();
@@ -148,21 +94,20 @@ template <typename P> struct oneOrMany {
                 });
                 o(list, in);
               }});
-  }
+  }};
 };
-template <typename P> oneOrMany(P)->oneOrMany<P>;
 
 } // namespace parse
 
 namespace parse::xml {
-inline auto Char = satisfy{[](uint32_t c) {
+inline auto Char = par{[](uint32_t c) {
   return c == 0x9 || c == 0xA || c == 0xD || (0x20 <= c && c <= 0xD7FF) ||
          (0xE000 <= c && c <= 0xFFFD) || (0x10000 <= c && c <= 0x10FFFF);
 }};
-inline auto S = oneOrMany{satisfy{[](uint32_t c) {
+inline auto S = one_or_many(par{[](uint32_t c) {
   // S	   ::=   	(#x20 | #x9 | #xD | #xA)+
   return c == 0x20 || c == 0x9 || c == 0xD || c == 0xA;
-}}};
+}});
 } // namespace parse::xml
 
 #include "zip.hpp"
@@ -171,7 +116,7 @@ inline auto S = oneOrMany{satisfy{[](uint32_t c) {
 #include <tuple>
 
 static void t() {
-  //
+  using namespace parse;
   auto p1 = par{""};
   auto p3 = par{[](const char *, auto o) {
     o(1);
@@ -206,15 +151,15 @@ auto main() -> int {
                          }});
                  }});
 
-  parse::oneOrMany{parse::xml::Char}("01!`ა\001ბAB",
-                                     _o_{[](int) { std::cout << "error!\n"; },
-                                         [](const auto &vec, const char *rest) {
-                                           std::cout << '[';
-                                           for (auto n : vec)
-                                             std::cout << n;
-                                           std::cout << "] [" << rest << "]\n";
-                                         }});
-  parse::str{"ა"}("აბვ", _o_{[](int) { std::cout << "error\n"; },
+  parse::one_or_many(parse::xml::Char)(
+      "01!`ა\001ბAB", _o_{[](int) { std::cout << "error!\n"; },
+                          [](const auto &vec, const char *rest) {
+                            std::cout << '[';
+                            for (auto n : vec)
+                              std::cout << n;
+                            std::cout << "] [" << rest << "]\n";
+                          }});
+  parse::par{"ა"}("აბვ", _o_{[](int) { std::cout << "error\n"; },
                              [](std::string_view f, const char *rest) {
                                std::cout << '[' << f << "] [" << rest << "]\n";
                              }});
