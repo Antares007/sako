@@ -4,6 +4,72 @@
 
 template <typename... Ts> struct print;
 
+template <typename T, typename = void> ///
+struct par;
+
+template <> ///
+struct par<const char *> {
+  const char *str;
+  template <typename O> void operator()(const char *in, const O &o) const {
+    size_t i = 0;
+    while (char c = str[i]) {
+      if (c != in[i])
+        return o(-1);
+      i++;
+    }
+    o(std::string_view(in, i), in + i);
+  }
+};
+
+template <typename F> ///
+struct par<F, std::enable_if_t<std::is_convertible_v<
+                  decltype(std::declval<F>()(utf8::codepoint(""))), bool>>> {
+  F f;
+  template <typename O> void operator()(const char *in, const O &o) const { ///
+    if (in && f(utf8::codepoint(in))) {
+      auto n = utf8::next(in);
+      o(std::string_view(in, n - in), n);
+    } else
+      o(-1);
+  };
+};
+
+constexpr inline auto void_ray = _o_{[](int) {}, [](auto, const char *) {}};
+using void_ray_t = decltype(void_ray);
+
+template <typename Pith> ///
+struct par<Pith, std::enable_if_t<std::is_invocable_r_v<
+                     void, Pith, const char *, void_ray_t>>> {
+  Pith pith;
+  template <typename O>
+  void operator()(const char *in, const O &o) const {
+    pith(in, o);
+  };
+};
+template <typename F> par(F)->par<F>;
+
+template <typename L, typename R> constexpr auto operator|(par<L> l, par<R> r) {
+  return par{[=](const char *in, const auto &o) {
+    l(in, _o_{[&](int) { r(in, o); },
+              [&](auto &&m, const char *in) {
+                o(std::forward<decltype(m)>(m), in);
+              }});
+  }};
+}
+
+template <typename L, typename R> constexpr auto operator&(par<L> l, par<R> r) {
+  return par{[=](const char *in, const auto &o) {
+    l(in, _o_{[&](int err) { o(err); },
+              [&]<typename L_>(L_ &&l, const char *rest) {
+                r(rest, _o_{[&](int err) { o(err); },
+                            [&, l = std::forward<L_>(l)]<typename R_>(
+                                R_ &&r, const char *rest) {
+                              o(std::pair{l, std::forward<R_>(r)}, rest);
+                            }});
+              }});
+  }};
+}
+
 namespace parse {
 
 struct str {
@@ -19,7 +85,10 @@ struct str {
   }
 };
 
-template <typename F> struct satisfy {
+template <typename F,
+          typename = std::enable_if_t<std::is_convertible_v<
+              decltype(std::declval<F>()(std::declval<uint32_t>())), bool>>>
+struct satisfy {
   F f;
   template <typename O> void operator()(const char *in, const O &o) const { ///
     if (in && f(utf8::codepoint(in))) {
@@ -54,8 +123,7 @@ template <typename Pl, typename Pr> struct por {
 };
 template <typename Pl, typename Pr> por(Pl, Pr)->por<Pl, Pr>;
 
-template <typename P>
-struct many {
+template <typename P> struct many {
   P p;
   template <typename O> void operator()(const char *in, const O &o) const {
     p(in, _o_{[&](int) { o("", in); },
@@ -102,7 +170,25 @@ inline auto S = oneOrMany{satisfy{[](uint32_t c) {
 #include <iostream>
 #include <tuple>
 
+static void t() {
+  //
+  auto p1 = par{""};
+  auto p3 = par{[](const char *, auto o) {
+    o(1);
+    o("hi", "hello");
+  }};
+  (p1 & p1 | p3)("", _o_{[](int) { ///
+                         },
+                         [](std::pair<std::string_view, std::string_view>,
+                            const char *) { ///
+                         },
+                         [](std::string_view, const char *) { ///
+
+                         }});
+}
+
 auto main() -> int {
+  t();
   std::ifstream s("MyTest.xlsx", std::ios::binary);
   s.seekg(0, std::ios_base::end);
   const size_t size = static_cast<std::size_t>(s.tellg());
