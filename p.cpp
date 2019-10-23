@@ -5,16 +5,12 @@
 template <typename... Ts> struct print;
 
 namespace parse {
-
-template <typename T, typename = void> ///
-struct par;
-
-template <> ///
-struct par<const char *> {
-  const char *str;
+struct str {
+  const char *str_;
+  explicit str(const char *rhs) noexcept : str_(rhs) {}
   template <typename O> void operator()(const char *in, const O &o) const {
     int i = 0;
-    while (char c = str[i]) {
+    while (char c = str_[i]) {
       if (c != in[i])
         return o(-1);
       i++;
@@ -22,11 +18,14 @@ struct par<const char *> {
     o(i);
   }
 };
-
 template <typename F> ///
-struct par<F, std::enable_if_t<std::is_convertible_v<
-                  decltype(std::declval<F>()(utf8::codepoint(""))), bool>>> {
+struct satisfy {
   F f;
+  template <typename U,
+            typename = std::enable_if_t<std::is_convertible_v<
+                decltype(std::declval<U>()(utf8::codepoint(""))), bool>>>
+  explicit satisfy(U &&u) noexcept : f(std::forward<U>(u)) {}
+
   template <typename O> void operator()(const char *in, const O &o) const { ///
     if (in && f(utf8::codepoint(in)))
       o(utf8::next(in) - in);
@@ -34,14 +33,24 @@ struct par<F, std::enable_if_t<std::is_convertible_v<
       o(-1);
   };
 };
-constexpr inline auto iray = [](int) {};
-template <typename Pith> ///
-struct par<Pith, std::enable_if_t<std::is_invocable_r_v<
-                     void, Pith, const char *, decltype(iray)>>> {
-  Pith pith;
-  template <typename O> void operator()(const char *in, const O &o) const {
+template <typename F> satisfy(F)->satisfy<F>;
+
+constexpr inline auto aray = [](auto) {};
+using aray_t = decltype(aray);
+
+template <typename T>
+using if_bark_t =
+    std::enable_if_t<std::is_invocable_r_v<void, T, const char *, aray_t>>;
+
+template <typename P> ///
+struct sum {
+  P p;
+  template <typename U, typename = if_bark_t<U>>
+  explicit sum(U &&u) noexcept : p(std::forward<U>(u)) {}
+
+  template <typename O> void operator()(const char *in, const O &o) const { ///
     int next = 0;
-    pith(in, [&next](int x) {
+    p(in, [&next](int x) {
       if (0 <= next) {
         if (x < 0)
           next = x;
@@ -52,31 +61,64 @@ struct par<Pith, std::enable_if_t<std::is_invocable_r_v<
     o(next);
   };
 };
-template <typename F> par(F)->par<F>;
+template <typename P> sum(P)->sum<P>;
 
-template <typename L, typename R> auto operator|(par<L> l, par<R> r) {
-  return par{[=](const char *in, const auto &o) {
+template <typename L, typename R> ///
+struct or_ {
+  L l;
+  R r;
+  template <typename UL, typename UR, typename = if_bark_t<UL>,
+            typename = if_bark_t<UR>>
+  explicit or_(UL &&ul, UR &&ur) noexcept
+      : l(std::forward<UL>(ul)), r(std::forward<UR>(ur)) {}
+
+  template <typename O> void operator()(const char *in, const O &o) const { ///
     l(in, [&](int x) {
       if (x < 0)
         r(in, o);
       else
         o(x);
     });
-  }};
+  };
+};
+template <typename L, typename R> or_(L, R)->or_<L, R>;
+
+template <typename L, typename R, typename = if_bark_t<L>,
+          typename = if_bark_t<R>>
+auto operator|(L &&l, R &&r) {
+  return or_(std::forward<L>(l), std::forward<R>(r));
 }
 
-template <typename L, typename R> auto operator&(par<L> l, par<R> r) {
-  return par{[=](const char *in, const auto &o) {
+template <typename L, typename R> ///
+struct and_ {
+  L l;
+  R r;
+  template <typename UL, typename UR, typename = if_bark_t<UL>,
+            typename = if_bark_t<UR>>
+  explicit and_(UL &&ul, UR &&ur) noexcept
+      : l(std::forward<UL>(ul)), r(std::forward<UR>(ur)) {}
+
+  template <typename O> void operator()(const char *in, const O &o) const { ///
     l(in, [&](int x) {
-        o(x);
-        if (0 <= x)
-          r(in + x, o);
+      o(x);
+      if (0 <= x)
+        r(in + x, o);
     });
-  }};
+  };
+};
+template <typename L, typename R> and_(L, R)->and_<L, R>;
+
+template <typename L, typename R, typename = if_bark_t<L>,
+          typename = if_bark_t<R>>
+auto operator&(L &&l, R &&r) {
+  return and_(std::forward<L>(l), std::forward<R>(r));
 }
 
 template <typename P> struct many {
-  par<P> p;
+  P p;
+  template <typename U, typename = if_bark_t<U>>
+  explicit many(U &&u) noexcept : p(std::forward<U>(u)) {}
+
   template <typename O> void operator()(const char *in, const O &o) const {
     p(in, [&](int x) {
       if (x < 0)
@@ -90,24 +132,29 @@ template <typename P> struct many {
 };
 template <typename P> many(P)->many<P>;
 
-template <typename P> auto one_or_many(par<P> p) {
-  return par{[=]<typename O>(const char *in, const O &o) {
+template <typename P> struct one_or_many {
+  P p;
+  template <typename U, typename = if_bark_t<U>>
+  explicit one_or_many(U &&u) noexcept : p(std::forward<U>(u)) {}
+
+  template <typename O> void operator()(const char *in, const O &o) const {
     p(in, [&](int x) {
       o(x);
       if (0 <= x)
         many{p}(in + x, o);
     });
-  }};
+  }
 };
+template <typename P> one_or_many(P)->one_or_many<P>;
 
 } // namespace parse
 
 namespace parse::xml {
-inline auto Char = par{[](uint32_t c) {
+inline auto Char = satisfy{[](uint32_t c) {
   return c == 0x9 || c == 0xA || c == 0xD || (0x20 <= c && c <= 0xD7FF) ||
          (0xE000 <= c && c <= 0xFFFD) || (0x10000 <= c && c <= 0x10FFFF);
 }};
-inline auto S = one_or_many(par{[](uint32_t c) {
+inline auto S = one_or_many(satisfy{[](uint32_t c) {
   // S	   ::=   	(#x20 | #x9 | #xD | #xA)+
   return c == 0x20 || c == 0x9 || c == 0xD || c == 0xA;
 }});
@@ -120,27 +167,23 @@ inline auto S = one_or_many(par{[](uint32_t c) {
 
 static void t() {
   using namespace parse;
-  auto logger = [](const char *abv) {
-    return [=](int x) {
+  auto run = [](const char *in, const auto &parser) {
+    sum{parser}(in, [=](int x) {
       if (x < 0)
         std::cout << "error\n";
       else
-        std::cout << "[" << std::string_view(abv, x) << "] [" << abv + x
-                  << "]\n";
-    };
+        std::cout << "[" << std::string_view(in, x) << "] [" << in + x << "]\n";
+    });
   };
-  one_or_many(xml::Char)("01!`ა\001ბAB", logger("01!`ა\001ბAB"));
+  run("01!`ა\001ბAB", one_or_many{xml::Char});
 
-  auto abv = "აბვ";
-  par{"ა"}(abv, logger(abv));
+  run("აბვ", str{"ა"});
 
-  par{many{par{"A"} | par{"B"} | par{"C"}}}("ACBABABAB", logger("ACBABABAB"));
+  run("ACBABABAB", many{str{"A"} | str{"B"} | str{"C"}});
 }
 
 auto main() -> int {
-  std::string_view sv = "abc";
-  if (sv == "abc")
-    t();
+  t();
   std::ifstream s("MyTest.xlsx", std::ios::binary);
   s.seekg(0, std::ios_base::end);
   const size_t size = static_cast<std::size_t>(s.tellg());
@@ -157,7 +200,6 @@ auto main() -> int {
                            std::cout << name << " - " << size << "\n";
                          }});
                  }});
-
 
   // auto l = pand(pstr("a"), pstr("b"));
   // l("abo", _o_{[](int) { std::cout << "error\n"; },
