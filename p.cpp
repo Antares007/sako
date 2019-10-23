@@ -151,22 +151,6 @@ template <typename P> one_or_many(P)->one_or_many<P>;
 
 } // namespace parse
 
-namespace parse::xml {
-inline auto Char = satisfy{[](uint32_t c) {
-  return c == 0x9 || c == 0xA || c == 0xD || (0x20 <= c && c <= 0xD7FF) ||
-         (0xE000 <= c && c <= 0xFFFD) || (0x10000 <= c && c <= 0x10FFFF);
-}};
-inline auto S = one_or_many(satisfy{[](uint32_t c) {
-  // S	   ::=   	(#x20 | #x9 | #xD | #xA)+
-  return c == 0x20 || c == 0x9 || c == 0xD || c == 0xA;
-}});
-} // namespace parse::xml
-
-#include "zip.hpp"
-#include <fstream>
-#include <iostream>
-#include <tuple>
-
 namespace parse {
 template <size_t... N> struct cp;
 template <size_t N> struct cp<N> {
@@ -187,6 +171,22 @@ template <size_t S, size_t E> struct cp<S, E> {
   };
 };
 } // namespace parse
+
+namespace parse::xml {
+inline auto Char = satisfy{[](uint32_t c) {
+  return c == 0x9 || c == 0xA || c == 0xD || (0x20 <= c && c <= 0xD7FF) ||
+         (0xE000 <= c && c <= 0xFFFD) || (0x10000 <= c && c <= 0x10FFFF);
+}};
+inline auto S = one_or_many(satisfy{[](uint32_t c) {
+  // S	   ::=   	(#x20 | #x9 | #xD | #xA)+
+  return c == 0x20 || c == 0x9 || c == 0xD || c == 0xA;
+}});
+} // namespace parse::xml
+
+#include "zip.hpp"
+#include <fstream>
+#include <iostream>
+#include <tuple>
 
 static void t() {
   using namespace parse;
