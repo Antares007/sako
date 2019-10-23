@@ -5,6 +5,7 @@
 template <typename... Ts> struct print;
 
 namespace parse {
+
 template <typename T, typename = void> ///
 struct par;
 
@@ -12,13 +13,13 @@ template <> ///
 struct par<const char *> {
   const char *str;
   template <typename O> void operator()(const char *in, const O &o) const {
-    size_t i = 0;
+    int i = 0;
     while (char c = str[i]) {
       if (c != in[i])
         return o(-1);
       i++;
     }
-    o(std::string_view(in, i), in + i);
+    o(i);
   }
 };
 
@@ -27,87 +28,75 @@ struct par<F, std::enable_if_t<std::is_convertible_v<
                   decltype(std::declval<F>()(utf8::codepoint(""))), bool>>> {
   F f;
   template <typename O> void operator()(const char *in, const O &o) const { ///
-    if (in && f(utf8::codepoint(in))) {
-      auto n = utf8::next(in);
-      o(std::string_view(in, n - in), n);
-    } else
+    if (in && f(utf8::codepoint(in)))
+      o(utf8::next(in) - in);
+    else
       o(-1);
   };
 };
-
-constexpr inline auto void_ray = _o_{[](int) {}, [](auto, const char *) {}};
-using void_ray_t = decltype(void_ray);
-
+constexpr inline auto iray = [](int) {};
 template <typename Pith> ///
 struct par<Pith, std::enable_if_t<std::is_invocable_r_v<
-                     void, Pith, const char *, void_ray_t>>> {
+                     void, Pith, const char *, decltype(iray)>>> {
   Pith pith;
-  template <typename O>
-  void operator()(const char *in, const O &o) const {
-    pith(in, o);
+  template <typename O> void operator()(const char *in, const O &o) const {
+    int next = 0;
+    pith(in, [&next](int x) {
+      if (0 <= next) {
+        if (x < 0)
+          next = x;
+        else
+          next += x;
+      }
+    });
+    o(next);
   };
 };
 template <typename F> par(F)->par<F>;
 
 template <typename L, typename R> auto operator|(par<L> l, par<R> r) {
   return par{[=](const char *in, const auto &o) {
-    l(in, _o_{[&](int) { r(in, o); },
-              [&](auto &&m, const char *in) {
-                o(std::forward<decltype(m)>(m), in);
-              }});
+    l(in, [&](int x) {
+      if (x < 0)
+        r(in, o);
+      else
+        o(x);
+    });
   }};
 }
 
 template <typename L, typename R> auto operator&(par<L> l, par<R> r) {
   return par{[=](const char *in, const auto &o) {
-    l(in, _o_{[&](int err) { o(err); },
-              [&]<typename L_>(L_ &&l, const char *rest) {
-                r(rest, _o_{[&](int err) { o(err); },
-                            [&, l = std::forward<L_>(l)]<typename R_>(
-                                R_ &&r, const char *rest) {
-                              o(std::pair{l, std::forward<R_>(r)}, rest);
-                            }});
-              }});
+    l(in, [&](int x) {
+        o(x);
+        if (0 <= x)
+          r(in + x, o);
+    });
   }};
 }
-template <typename P> struct rec {
+
+template <typename P> struct many {
   par<P> p;
   template <typename O> void operator()(const char *in, const O &o) const {
-    p(in, _o_{[&](int) { o("", in); },
-              [&](auto m, const char *in) {
-                o(m, in);
-                this->operator()(in, o);
-              }});
+    p(in, [&](int x) {
+      if (x < 0)
+        o(0);
+      else {
+        o(x);
+        this->operator()(in + x, o);
+      }
+    });
   }
 };
-template <typename P> rec(P)->rec<P>;
+template <typename P> many(P)->many<P>;
 
-template <typename P> auto many(par<P> p) {
-  return par{[=]<typename O>(const char *in, const O &o) {
-    p(in, _o_{[&](int) { o("", in); },
-              [&](auto &&u, const char *in) {
-                auto list = std::vector<std::decay_t<decltype(u)>>();
-                list.push_back(std::forward<decltype(u)>(u));
-                rec{p}(in, [&](auto &&u, const char *in_) {
-                  in = in_;
-                  list.push_back(std::forward<decltype(u)>(u));
-                });
-                o(list, in);
-              }});
-  }};
-};
 template <typename P> auto one_or_many(par<P> p) {
   return par{[=]<typename O>(const char *in, const O &o) {
-    p(in, _o_{[&](int err) { o(err); },
-              [&](auto &&u, const char *in) {
-                auto list = std::vector<std::decay_t<decltype(u)>>();
-                list.push_back(std::forward<decltype(u)>(u));
-                rec{p}(in, [&](auto &&u, const char *in_) {
-                  in = in_;
-                  list.push_back(std::forward<decltype(u)>(u));
-                });
-                o(list, in);
-              }});
+    p(in, [&](int x) {
+      o(x);
+      if (0 <= x)
+        many{p}(in + x, o);
+    });
   }};
 };
 
@@ -131,23 +120,27 @@ inline auto S = one_or_many(par{[](uint32_t c) {
 
 static void t() {
   using namespace parse;
-  auto p1 = par{""};
-  auto p3 = par{[](const char *, auto o) {
-    o(1);
-    o("hi", "hello");
-  }};
-  (p1 & p1 | p3)("", _o_{[](int) { ///
-                         },
-                         [](std::pair<std::string_view, std::string_view>,
-                            const char *) { ///
-                         },
-                         [](std::string_view, const char *) { ///
+  auto logger = [](const char *abv) {
+    return [=](int x) {
+      if (x < 0)
+        std::cout << "error\n";
+      else
+        std::cout << "[" << std::string_view(abv, x) << "] [" << abv + x
+                  << "]\n";
+    };
+  };
+  one_or_many(xml::Char)("01!`ა\001ბAB", logger("01!`ა\001ბAB"));
 
-                         }});
+  auto abv = "აბვ";
+  par{"ა"}(abv, logger(abv));
+
+  par{many{par{"A"} | par{"B"} | par{"C"}}}("ACBABABAB", logger("ACBABABAB"));
 }
 
 auto main() -> int {
-  t();
+  std::string_view sv = "abc";
+  if (sv == "abc")
+    t();
   std::ifstream s("MyTest.xlsx", std::ios::binary);
   s.seekg(0, std::ios_base::end);
   const size_t size = static_cast<std::size_t>(s.tellg());
@@ -165,18 +158,6 @@ auto main() -> int {
                          }});
                  }});
 
-  parse::one_or_many(parse::xml::Char)(
-      "01!`ა\001ბAB", _o_{[](int) { std::cout << "error!\n"; },
-                          [](const auto &vec, const char *rest) {
-                            std::cout << '[';
-                            for (auto n : vec)
-                              std::cout << n;
-                            std::cout << "] [" << rest << "]\n";
-                          }});
-  parse::par{"ა"}("აბვ", _o_{[](int) { std::cout << "error\n"; },
-                             [](std::string_view f, const char *rest) {
-                               std::cout << '[' << f << "] [" << rest << "]\n";
-                             }});
 
   // auto l = pand(pstr("a"), pstr("b"));
   // l("abo", _o_{[](int) { std::cout << "error\n"; },
