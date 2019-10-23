@@ -5,6 +5,7 @@
 template <typename... Ts> struct print;
 
 namespace parse {
+
 struct str {
   const char *str_;
   explicit str(const char *rhs) noexcept : str_(rhs) {}
@@ -18,6 +19,7 @@ struct str {
     o(i);
   }
 };
+
 template <typename F> ///
 struct satisfy {
   F f;
@@ -165,8 +167,30 @@ inline auto S = one_or_many(satisfy{[](uint32_t c) {
 #include <iostream>
 #include <tuple>
 
+namespace parse {
+template <size_t... N> struct cp;
+template <size_t N> struct cp<N> {
+  template <typename O> void operator()(const char *in, const O &o) const { ///
+    if (utf8::codepoint(in) == N)
+      o(utf8::next(in) - in);
+    else
+      o(-1);
+  };
+};
+template <size_t S, size_t E> struct cp<S, E> {
+  template <typename O> void operator()(const char *in, const O &o) const { ///
+    const auto cp = utf8::codepoint(in);
+    if (S <= cp && cp <= E)
+      o(utf8::next(in) - in);
+    else
+      o(-1);
+  };
+};
+} // namespace parse
+
 static void t() {
   using namespace parse;
+  auto z = cp<'0', '9'>{} | cp<100>{};
   auto run = [](const char *in, const auto &parser) {
     sum{parser}(in, [=](int x) {
       if (x < 0)
