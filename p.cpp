@@ -45,10 +45,10 @@ using if_bark_t =
     std::enable_if_t<std::is_invocable_r_v<void, T, const char *, aray_t>>;
 
 template <typename P> ///
-struct sum {
+struct run {
   P p;
   template <typename U, typename = if_bark_t<U>>
-  explicit sum(U &&u) noexcept : p(std::forward<U>(u)) {}
+  explicit run(U &&u) noexcept : p(std::forward<U>(u)) {}
 
   template <typename O> void operator()(const char *in, const O &o) const { ///
     int next = 0;
@@ -63,7 +63,7 @@ struct sum {
     o(next);
   };
 };
-template <typename P> sum(P)->sum<P>;
+template <typename P> run(P)->run<P>;
 
 template <typename L, typename R> ///
 struct or_ {
@@ -192,7 +192,7 @@ static void t() {
   using namespace parse;
   auto z = cp<'0', '9'>{} | cp<100>{};
   auto run = [](const char *in, const auto &parser) {
-    sum{parser}(in, [=](int x) {
+    parse::run{parser}(in, [=](int x) {
       if (x < 0)
         std::cout << "error\n";
       else
