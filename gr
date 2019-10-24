@@ -1,0 +1,144 @@
+XML Grammar
+About This Reference
+This reference was made by copying and pasting from the XML Spec at http://www.w3.org/TR/REC-xml and including all the errata at http://www.w3.org/XML/xml-V10-2e-errata (upto E44, which is as far as they had gotten when I made this page).
+
+The Syntax of XML
+Document
+
+document  ::=  prolog element Misc*
+
+
+
+Names and Tokens
+
+NameChar  ::=  Letter | Digit
+            |  '.' | '-' | '_' | ':'
+            |  CombiningChar | Extender
+Name      ::=  (Letter | '_' | ':') (NameChar)*
+Names     ::=  Name (#x20 Name)*
+Nmtoken   ::=  (NameChar)+
+Nmtokens  ::=  Nmtoken (#x20 Nmtoken)*
+
+Literals
+
+EntityValue    ::=  '"' ([^%&"] | PEReference | Reference)* '"'
+                 |  "'" ([^%&'] | PEReference | Reference)* "'"
+AttValue       ::=  '"' ([^<&"] | Reference)* '"'
+                 |  "'" ([^<&'] | Reference)* "'"
+SystemLiteral  ::=  ('"' [^"]* '"') | ("'" [^']* "'")
+PubidLiteral   ::=  '"' PubidChar* '"' | "'" (PubidChar - "'")* "'"
+PubidChar      ::=  #x20 | #xD | #xA | [a-zA-Z0-9]
+                 |  [-'()+,./:=?;!*#@$_%]
+
+Character Data
+
+CharData  ::=  [^<&]* - ([^<&]* ']]>' [^<&]*)
+
+Comments
+
+Comment  ::=  '<!--' ((Char - '-') | ('-' (Char - '-')))* '-->'
+
+Processing Instructions
+
+PI        ::=  '<?' PITarget (S (Char* - (Char* '?>' Char*)))? '?>'
+PITarget  ::=  Name - (('X' | 'x') ('M' | 'm') ('L' | 'l'))
+
+CDATA Sections
+
+CDSect   ::=  CDStart CData CDEnd
+CDStart  ::=  '<![CDATA['
+CData    ::=  (Char* - (Char* ']]>' Char*))
+CDEnd    ::=  ']]>'
+
+Prolog
+
+prolog       ::=  XMLDecl? Misc* (doctypedecl Misc*)?
+XMLDecl      ::=  '<?xml' VersionInfo EncodingDecl? SDDecl? S? '?>'
+VersionInfo  ::=  S 'version' Eq ("'" VersionNum "'" | '"' VersionNum '"')
+Eq           ::=  S? '=' S?
+VersionNum   ::=  '1.0'
+Misc         ::=  Comment | PI | S
+
+Document Type Definition
+
+doctypedecl    ::=  '<!DOCTYPE' S Name (S ExternalID)? S? ('[' intSubset ']' S?)? '>'
+DeclSep        ::=  PEReference | S
+intSubset      ::=  (markupdecl | DeclSep)*
+markupdecl     ::=  elementdecl | AttlistDecl | EntityDecl | NotationDecl
+                 |  PI | Comment
+extSubset      ::=  TextDecl? extSubsetDecl
+extSubsetDecl  ::=  ( markupdecl | conditionalSect | DeclSep)*
+
+Standalone Document Declaration
+
+SDDecl  ::=  S 'standalone' Eq
+             (("'" ('yes' | 'no') "'") | ('"' ('yes' | 'no') '"'))
+
+Elements, Tags and Element Content
+
+element       ::=  EmptyElemTag  | STag content ETag
+STag          ::=  '<' Name (S Attribute)* S? '>'
+Attribute     ::=  Name Eq AttValue
+ETag          ::=  '</' Name S? '>'
+content       ::=  CharData?
+                   ((element | Reference | CDSect | PI | Comment) CharData?)*
+EmptyElemTag  ::=  '<' Name (S Attribute)* S? '/>'
+
+Elements in the DTD
+
+elementdecl  ::=  '<!ELEMENT' S Name S contentspec S? '>'
+contentspec  ::=  'EMPTY' | 'ANY' | Mixed | children
+children     ::=  (choice | seq) ('?' | '*' | '+')?
+cp           ::=  (Name | choice | seq) ('?' | '*' | '+')?
+choice       ::=  '(' S? cp ( S? '|' S? cp )+ S? ')'
+seq          ::=  '(' S? cp ( S? ',' S? cp )* S? ')'
+Mixed        ::=  '(' S? '#PCDATA' (S? '|' S? Name)* S? ')*'
+               |  '(' S? '#PCDATA' S? ')'
+
+Attributes in the DTD
+
+AttlistDecl       ::=  '<!ATTLIST' S Name AttDef* S? '>'
+AttDef            ::=  S Name S AttType S DefaultDecl
+AttType           ::=  StringType | TokenizedType | EnumeratedType
+StringType        ::=  'CDATA'
+TokenizedType     ::=  'ID' | 'IDREF' | 'IDREFS' | 'ENTITY'
+                    |  'ENTITIES' | 'NMTOKEN' | 'NMTOKENS'
+EnumeratedType    ::=  NotationType | Enumeration
+NotationType      ::=  'NOTATION' S '(' S? Name (S? '|' S? Name)* S? ')'
+Enumeration       ::=  '(' S? Nmtoken (S? '|' S? Nmtoken)* S? ')'
+DefaultDecl       ::=  '#REQUIRED' | '#IMPLIED' | (('#FIXED' S)? AttValue)
+
+Conditional Section
+
+conditionalSect     ::=  includeSect | ignoreSect
+includeSect         ::=  '<![' S? 'INCLUDE' S? '[' extSubsetDecl ']]>'
+ignoreSect          ::=  '<![' S? 'IGNORE' S? '[' ignoreSectContents* ']]>'
+ignoreSectContents  ::= Ignore ('<![' ignoreSectContents ']]>' Ignore)*
+Ignore              ::=  Char* - (Char* ('<![' | ']]>') Char*)
+
+Character and Entity References
+
+CharRef      ::=  '&#' [0-9]+ ';' | '&#x' [0-9a-fA-F]+ ';'
+Reference    ::=  EntityRef | CharRef
+EntityRef    ::=  '&' Name ';'
+PEReference  ::=  '%' Name ';'
+
+Entity Declarations
+
+EntityDecl        ::=  GEDecl | PEDecl
+GEDecl            ::=  '<!ENTITY' S Name S EntityDef S? '>'
+PEDecl            ::=  '<!ENTITY' S '%' S Name S PEDef S? '>'
+EntityDef         ::=  EntityValue | (ExternalID NDataDecl?)
+PEDef             ::=  EntityValue | ExternalID
+ExternalID        ::=  'SYSTEM' S SystemLiteral
+                    |  'PUBLIC' S PubidLiteral S SystemLiteral
+NDataDecl         ::=  S 'NDATA' S Name
+
+Parsed Entities
+
+TextDecl      ::=  '<?xml' VersionInfo? EncodingDecl S? '?>'
+extParsedEnt  ::=  TextDecl? content
+EncodingDecl  ::=  S 'encoding' Eq ('"' EncName '"' | "'" EncName "'" )
+EncName       ::=  [A-Za-z] ([A-Za-z0-9._] | '-')*
+NotationDecl  ::=  '<!NOTATION' S Name S (ExternalID | PublicID) S? '>'
+PublicID      ::=  'PUBLIC' S PubidLiteral
