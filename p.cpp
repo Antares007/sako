@@ -1,5 +1,4 @@
 #include "_o_.hpp"
-#include "utf8.hpp"
 #include <functional>
 
 template <typename... Ts> struct print;
@@ -21,21 +20,55 @@ struct str {
 };
 
 template <typename F> ///
-struct satisfy {
+struct u8cp {
   F f;
-  template <typename U,
-            typename = std::enable_if_t<std::is_convertible_v<
-                decltype(std::declval<U>()(utf8::codepoint(""))), bool>>>
-  constexpr explicit satisfy(U &&u) noexcept : f(std::forward<U>(u)) {}
+  template <typename U, typename = std::enable_if_t<std::is_convertible_v<
+                            decltype(std::declval<U>()(9)), bool>>>
+  constexpr explicit u8cp(U &&u) noexcept : f(std::forward<U>(u)) {}
+
+  template <typename O> void operator()(const char *s, const O &o) const { ///
+    if (0x00 == (0x80 & s[0])) {
+      if (f(s[0]))
+        o(1);
+      else
+        o(-1);
+    } else if (0xc0 == (0xe0 & s[0])) {
+      if (f(((0x1f & s[0]) << 6) | (0x3f & s[1])))
+        o(2);
+      else
+        o(-1);
+    } else if (0xe0 == (0xf0 & s[0])) {
+      if (f(((0x0f & s[0]) << 12) | ((0x3f & s[1]) << 6) | (0x3f & s[2])))
+        o(3);
+      else
+        o(-1);
+    } else if (0xf0 == (0xf8 & s[0])) {
+      if (f(((0x07 & s[0]) << 18) | ((0x3f & s[1]) << 12) |
+            ((0x3f & s[2]) << 6) | (0x3f & s[3])))
+        o(4);
+      else
+        o(-1);
+    } else
+      o(-1);
+  };
+};
+template <typename F> u8cp(F)->u8cp<F>;
+
+template <typename F> ///
+struct chr {
+  F f;
+  template <typename U, typename = std::enable_if_t<std::is_convertible_v<
+                            decltype(std::declval<U>()(' ')), bool>>>
+  constexpr explicit chr(U &&u) noexcept : f(std::forward<U>(u)) {}
 
   template <typename O> void operator()(const char *in, const O &o) const { ///
-    if (in && f(utf8::codepoint(in)))
-      o(utf8::next(in) - in);
+    if (f(in[0]))
+      o(1);
     else
       o(-1);
   };
 };
-template <typename F> satisfy(F)->satisfy<F>;
+template <typename F> chr(F)->chr<F>;
 
 constexpr inline auto aray = [](auto) {};
 using aray_t = decltype(aray);
@@ -174,38 +207,15 @@ template <typename P> struct opt {
 template <typename P> opt(P)->opt<P>;
 } // namespace parse
 
-namespace parse {
-template <size_t... N> struct cp;
-template <size_t N> struct cp<N> {
-  template <typename O> void operator()(const char *in, const O &o) const { ///
-    if (utf8::codepoint(in) == N)
-      o(utf8::next(in) - in);
-    else
-      o(-1);
-  };
-};
-template <size_t S, size_t E> struct cp<S, E> {
-  template <typename O> void operator()(const char *in, const O &o) const { ///
-    const auto cp = utf8::codepoint(in);
-    if (S <= cp && cp <= E)
-      o(utf8::next(in) - in);
-    else
-      o(-1);
-  };
-};
-
-constexpr auto any() {}
-} // namespace parse
-
 namespace parse::xml {
 #define C constexpr inline auto
-C Char = satisfy([](auto c) {
+C Char = u8cp([](auto c) {
   return (c == 0x9) | (c == 0xA) | (c == 0xD) | (0x20 <= c && c <= 0xD7FF) |
          (0xE000 <= c && c <= 0xFFFD) | (0x10000 <= c && c <= 0x10FFFF);
 });
-C S = one_or_many(satisfy(
+C S = one_or_many(chr(
     [](auto c) { return (c == 0x20) | (c == 0x9) | (c == 0xD) | (c == 0xA); }));
-C BaseChar = satisfy([](auto c) {
+C BaseChar = u8cp([](auto c) {
   return (0x41 <= c && c <= 0x5A) | (0x61 <= c && c <= 0x7A) |
          (0xC0 <= c && c <= 0xD6) | (0xD8 <= c && c <= 0xF6) |
          (0xF8 <= c && c <= 0xFF) | (0x100 <= c && c <= 0x131) |
@@ -301,11 +311,11 @@ C BaseChar = satisfy([](auto c) {
          (0x30A1 <= c && c <= 0x30FA) | (0x3105 <= c && c <= 0x312C) |
          (0xAC00 <= c && c <= 0xD7A3);
 });
-C Ideographic = satisfy([](auto c) {
+C Ideographic = u8cp([](auto c) {
   return (0x4E00 <= c && c <= 0x9FA5) | (c == 0x3007) |
          (0x3021 <= c && c <= 0x3029);
 });
-C CombiningChar = satisfy([](auto c) {
+C CombiningChar = u8cp([](auto c) {
   return (0x300 <= c && c <= 0x345) | (0x360 <= c && c <= 0x361) |
          (0x483 <= c && c <= 0x486) | (0x591 <= c && c <= 0x5A1) |
          (0x5A3 <= c && c <= 0x5B9) | (0x5BB <= c && c <= 0x5BD) |
@@ -350,7 +360,7 @@ C CombiningChar = satisfy([](auto c) {
          (0x20D0 <= c && c <= 0x20DC) | (c == 0x20E1) |
          (0x302A <= c && c <= 0x302F) | (c == 0x3099) | (c == 0x309A);
 });
-C Digit = satisfy([](auto c) {
+C Digit = u8cp([](auto c) {
   return (0x30 <= c && c <= 0x39) | (0x660 <= c && c <= 0x669) |
          (0x6F0 <= c && c <= 0x6F9) | (0x966 <= c && c <= 0x96F) |
          (0x9E6 <= c && c <= 0x9EF) | (0xA66 <= c && c <= 0xA6F) |
@@ -360,7 +370,7 @@ C Digit = satisfy([](auto c) {
          (0xE50 <= c && c <= 0xE59) | (0xED0 <= c && c <= 0xED9) |
          (0xF20 <= c && c <= 0xF29);
 });
-C Extender = satisfy([](auto c) {
+C Extender = u8cp([](auto c) {
   return (c == 0xB7) | (c == 0x2D0) | (c == 0x2D1) | (c == 0x387) |
          (c == 0x640) | (c == 0xE46) | (c == 0xEC6) | (c == 0x3005) |
          (0x3031 <= c && c <= 0x3035) | (0x309D <= c && c <= 0x309E) |
