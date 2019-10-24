@@ -124,6 +124,10 @@ template <typename T, typename = if_bark_t<T>>
 constexpr auto operator&(const char *l, T &&r) {
   return and_(str{l}, std::forward<T>(r));
 }
+template <typename T, typename = if_bark_t<T>>
+constexpr auto operator&(T &&l, const char *r) {
+  return and_(std::forward<T>(l), str{r});
+}
 
 template <typename P> struct many {
   P p;
@@ -194,13 +198,14 @@ constexpr auto any() {}
 } // namespace parse
 
 namespace parse::xml {
-constexpr inline auto Char = satisfy([](auto c) {
+#define C constexpr inline auto
+C Char = satisfy([](auto c) {
   return (c == 0x9) | (c == 0xA) | (c == 0xD) | (0x20 <= c && c <= 0xD7FF) |
          (0xE000 <= c && c <= 0xFFFD) | (0x10000 <= c && c <= 0x10FFFF);
 });
-constexpr inline auto S = one_or_many(satisfy(
+C S = one_or_many(satisfy(
     [](auto c) { return (c == 0x20) | (c == 0x9) | (c == 0xD) | (c == 0xA); }));
-constexpr inline auto BaseChar = satisfy([](auto c) {
+C BaseChar = satisfy([](auto c) {
   return (0x41 <= c && c <= 0x5A) | (0x61 <= c && c <= 0x7A) |
          (0xC0 <= c && c <= 0xD6) | (0xD8 <= c && c <= 0xF6) |
          (0xF8 <= c && c <= 0xFF) | (0x100 <= c && c <= 0x131) |
@@ -296,11 +301,11 @@ constexpr inline auto BaseChar = satisfy([](auto c) {
          (0x30A1 <= c && c <= 0x30FA) | (0x3105 <= c && c <= 0x312C) |
          (0xAC00 <= c && c <= 0xD7A3);
 });
-constexpr inline auto Ideographic = satisfy([](auto c) {
+C Ideographic = satisfy([](auto c) {
   return (0x4E00 <= c && c <= 0x9FA5) | (c == 0x3007) |
          (0x3021 <= c && c <= 0x3029);
 });
-constexpr inline auto CombiningChar = satisfy([](auto c) {
+C CombiningChar = satisfy([](auto c) {
   return (0x300 <= c && c <= 0x345) | (0x360 <= c && c <= 0x361) |
          (0x483 <= c && c <= 0x486) | (0x591 <= c && c <= 0x5A1) |
          (0x5A3 <= c && c <= 0x5B9) | (0x5BB <= c && c <= 0x5BD) |
@@ -345,7 +350,7 @@ constexpr inline auto CombiningChar = satisfy([](auto c) {
          (0x20D0 <= c && c <= 0x20DC) | (c == 0x20E1) |
          (0x302A <= c && c <= 0x302F) | (c == 0x3099) | (c == 0x309A);
 });
-constexpr inline auto Digit = satisfy([](auto c) {
+C Digit = satisfy([](auto c) {
   return (0x30 <= c && c <= 0x39) | (0x660 <= c && c <= 0x669) |
          (0x6F0 <= c && c <= 0x6F9) | (0x966 <= c && c <= 0x96F) |
          (0x9E6 <= c && c <= 0x9EF) | (0xA66 <= c && c <= 0xA6F) |
@@ -355,40 +360,38 @@ constexpr inline auto Digit = satisfy([](auto c) {
          (0xE50 <= c && c <= 0xE59) | (0xED0 <= c && c <= 0xED9) |
          (0xF20 <= c && c <= 0xF29);
 });
-
-constexpr inline auto Extender = satisfy([](auto c) {
+C Extender = satisfy([](auto c) {
   return (c == 0xB7) | (c == 0x2D0) | (c == 0x2D1) | (c == 0x387) |
          (c == 0x640) | (c == 0xE46) | (c == 0xEC6) | (c == 0x3005) |
          (0x3031 <= c && c <= 0x3035) | (0x309D <= c && c <= 0x309E) |
          (0x30FC <= c && c <= 0x30FE);
 });
 
-constexpr inline auto prolog = str{""};
-constexpr inline auto Misc = str{""};
-constexpr inline auto Attribute = str{""};
-constexpr inline auto STag = str{""};
-constexpr inline auto ETag = str{""};
-constexpr inline auto content = str{""};
+C prolog = str{""};
+C Misc = str{""};
+C Attribute = str{""};
+C STag = str{""};
+C ETag = str{""};
+C content = str{""};
 
 // Letter         ::=  BaseChar | Ideographic
-constexpr inline auto Letter = BaseChar | Ideographic;
+C Letter = BaseChar | Ideographic;
 
 // NameChar  ::=  Letter | Digit |  '.' | '-' | '_' | ':' |  CombiningChar |
 // Extender
-constexpr inline auto NameChar =
-    Letter | Digit | "." | "-" | "_" | ":" | CombiningChar | Extender;
+C NameChar = Letter | Digit | "." | "-" | "_" | ":" | CombiningChar | Extender;
 
 // Name      ::=  (Letter | '_' | ':') (NameChar)*
-constexpr inline auto Name = run(Letter | "_" | ":") & many(NameChar);
+C Name = run(Letter | "_" | ":") & many(NameChar);
 
 // EmptyElemTag  ::=  '<' Name (S Attribute)* S? '/>'
-constexpr inline auto EmptyElemTag = "<" & Name & many(S & Attribute) & opt(S);
+C EmptyElemTag = "<" & Name & many(S & Attribute) & opt(S) & "/>";
 
 // element       ::=  EmptyElemTag  | STag content ETag
-constexpr inline auto element = EmptyElemTag | STag & content & ETag;
+C element = EmptyElemTag | STag & content & ETag;
 
 // document  ::=  prolog element Misc*
-constexpr inline auto document = prolog & element & many(Misc);
+C document = prolog & element & many(Misc);
 
 } // namespace parse::xml
 
