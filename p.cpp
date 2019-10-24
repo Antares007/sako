@@ -377,12 +377,8 @@ C Extender = u8cp([](auto c) {
          (0x30FC <= c && c <= 0x30FE);
 });
 
-C prolog = str{""};
-C Misc = str{""};
-C Attribute = str{""};
-C STag = str{""};
-C ETag = str{""};
-C content = str{""};
+// Eq           ::=  S? '=' S?
+C Eq = opt(S) & "=" & opt(S);
 
 // Letter         ::=  BaseChar | Ideographic
 C Letter = BaseChar | Ideographic;
@@ -394,8 +390,57 @@ C NameChar = Letter | Digit | "." | "-" | "_" | ":" | CombiningChar | Extender;
 // Name      ::=  (Letter | '_' | ':') (NameChar)*
 C Name = run(Letter | "_" | ":") & many(NameChar);
 
+C prolog = str{""};
+C Misc = str{""};
+
+
+C digit = chr{[](char c) { return '0' <= c && c <= '9'; }};
+C hexdigit = chr{[](char c) {
+  return '0' <= c && c <= '9' | 'a' <= c && c <= 'f' | 'A' <= c && c <= 'F';
+}};
+// CharRef      ::=  '&#' [0-9]+ ';' | '&#x' [0-9a-fA-F]+ ';'
+C CharRef =
+    "&#" & one_or_many(digit) & ";" | "&#x" & one_or_many(hexdigit) & ";";
+
+C EntityRef = "&" & Name & ";";
+
+// Reference    ::=  EntityRef | CharRef
+C Reference = EntityRef | CharRef;
+
+C noneof = [](const char *chars) {
+  return chr([=](char c) { ///
+    int i = 0;
+    while (char m = chars[i]) {
+      if (m == c)
+        return false;
+      i++;
+    }
+    return true;
+  });
+};
+
+// AttValue       ::=  '"' ([^<&"] | Reference)* '"'
+//                 |  "'" ([^<&'] | Reference)* "'"
+C AttValue = "\"" & many(noneof("<&\"") | Reference) & "\"" |
+             "'" & many(noneof("<&'") | Reference) & "'";
+
+// Attribute     ::=  Name Eq AttValue
+C Attribute = Name & Eq & AttValue;
+
 // EmptyElemTag  ::=  '<' Name (S Attribute)* S? '/>'
 C EmptyElemTag = "<" & Name & many(S & Attribute) & opt(S) & "/>";
+
+// STag          ::=  '<' Name (S Attribute)* S? '>'
+C STag = "<" & Name & many(S & Attribute) & opt(S) & ">";
+
+// ETag          ::=  '</' Name S? '>'
+C ETag = "</" & Name & opt(S) & ">";
+
+// CharData  ::=  [^<&]* - ([^<&]* ']]>' [^<&]*)
+
+// content       ::=  CharData?
+//                   ((element | Reference | CDSect | PI | Comment) CharData?)*
+C content = str{""};
 
 // element       ::=  EmptyElemTag  | STag content ETag
 C element = EmptyElemTag | STag & content & ETag;
