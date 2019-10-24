@@ -19,7 +19,7 @@ struct str {
     o(i);
   }
 };
-
+inline namespace {    /// u8cp
 template <typename F> ///
 struct u8cp {
   F f;
@@ -57,7 +57,8 @@ struct u8cp {
   };
 };
 template <typename F> u8cp(F)->u8cp<F>;
-
+} // namespace
+inline namespace {    /// chr
 template <typename F> ///
 struct chr {
   F f;
@@ -74,14 +75,16 @@ struct chr {
   };
 };
 template <typename F> chr(F)->chr<F>;
-
+} // namespace
+inline namespace { /// concepts
 constexpr inline auto aray = [](auto) {};
 using aray_t = decltype(aray);
 
 template <typename T>
 using if_bark_t = std::enable_if_t<
     std::is_invocable_r_v<void, T, const char *, size_t, aray_t>>;
-
+} // namespace
+inline namespace {    /// run
 template <typename P> ///
 struct run {
   P p;
@@ -103,7 +106,8 @@ struct run {
   };
 };
 template <typename P> run(P)->run<P>;
-
+} // namespace
+inline namespace {                /// or
 template <typename L, typename R> ///
 struct or_ {
   L l;
@@ -134,7 +138,8 @@ template <typename L, typename = if_bark_t<L>>
 constexpr auto operator|(L &&l, const char *r) {
   return or_(std::forward<L>(l), str{r});
 }
-
+} // namespace
+inline namespace {                /// and
 template <typename L, typename R> ///
 struct and_ {
   L l;
@@ -169,7 +174,8 @@ template <typename T, typename = if_bark_t<T>>
 constexpr auto operator&(T &&l, const char *r) {
   return and_(std::forward<T>(l), str{r});
 }
-
+} // namespace
+inline namespace { /// many
 template <typename P> struct many {
   P p;
   template <typename U, typename = if_bark_t<U>>
@@ -188,7 +194,8 @@ template <typename P> struct many {
   }
 };
 template <typename P> many(P)->many<P>;
-
+} // namespace
+inline namespace { /// one_or_many
 template <typename P> struct one_or_many {
   P p;
   template <typename U, typename = if_bark_t<U>>
@@ -204,7 +211,8 @@ template <typename P> struct one_or_many {
   }
 };
 template <typename P> one_or_many(P)->one_or_many<P>;
-
+} // namespace
+inline namespace { /// opt
 template <typename P> struct opt {
   P p;
   template <typename U, typename = if_bark_t<U>>
@@ -216,6 +224,7 @@ template <typename P> struct opt {
   }
 };
 template <typename P> opt(P)->opt<P>;
+} // namespace
 } // namespace parse
 
 namespace parse::xml {
@@ -479,11 +488,10 @@ static void t() {
         std::cout << "[" << std::string_view(in, x) << "] [" << in + x << "]\n";
     });
   };
+
   run("01!`ა\001ბAB", one_or_many{xml::Char});
 
-  run("აბვ", str{"ა"});
-
-  run("ACBABABAB", many{str{"A"} | str{"B"} | str{"C"}});
+  run("ACBაoBABAB", many{str{"A"} | "B" | "C" | "ა"});
 }
 
 auto main() -> int {
