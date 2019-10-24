@@ -8,10 +8,11 @@ namespace parse {
 struct str {
   const char *str_;
   constexpr explicit str(const char *rhs) noexcept : str_(rhs) {}
-  template <typename O> void operator()(const char *in, const O &o) const {
+  template <typename O>
+  void operator()(const char *in, size_t avail, const O &o) const {
     int i = 0;
     while (char c = str_[i]) {
-      if (c != in[i])
+      if (c != in[i] || avail <= static_cast<size_t>(i))
         return o(-1);
       i++;
     }
@@ -26,7 +27,10 @@ struct u8cp {
                             decltype(std::declval<U>()(9)), bool>>>
   constexpr explicit u8cp(U &&u) noexcept : f(std::forward<U>(u)) {}
 
-  template <typename O> void operator()(const char *s, const O &o) const { ///
+  template <typename O>
+  void operator()(const char *s, size_t avail, const O &o) const { ///
+    if (avail < 1)
+      return o(-1);
     if (0x00 == (0x80 & s[0])) {
       if (f(s[0]))
         o(1);
@@ -61,8 +65,9 @@ struct chr {
                             decltype(std::declval<U>()(' ')), bool>>>
   constexpr explicit chr(U &&u) noexcept : f(std::forward<U>(u)) {}
 
-  template <typename O> void operator()(const char *in, const O &o) const { ///
-    if (f(in[0]))
+  template <typename O>
+  void operator()(const char *in, size_t avail, const O &o) const { ///
+    if (0 < avail && f(in[0]))
       o(1);
     else
       o(-1);
@@ -74,8 +79,8 @@ constexpr inline auto aray = [](auto) {};
 using aray_t = decltype(aray);
 
 template <typename T>
-using if_bark_t =
-    std::enable_if_t<std::is_invocable_r_v<void, T, const char *, aray_t>>;
+using if_bark_t = std::enable_if_t<
+    std::is_invocable_r_v<void, T, const char *, size_t, aray_t>>;
 
 template <typename P> ///
 struct run {
@@ -83,9 +88,10 @@ struct run {
   template <typename U, typename = if_bark_t<U>>
   constexpr explicit run(U &&u) noexcept : p(std::forward<U>(u)) {}
 
-  template <typename O> void operator()(const char *in, const O &o) const { ///
+  template <typename O>
+  void operator()(const char *in, size_t avail, const O &o) const { ///
     int next = 0;
-    p(in, [&next](int x) {
+    p(in, avail, [&next](int x) {
       if (0 <= next) {
         if (x < 0)
           next = x;
@@ -107,10 +113,11 @@ struct or_ {
   constexpr explicit or_(UL &&ul, UR &&ur) noexcept
       : l(std::forward<UL>(ul)), r(std::forward<UR>(ur)) {}
 
-  template <typename O> void operator()(const char *in, const O &o) const { ///
-    l(in, [&](int x) {
+  template <typename O>
+  void operator()(const char *in, size_t avail, const O &o) const { ///
+    l(in, avail, [&](int x) {
       if (x < 0)
-        r(in, o);
+        r(in, avail, o);
       else
         o(x);
     });
@@ -138,11 +145,12 @@ struct and_ {
 
       : l(std::forward<UL>(ul)), r(std::forward<UR>(ur)) {}
 
-  template <typename O> void operator()(const char *in, const O &o) const { ///
-    l(in, [&](int x) {
+  template <typename O>
+  void operator()(const char *in, size_t avail, const O &o) const { ///
+    l(in, avail, [&](int x) {
       o(x);
       if (0 <= x)
-        r(in + x, o);
+        r(in + x, avail - x, o);
     });
   };
 };
@@ -167,13 +175,14 @@ template <typename P> struct many {
   template <typename U, typename = if_bark_t<U>>
   constexpr explicit many(U &&u) noexcept : p(std::forward<U>(u)) {}
 
-  template <typename O> void operator()(const char *in, const O &o) const {
-    p(in, [&](int x) {
+  template <typename O>
+  void operator()(const char *in, size_t avail, const O &o) const {
+    p(in, avail, [&](int x) {
       if (x < 0)
         o(0);
       else {
         o(x);
-        this->operator()(in + x, o);
+        this->operator()(in + x, avail - x, o);
       }
     });
   }
@@ -185,11 +194,12 @@ template <typename P> struct one_or_many {
   template <typename U, typename = if_bark_t<U>>
   constexpr explicit one_or_many(U &&u) noexcept : p(std::forward<U>(u)) {}
 
-  template <typename O> void operator()(const char *in, const O &o) const {
-    p(in, [&](int x) {
+  template <typename O>
+  void operator()(const char *in, size_t avail, const O &o) const {
+    p(in, avail, [&](int x) {
       o(x);
       if (0 <= x)
-        many{p}(in + x, o);
+        many{p}(in + x, avail - x, o);
     });
   }
 };
@@ -200,8 +210,9 @@ template <typename P> struct opt {
   template <typename U, typename = if_bark_t<U>>
   constexpr explicit opt(U &&u) noexcept : p(std::forward<U>(u)) {}
 
-  template <typename O> void operator()(const char *in, const O &o) const {
-    p(in, [&](int x) { o(x < 0 ? 0 : x); });
+  template <typename O>
+  void operator()(const char *in, size_t avail, const O &o) const {
+    p(in, avail, [&](int x) { o(x < 0 ? 0 : x); });
   }
 };
 template <typename P> opt(P)->opt<P>;
@@ -458,7 +469,10 @@ C document = prolog & element & many(Misc);
 static void t() {
   using namespace parse;
   auto run = [](const char *in, const auto &parser) {
-    parse::run{parser}(in, [=](int x) {
+    size_t Size = 0;
+    while (in[Size] != '\0')
+      Size++;
+    parse::run{parser}(in, Size, [=](int x) {
       if (x < 0)
         std::cout << "error\n";
       else
