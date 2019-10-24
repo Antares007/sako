@@ -107,6 +107,33 @@ struct run {
 };
 template <typename P> run(P)->run<P>;
 } // namespace
+inline namespace {                /// minus
+template <typename L, typename R> ///
+struct minus {
+  L l;
+  R r;
+  template <typename UL, typename UR, typename = if_bark_t<UL>,
+            typename = if_bark_t<UR>>
+  constexpr explicit minus(UL &&ul, UR &&ur) noexcept
+      : l(std::forward<UL>(ul)), r(std::forward<UR>(ur)) {}
+  template <typename O>
+  void operator()(const char *in, size_t avail, const O &o) const { ///
+    l(in, avail, [&](int x) {
+      if (x < 0)
+        o(x);
+      else
+        r(in, x, [x_ = x, &o](int x) { o(x < 0 ? x_ : -1); });
+    });
+  };
+};
+template <typename L, typename R> minus(L, R)->minus<L, R>;
+
+template <typename L, typename R, typename = if_bark_t<L>,
+          typename = if_bark_t<R>>
+constexpr auto operator-(L &&l, R &&r) {
+  return minus(std::forward<L>(l), std::forward<R>(r));
+}
+} // namespace
 inline namespace {                /// or
 template <typename L, typename R> ///
 struct or_ {
@@ -457,16 +484,27 @@ C STag = "<" & Name & many(S & Attribute) & opt(S) & ">";
 C ETag = "</" & Name & opt(S) & ">";
 
 // CharData  ::=  [^<&]* - ([^<&]* ']]>' [^<&]*)
+C CharData =
+    many(noneof("<&")) - run(many(noneof("<&")) & "]]>" & many(noneof("<&")));
+C Comment = str{""};
+C CDSect = str{""};
+C PI = str{""};
 
-// content       ::=  CharData?
-//                   ((element | Reference | CDSect | PI | Comment) CharData?)*
-C content = str{""};
-
-// element       ::=  EmptyElemTag  | STag content ETag
-C element = EmptyElemTag | STag & content & ETag;
+struct element {
+  template <typename O>
+  void operator()(const char *in, size_t avail, const O &o) const {
+    // content       ::=  CharData?
+    //                   ((element | Reference | CDSect | PI | Comment)
+    //                   CharData?)*
+    auto content =
+        opt(CharData) &
+        many((*this | Reference | CDSect | PI | Comment) & opt(CharData));
+    (EmptyElemTag | STag & content & ETag)(in, avail, o);
+  }
+};
 
 // document  ::=  prolog element Misc*
-C document = prolog & element & many(Misc);
+C document = prolog & element{} & many(Misc);
 
 } // namespace parse::xml
 
@@ -491,7 +529,7 @@ static void t() {
 
   run("01!`ა\001ბAB", one_or_many{xml::Char});
 
-  run("ACBაoBABAB", many{str{"A"} | "B" | "C" | "ა"});
+  run("ACBაoBABAB", many{(str{"A"} | "o" | "B" | "C" | "ა") - str{"o"}});
 }
 
 auto main() -> int {
