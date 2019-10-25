@@ -44,6 +44,7 @@ C treebuilder_new = git::lift{git_treebuilder_new, git_treebuilder_free};
 C treebuilder_write = git::lift{git_treebuilder_write};
 C oid_fromstr = git::lift{git_oid_fromstr};
 C revparse = git::lift{git_revparse};
+C blob_lookup = git::lift{git_blob_lookup, git_blob_free};
 
 template <typename Pith> struct bark {
   Pith pith;
