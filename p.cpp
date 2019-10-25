@@ -205,7 +205,8 @@ C Misc = str{""};
 
 C digit = chr{[](char c) { return '0' <= c && c <= '9'; }};
 C hexdigit = chr{[](char c) {
-  return '0' <= c && c <= '9' | 'a' <= c && c <= 'f' | 'A' <= c && c <= 'F';
+  return ('0' <= c && c <= '9') || ('a' <= c && c <= 'f') ||
+         ('A' <= c && c <= 'F');
 }};
 // CharRef      ::=  '&#' [0-9]+ ';' | '&#x' [0-9a-fA-F]+ ';'
 C CharRef =
@@ -274,13 +275,8 @@ C document = prolog & element{} & many{Misc};
 #include <fstream>
 #include <iostream>
 #include <tuple>
-template <typename T> struct A {
 
-  T t;
-};
-template <typename U, typename = parsec::if_bark_t<U>> A(U)->A<U>;
 static void t() {
-  auto x = A{[](auto, auto, auto) {}};
   using namespace parsec;
   auto run = [](const char *in, const auto &parser) {
     size_t Size = 0;
