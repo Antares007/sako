@@ -34,6 +34,9 @@ lift(int (*)(T *, Args...))->lift<T, Args...>;
 
 #define C constexpr inline auto
 
+C BLOB = GIT_FILEMODE_BLOB;
+C TREE = GIT_FILEMODE_TREE;
+
 C repository_open = git::lift{git_repository_open, git_repository_free};
 C tree_lookup = git::lift{git_tree_lookup, git_tree_free};
 C treebuilder_new = git::lift{git_treebuilder_new, git_treebuilder_free};
@@ -70,12 +73,9 @@ template <typename Pith> struct bark {
   }
 };
 template <typename Pith> bark(Pith)->bark<Pith>; ///
-
-inline auto BLOB = GIT_FILEMODE_BLOB;
-inline auto TREE = GIT_FILEMODE_TREE;
-
 } // namespace git
 
+#ifndef NVIM
 #include <iostream>
 auto main() -> int {
   git_libgit2_init();
@@ -123,3 +123,4 @@ auto main() -> int {
            }});
   return 3;
   }
+#endif
