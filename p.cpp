@@ -4,7 +4,6 @@
 template <typename... Ts> struct print;
 
 namespace parse {
-
 struct str {
   const char *str_;
   constexpr explicit str(const char *rhs) noexcept : str_(rhs) {}
@@ -84,29 +83,6 @@ template <typename T>
 using if_bark_t = std::enable_if_t<
     std::is_invocable_r_v<void, T, const char *, size_t, aray_t>>;
 } // namespace
-inline namespace {    /// run
-template <typename P> ///
-struct run {
-  P p;
-  template <typename U, typename = if_bark_t<U>>
-  constexpr explicit run(U &&u) noexcept : p(std::forward<U>(u)) {}
-
-  template <typename O>
-  void operator()(const char *in, size_t avail, const O &o) const { ///
-    int next = 0;
-    p(in, avail, [&next](int x) {
-      if (0 <= next) {
-        if (x < 0)
-          next = x;
-        else
-          next += x;
-      }
-    });
-    o(next);
-  };
-};
-template <typename P> run(P)->run<P>;
-} // namespace
 inline namespace {                /// minus
 template <typename L, typename R> ///
 struct minus {
@@ -180,9 +156,10 @@ struct and_ {
   template <typename O>
   void operator()(const char *in, size_t avail, const O &o) const { ///
     l(in, avail, [&](int x) {
-      o(x);
-      if (0 <= x)
-        r(in + x, avail - x, o);
+      if (x < 0)
+        o(x);
+      else
+        r(in + x, avail - x, [&](int x2) { o(x2 < 0 ? x2 : x2 + x); });
     });
   };
 };
@@ -209,13 +186,13 @@ template <typename P> struct many {
   constexpr explicit many(U &&u) noexcept : p(std::forward<U>(u)) {}
 
   template <typename O>
-  void operator()(const char *in, size_t avail, const O &o) const {
+  void operator()(const char *in, size_t avail, const O &o,
+                  size_t a = 0) const {
     p(in, avail, [&](int x) {
       if (x < 0)
-        o(0);
+        o(a);
       else {
-        o(x);
-        this->operator()(in + x, avail - x, o);
+        this->operator()(in + x, avail - x, o, a + x);
       }
     });
   }
@@ -231,9 +208,11 @@ template <typename P> struct one_or_many {
   template <typename O>
   void operator()(const char *in, size_t avail, const O &o) const {
     p(in, avail, [&](int x) {
-      o(x);
-      if (0 <= x)
-        many{p}(in + x, avail - x, o);
+      if (x < 0)
+        o(x);
+      else {
+        many{p}(in + x, avail - x, o, x);
+      }
     });
   }
 };
@@ -430,12 +409,24 @@ C Eq = opt(S) & "=" & opt(S);
 // Letter         ::=  BaseChar | Ideographic
 C Letter = BaseChar | Ideographic;
 
+C anyof = [](const char *chars) {
+  return chr([=](char c) { ///
+    int i = 0;
+    while (char m = chars[i]) {
+      if (m == c)
+        return true;
+      i++;
+    }
+    return false;
+  });
+};
+
 // NameChar  ::=  Letter | Digit |  '.' | '-' | '_' | ':' |  CombiningChar |
 // Extender
-C NameChar = Letter | Digit | "." | "-" | "_" | ":" | CombiningChar | Extender;
+C NameChar = Letter | Digit | anyof(".-_:") | CombiningChar | Extender;
 
 // Name      ::=  (Letter | '_' | ':') (NameChar)*
-C Name = run(Letter | "_" | ":") & many(NameChar);
+C Name = (Letter | "_" | ":") & many(NameChar);
 
 C prolog = str{""};
 C Misc = str{""};
@@ -485,7 +476,7 @@ C ETag = "</" & Name & opt(S) & ">";
 
 // CharData  ::=  [^<&]* - ([^<&]* ']]>' [^<&]*)
 C CharData =
-    many(noneof("<&")) - run(many(noneof("<&")) & "]]>" & many(noneof("<&")));
+    many(noneof("<&")) - many(noneof("<&")) & "]]>" & many(noneof("<&"));
 C Comment = str{""};
 C CDSect = str{""};
 C PI = str{""};
@@ -512,28 +503,34 @@ C document = prolog & element{} & many(Misc);
 #include <fstream>
 #include <iostream>
 #include <tuple>
-
+struct A {};
 static void t() {
   using namespace parse;
   auto run = [](const char *in, const auto &parser) {
     size_t Size = 0;
     while (in[Size] != '\0')
       Size++;
-    parse::run{parser}(in, Size, [=](int x) {
+    size_t pos = 0;
+    parser(in, Size, [&](int x) {
       if (x < 0)
-        std::cout << "error\n";
-      else
-        std::cout << "[" << std::string_view(in, x) << "] [" << in + x << "]\n";
+        std::cout << "error: " << x << "\n";
+      else {
+        pos += x;
+        std::cout << "[" << std::string_view(in, pos) << "] [" << in + pos
+                  << "]\n";
+      }
     });
   };
 
-  run("01!`ა\001ბAB", one_or_many{xml::Char});
-
-  run("ACBაoBABAB", many{(str{"A"} | "o" | "B" | "C" | "ა") - str{"o"}});
+  //  run("01!`ა\001ბAB", one_or_many{xml::Char});
+  run("<Tag n = 'abo' />", xml::EmptyElemTag);
+  // run("ACBაoBABAB", one_or_many{(str{"A"} | "o" | "B" | "C" | "ა") -
+  // str{"o"}});
 }
 
 auto main() -> int {
   t();
+  exit(0);
   std::ifstream s("MyTest.xlsx", std::ios::binary);
   s.seekg(0, std::ios_base::end);
   const size_t size = static_cast<std::size_t>(s.tellg());
