@@ -76,12 +76,9 @@ struct chr {
 template <typename F> chr(F)->chr<F>;
 } // namespace
 inline namespace { /// concepts
-constexpr inline auto aray = [](auto) {};
-using aray_t = decltype(aray);
-
 template <typename T>
 using if_bark_t = std::enable_if_t<
-    std::is_invocable_r_v<void, T, const char *, size_t, aray_t>>;
+    std::is_invocable_r_v<void, T, const char *, size_t, ray<>>>;
 } // namespace
 inline namespace {                /// minus
 template <typename L, typename R> ///

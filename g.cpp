@@ -1,32 +1,8 @@
+#include "_o_.hpp"
 #include <functional>
 #include <git2.h>
 
-namespace abo {
-template <class... O> struct o : O... { using O::operator()...; };
-template <class... O> o(O...)->o<O...>;
-
-template <typename... Ts> struct print;
-
-template <typename... T> struct ray;
-template <> struct ray<> {
-  template <typename U> void operator()(U &&) const {}
-};
-template <typename T> struct ray<T> { void operator()(T &&) const {}; };
-template <typename T, typename... Rest>
-struct ray<T, Rest...> : ray<T>, ray<Rest...> {
-  using ray<T>::operator();
-  using ray<Rest...>::operator();
-};
-
-template <typename A, typename F>
-constexpr auto operator|(A &&a, F &&f)
-    -> decltype(std::invoke(std::forward<F>(f), std::forward<A>(a))) {
-  return std::invoke(std::forward<F>(f), std::forward<A>(a));
-}
-} // namespace abo
-
-namespace abo::git {
-
+namespace git {
 template <typename... Args> struct lift;
 template <typename T, typename... Args> struct lift<T *, Args...> {
   int (*ctor)(T **, Args...);
@@ -41,7 +17,6 @@ template <typename T, typename... Args> struct lift<T *, Args...> {
     }
   }
 };
-
 template <typename T, typename... Args> struct lift<T, Args...> {
   int (*ctor)(T *, Args...);
   template <typename O> void operator()(Args... args, O &&o) const {
@@ -52,29 +27,20 @@ template <typename T, typename... Args> struct lift<T, Args...> {
       o(v);
   }
 };
-
 template <typename T, typename... Args>
 lift(int (*)(T **, Args...), void (*)(T *))->lift<T *, Args...>;
 template <typename T, typename... Args>
 lift(int (*)(T *, Args...))->lift<T, Args...>;
 
-} // namespace abo::git
+#define C constexpr inline auto
 
-#include <iostream>
+C repository_open = git::lift{git_repository_open, git_repository_free};
+C tree_lookup = git::lift{git_tree_lookup, git_tree_free};
+C treebuilder_new = git::lift{git_treebuilder_new, git_treebuilder_free};
 
-inline auto O = []<typename... Rays>(Rays... rays) {
-  return abo::o<Rays...>{rays...};
-};
-
-inline auto repository_open =
-    abo::git::lift{git_repository_open, git_repository_free};
-inline auto tree_lookup = abo::git::lift{git_tree_lookup, git_tree_free};
-inline auto treebuilder_new =
-    abo::git::lift{git_treebuilder_new, git_treebuilder_free};
-
-inline auto treebuilder_write = abo::git::lift{git_treebuilder_write};
-inline auto oid_fromstr = abo::git::lift{git_oid_fromstr};
-inline auto revparse = abo::git::lift{git_revparse};
+C treebuilder_write = git::lift{git_treebuilder_write};
+C oid_fromstr = git::lift{git_oid_fromstr};
+C revparse = git::lift{git_revparse};
 
 template <typename Pith> struct bark {
   Pith pith;
@@ -83,27 +49,24 @@ template <typename Pith> struct bark {
   void operator()(git_repository *repo, O &&o) const {
     treebuilder_new(
         repo, nullptr,
-        abo::o{o, [&](git_treebuilder *bld) { ///
-                 pith([&]<typename T>(const char *name, git_filemode_t mode,
-                                      T r) { ///
-
-                   if constexpr (std::is_invocable_r_v<void, T,
-                                                       abo::ray<int, git_oid>>)
-                     r(abo::o{[&](int err) { o(err); },
+        _o_{o, [&](git_treebuilder *bld) { ///
+              pith([&]<typename T>(const char *name, git_filemode_t mode,
+                                   T r) { ///
+                if constexpr (std::is_invocable_r_v<void, T, ray<int, git_oid>>)
+                  r(_o_{[&](int err) { o(err); },
+                        [&](git_oid id) {
+                          git_treebuilder_insert(nullptr, bld, name, &id, mode);
+                        }});
+                else
+                  r(repo, _o_{[&](int err) { o(err); },
                               [&](git_oid id) {
                                 git_treebuilder_insert(nullptr, bld, name, &id,
                                                        mode);
                               }});
-                   else
-                     r(repo, abo::o{[&](int err) { o(err); },
-                                    [&](git_oid id) {
-                                      git_treebuilder_insert(nullptr, bld, name,
-                                                             &id, mode);
-                                    }});
 
-                 });
-                 treebuilder_write(bld, o);
-               }});
+              });
+              treebuilder_write(bld, o);
+            }});
   }
 };
 template <typename Pith> bark(Pith)->bark<Pith>; ///
@@ -111,52 +74,52 @@ template <typename Pith> bark(Pith)->bark<Pith>; ///
 inline auto BLOB = GIT_FILEMODE_BLOB;
 inline auto TREE = GIT_FILEMODE_TREE;
 
+} // namespace git
+
+#include <iostream>
 auto main() -> int {
   git_libgit2_init();
-
   auto pith = [](auto o) {
     o("...start");
     o(1);
     o("end...");
-    repository_open(".", O(o, [&](git_repository *repo) {
-                      const auto pid = std::bind_front(
-                          oid_fromstr,
-                          "2096476c4b64612e8db373e838078ee213527476");
+    git::repository_open(
+        ".", _o_{o, [&](git_repository *repo) {
+                   const auto pid = std::bind_front(
+                       git::oid_fromstr,
+                       "2096476c4b64612e8db373e838078ee213527476");
 
-                      auto amocana1 = bark{[&, op = o](auto o) { ///
+                   auto amocana1 = git::bark{[&, op = o](auto o) { ///
+                     op("hello");
+                     // o("readme.txt", BLOB, "hello world!\n");
 
-                        op("hello");
-                        // o("readme.txt", BLOB, "hello world!\n");
+                     o("Aaaaaa", git::TREE, pid); ///
+                     o("Bbbb", git::TREE, pid);
 
+                     op("world");
 
-                        o("Aaaaaa", TREE, pid); ///
-                        o("Bbbb", TREE, pid);
+                   }};
 
-                        op("world");
+                   amocana1(repo, o);
 
-                      }};
-
-                      amocana1(repo, o);
-
-                      bark{[&](auto o) { ///
-                        o("A", TREE, pid);
-                        o("B", TREE, bark{[&](auto o) { ///
-                            o("A", TREE, pid);
-                            o("B", TREE, pid);
-                          }});
-                      }}(repo, o);
-
-                    }));
+                   git::bark{[&](auto o) { ///
+                     o("A", git::TREE, pid);
+                     o("B", git::TREE, git::bark{[&](auto o) { ///
+                         o("A", git::TREE, pid);
+                         o("B", git::TREE, pid);
+                       }});
+                   }}(repo, o);
+                 }});
   };
 
-  pith(abo::o{[](int err) { ///
-                std::cout << err << '\n';
-              },
-              [](git_oid id) { ///
-                std::cout << git_oid_tostr_s(&id) << '\n';
-              },
-              [](auto r) { ///
-                std::cout << " !!!! " << r << '\n';
-              }});
+  pith(_o_{[](int err) { ///
+             std::cout << err << '\n';
+           },
+           [](git_oid id) { ///
+             std::cout << git_oid_tostr_s(&id) << '\n';
+           },
+           [](auto r) { ///
+             std::cout << " !!!! " << r << '\n';
+           }});
   return 3;
   }
