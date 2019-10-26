@@ -105,7 +105,9 @@ auto main() -> int {
                                      i < git_tree_entrycount(tree); i++) {
                                   ;
                                   auto e = git_tree_entry_byindex(tree, i);
-                                  std::cout << git_tree_entry_name(e) << "\n";
+                                  std::cout << git_tree_entry_filemode(e)
+                                            << " - " << git_tree_entry_name(e)
+                                            << "\n";
                                 }
                                 std::cout
                                     << "ahaaa "
