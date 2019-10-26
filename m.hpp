@@ -26,3 +26,7 @@
           A && a, B && b) {                                                    \
     return name##_fn<A, B>{std::forward<A>(a), std::forward<B>(b)};            \
   }
+#define BOP(oper, ...)                                                         \
+  template <typename L, typename R,                                            \
+            typename = std::enable_if_t<std::conjunction_v<__VA_ARGS__>>>      \
+  constexpr auto operator oper(L &&l, R &&r)

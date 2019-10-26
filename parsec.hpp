@@ -4,6 +4,9 @@
 #include <functional>
 
 namespace parsec {
+template <typename T>
+using is_bark = std::is_invocable_r<void, T, ray<>, const char *, size_t>;
+
 struct str {
   const char *str_;
   MO()(const char *in, size_t avail) {
@@ -46,18 +49,15 @@ MO()(const char *s, size_t avail) { ///
 };
 UFE(u8cp, std::is_convertible<decltype(std::declval<A>()(9)), bool>);
 UFB(chr);
-MO()(const char *in, size_t avail) { ///
+MO()(const char *in, size_t avail) {
   if (0 < avail && a(in[0]))
     o(1);
   else
     o(-1);
 };
 UFE(chr, std::is_convertible<decltype(std::declval<A>()(' ')), bool>);
-template <typename T>
-using if_bark_t = std::enable_if_t<
-    std::is_invocable_r_v<void, T, ray<>, const char *, size_t>>;
 BFB(minus);
-MO()(const char *in, size_t avail) { ///
+MO()(const char *in, size_t avail) {
   a(
       [&](int x) {
         if (x < 0)
@@ -67,15 +67,9 @@ MO()(const char *in, size_t avail) { ///
       },
       in, avail);
 };
-BFE(minus, std::is_invocable_r<void, A, ray<>, const char *, size_t>);
-
-template <typename L, typename R, typename = if_bark_t<L>,
-          typename = if_bark_t<R>>
-constexpr auto operator-(L &&l, R &&r) {
-  return minus_fn<L, R>{std::forward<L>(l), std::forward<R>(r)};
-}
+BFE(minus, is_bark<A>);
 BFB(or_);
-MO()(const char *in, size_t avail) { ///
+MO()(const char *in, size_t avail) {
   a(
       [&](int x) {
         if (x < 0)
@@ -85,20 +79,9 @@ MO()(const char *in, size_t avail) { ///
       },
       in, avail);
 };
-BFE(or_, std::is_invocable_r<void, A, ray<>, const char *, size_t>,
-    std::is_invocable_r<void, B, ray<>, const char *, size_t>);
-
-template <typename L, typename R, typename = if_bark_t<L>,
-          typename = if_bark_t<R>>
-constexpr auto operator|(L &&l, R &&r) {
-  return or_(std::forward<L>(l), std::forward<R>(r));
-}
-template <typename L, typename = if_bark_t<L>>
-constexpr auto operator|(L &&l, const char *r) {
-  return or_(std::forward<L>(l), str{r});
-}
+BFE(or_, is_bark<A>, is_bark<B>);
 BFB(and_);
-MO()(const char *in, size_t avail) { ///
+MO()(const char *in, size_t avail) {
   a(
       [&](int x) {
         if (x < 0)
@@ -108,9 +91,61 @@ MO()(const char *in, size_t avail) { ///
       },
       in, avail);
 };
-BFE(and_, std::is_invocable_r<void, A, ray<>, const char *, size_t>,
-    std::is_invocable_r<void, B, ray<>, const char *, size_t>);
+BFE(and_, is_bark<A>, is_bark<B>);
+UFB(many);
+MO()(const char *in, size_t avail, size_t acc = 0) {
+  a(
+      [&](int x) {
+        if (x < 0)
+          o(acc);
+        else {
+          this->operator()(o, in + x, avail - x, acc + x);
+        }
+      },
+      in, avail);
+}
+UFE(many, is_bark<A>);
+UFB(one_or_many);
+MO()(const char *in, size_t avail) {
+  a(
+      [&](int x) {
+        if (x < 0)
+          o(x);
+        else {
+          many(a)(o, in + x, avail - x, x);
+        }
+      },
+      in, avail);
+}
+UFE(one_or_many, is_bark<A>);
+UFB(opt);
+MO()(const char *in, size_t avail) {
+  a([&](int x) { o(x < 0 ? 0 : x); }, in, avail);
+}
+UFE(opt, std::is_invocable_r<void, A, ray<>, const char *, size_t>);
+} // namespace parsec
 
+namespace parsec { // operators
+template <typename T>
+using if_bark_t = std::enable_if_t<
+    std::is_invocable_r_v<void, T, ray<>, const char *, size_t>>;
+
+template <typename T> using is_ccharptr = std::is_convertible<T, const char *>;
+
+template <typename L, typename R, typename = if_bark_t<L>,
+          typename = if_bark_t<R>>
+constexpr auto operator-(L &&l, R &&r) {
+  return minus(std::forward<L>(l), std::forward<R>(r));
+}
+template <typename L, typename R, typename = if_bark_t<L>,
+          typename = if_bark_t<R>>
+constexpr auto operator|(L &&l, R &&r) {
+  return or_(std::forward<L>(l), std::forward<R>(r));
+}
+template <typename L, typename = if_bark_t<L>>
+constexpr auto operator|(L &&l, const char *r) {
+  return or_(std::forward<L>(l), str{r});
+}
 template <typename L, typename R, typename = if_bark_t<L>,
           typename = if_bark_t<R>>
 constexpr auto operator&(L &&l, R &&r) {
@@ -124,36 +159,4 @@ template <typename T, typename = if_bark_t<T>>
 constexpr auto operator&(T &&l, const char *r) {
   return and_(std::forward<T>(l), str{r});
 }
-UFB(many);
-MO()(const char *in, size_t avail, size_t acc = 0) {
-  a(
-      [&](int x) {
-        if (x < 0)
-          o(acc);
-        else {
-          this->operator()(o, in + x, avail - x, acc + x);
-        }
-      },
-      in, avail);
-}
-UFE(many, std::is_invocable_r<void, A, ray<>, const char *, size_t>);
-UFB(one_or_many);
-MO()(const char *in, size_t avail) {
-  a(
-      [&](int x) {
-        if (x < 0)
-          o(x);
-        else {
-          many(a)(o, in + x, avail - x, x);
-        }
-      },
-      in, avail);
-}
-UFE(one_or_many, std::is_invocable_r<void, A, ray<>, const char *, size_t>);
-UFB(opt);
-MO()(const char *in, size_t avail) {
-  a([&](int x) { o(x < 0 ? 0 : x); }, in, avail);
-}
-UFE(opt, std::is_invocable_r<void, A, ray<>, const char *, size_t>);
 } // namespace parsec
-
