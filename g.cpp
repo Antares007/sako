@@ -63,32 +63,38 @@ C revparse = [](const auto &o, git_repository *repo, const char *spec) {
 };
 C blob_lookup = git::lift{git_blob_lookup, git_blob_free};
 
+C bray = [](const auto &o, git_treebuilder *bld, git_repository *repo) {
+  return _o_{[=]<typename T>(const char *name, git_filemode_t mode,
+                             T r) { ///
+    if constexpr (std::is_invocable_r_v<void, T, _o_<ray<int>, ray<git_oid>>>)
+      r(_o_{[&](int err) { o(err); },
+            [&](git_oid id) {
+              git_treebuilder_insert(nullptr, bld, name, &id, mode);
+            }});
+    else
+      r(_o_{[&](int err) { o(err); },
+            [&](git_oid id) {
+              git_treebuilder_insert(nullptr, bld, name, &id, mode);
+            }},
+        repo);
+
+  }};
+};
+
 UFB(bark);
 MO()(git_repository *repo) {
-  treebuilder_new(
-      _o_{o,
-          [&](git_treebuilder *bld) { ///
-            a([&]<typename T>(const char *name, git_filemode_t mode,
-                              T r) { ///
-              if constexpr (std::is_invocable_r_v<void, T,
-                                                  _o_<ray<int>, ray<git_oid>>>)
-                r(_o_{[&](int err) { o(err); },
-                      [&](git_oid id) {
-                        git_treebuilder_insert(nullptr, bld, name, &id, mode);
-                      }});
-              else
-                r(_o_{[&](int err) { o(err); },
-                      [&](git_oid id) {
-                        git_treebuilder_insert(nullptr, bld, name, &id, mode);
+  treebuilder_new(_o_{o,
+                      [&](git_treebuilder *bld) {
+                        a(bray(o, bld, repo));
+                        treebuilder_write(o, bld);
                       }},
-                  repo);
-
-            });
-            treebuilder_write(o, bld);
-          }},
-      repo, nullptr);
+                  repo, nullptr);
 }
-UFE(bark, std::integral_constant<bool, true>);
+UFE(bark, std::is_invocable_r<
+              void, A,
+              decltype(bray(std::declval<_o_<ray<int>, ray<git_oid>>>(),
+                            nullptr, nullptr))>);
+
 } // namespace git
 
 #ifndef NVIM
@@ -98,39 +104,35 @@ auto main() -> int {
   git::repository_open( ///
       _o_{[](int) {},
           [](git_repository *repo) {
-            git::revparse(_o_{[](auto...) {},
-                              [](git_object *obj, unsigned int) {
-                                auto tree = reinterpret_cast<git_tree *>(obj);
-                                for (size_t i = 0;
-                                     i < git_tree_entrycount(tree); i++) {
-                                  ;
-                                  auto e = git_tree_entry_byindex(tree, i);
-                                  std::cout << git_tree_entry_filemode(e)
-                                            << " - " << git_tree_entry_name(e)
-                                            << "\n";
-                                }
-                                std::cout
-                                    << "ahaaa "
-                                    << (git_object_type(obj) == GIT_OBJECT_TREE)
-                                    << " ";
-                              }},
-                          repo, "HEAD^{tree}");
-            const auto pid = [](auto o) {
+            git::revparse( ///
+                _o_{[](auto...) {},
+                    [](git_object *obj, unsigned int) {
+                      auto tree = reinterpret_cast<git_tree *>(obj);
+                      for (size_t i = 0; i < git_tree_entrycount(tree); i++) {
+                        auto e = git_tree_entry_byindex(tree, i);
+                        std::cout << git_tree_entry_filemode(e) << " - "
+                                  << git_tree_entry_name(e) << "\n";
+                      }
+                      std::cout << "ahaaa "
+                                << (git_object_type(obj) == GIT_OBJECT_TREE)
+                                << " ";
+                    }},
+                repo, "HEAD^{tree}:test");
+
+            const auto pid = [](const auto &o) {
               git::oid_fromstr(o, "2096476c4b64612e8db373e838078ee213527476");
             };
 
-            auto amocana1 = git::bark([&](auto o) { ///
-              o("Aaaaaa", git::TREE, pid);          ///
+            git::bark([&](auto o) {
+              o("Aaaaaa", git::TREE, pid);
               o("Bbbb", git::TREE, pid);
-            });
-
-            amocana1(_o_{[](int) {},
-                         [](const git_oid &id) {
-                           std::cout << git_oid_tostr_s(&id) << '\n';
-                         }},
-                     repo);
+            })(_o_{[](int) {},
+                   [](const git_oid &id) {
+                     std::cout << git_oid_tostr_s(&id) << '\n';
+                   }},
+               repo);
           }},
       ".");
   return 3;
-  }
+}
 #endif
