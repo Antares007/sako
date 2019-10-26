@@ -251,8 +251,7 @@ C CDSect = str{""};
 C PI = str{""};
 
 struct element {
-  template <typename O>
-  void operator()(const char *in, size_t avail, const O &o) const {
+  MO()(const char *in, size_t avail) {
     // content       ::=  CharData?
     //                   ((element | Reference | CDSect | PI | Comment)
     //                   CharData?)*
@@ -280,15 +279,17 @@ static void t() {
     while (in[Size] != '\0')
       Size++;
     size_t pos = 0;
-    parser(in, Size, [&](int x) {
-      if (x < 0)
-        std::cout << "error: " << x << "\n";
-      else {
-        pos += x;
-        std::cout << "[" << std::string_view(in, pos) << "] [" << in + pos
-                  << "]\n";
-      }
-    });
+    parser(
+        [&](int x) {
+          if (x < 0)
+            std::cout << "error: " << x << "\n";
+          else {
+            pos += x;
+            std::cout << "[" << std::string_view(in, pos) << "] [" << in + pos
+                      << "]\n";
+          }
+        },
+        in, Size);
   };
 
   //  run("01!`ა\001ბAB", one_or_many(xml::Char));
