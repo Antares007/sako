@@ -1,18 +1,17 @@
 #include "_o_.hpp"
 #include "parsec.hpp"
 #include <functional>
-
 template <typename... Ts> struct print;
 
 namespace parsec::xml {
 #define C constexpr inline auto
-C Char = u8cp{[](auto c) {
+C Char = u8cp([](auto c) {
   return (c == 0x9) | (c == 0xA) | (c == 0xD) | (0x20 <= c && c <= 0xD7FF) |
          (0xE000 <= c && c <= 0xFFFD) | (0x10000 <= c && c <= 0x10FFFF);
-}};
-C S = one_or_many{chr{
-    [](auto c) { return (c == 0x20) | (c == 0x9) | (c == 0xD) | (c == 0xA); }}};
-C BaseChar = u8cp{[](auto c) {
+});
+C S = one_or_many(chr(
+    [](auto c) { return (c == 0x20) | (c == 0x9) | (c == 0xD) | (c == 0xA); }));
+C BaseChar = u8cp([](auto c) {
   return (0x41 <= c && c <= 0x5A) | (0x61 <= c && c <= 0x7A) |
          (0xC0 <= c && c <= 0xD6) | (0xD8 <= c && c <= 0xF6) |
          (0xF8 <= c && c <= 0xFF) | (0x100 <= c && c <= 0x131) |
@@ -107,12 +106,12 @@ C BaseChar = u8cp{[](auto c) {
          (0x2180 <= c && c <= 0x2182) | (0x3041 <= c && c <= 0x3094) |
          (0x30A1 <= c && c <= 0x30FA) | (0x3105 <= c && c <= 0x312C) |
          (0xAC00 <= c && c <= 0xD7A3);
-}};
-C Ideographic = u8cp{[](auto c) {
+});
+C Ideographic = u8cp([](auto c) {
   return (0x4E00 <= c && c <= 0x9FA5) | (c == 0x3007) |
          (0x3021 <= c && c <= 0x3029);
-}};
-C CombiningChar = u8cp{[](auto c) {
+});
+C CombiningChar = u8cp([](auto c) {
   return (0x300 <= c && c <= 0x345) | (0x360 <= c && c <= 0x361) |
          (0x483 <= c && c <= 0x486) | (0x591 <= c && c <= 0x5A1) |
          (0x5A3 <= c && c <= 0x5B9) | (0x5BB <= c && c <= 0x5BD) |
@@ -156,8 +155,8 @@ C CombiningChar = u8cp{[](auto c) {
          (0xFB1 <= c && c <= 0xFB7) | (c == 0xFB9) |
          (0x20D0 <= c && c <= 0x20DC) | (c == 0x20E1) |
          (0x302A <= c && c <= 0x302F) | (c == 0x3099) | (c == 0x309A);
-}};
-C Digit = u8cp{[](auto c) {
+});
+C Digit = u8cp([](auto c) {
   return (0x30 <= c && c <= 0x39) | (0x660 <= c && c <= 0x669) |
          (0x6F0 <= c && c <= 0x6F9) | (0x966 <= c && c <= 0x96F) |
          (0x9E6 <= c && c <= 0x9EF) | (0xA66 <= c && c <= 0xA6F) |
@@ -166,22 +165,22 @@ C Digit = u8cp{[](auto c) {
          (0xCE6 <= c && c <= 0xCEF) | (0xD66 <= c && c <= 0xD6F) |
          (0xE50 <= c && c <= 0xE59) | (0xED0 <= c && c <= 0xED9) |
          (0xF20 <= c && c <= 0xF29);
-}};
-C Extender = u8cp{[](auto c) {
+});
+C Extender = u8cp([](auto c) {
   return (c == 0xB7) | (c == 0x2D0) | (c == 0x2D1) | (c == 0x387) |
          (c == 0x640) | (c == 0xE46) | (c == 0xEC6) | (c == 0x3005) |
          (0x3031 <= c && c <= 0x3035) | (0x309D <= c && c <= 0x309E) |
          (0x30FC <= c && c <= 0x30FE);
-}};
+});
 
 // Eq           ::=  S? '=' S?
-C Eq = opt{S} & "=" & opt{S};
+C Eq = opt(S) & "=" & opt(S);
 
 // Letter         ::=  BaseChar | Ideographic
 C Letter = BaseChar | Ideographic;
 
 C anyof = [](const char *chars) {
-  return chr{[=](char c) { ///
+  return chr([=](char c) { ///
     int i = 0;
     while (char m = chars[i]) {
       if (m == c)
@@ -189,7 +188,7 @@ C anyof = [](const char *chars) {
       i++;
     }
     return false;
-  }};
+  });
 };
 
 // NameChar  ::=  Letter | Digit |  '.' | '-' | '_' | ':' |  CombiningChar |
@@ -197,20 +196,18 @@ C anyof = [](const char *chars) {
 C NameChar = Letter | Digit | anyof(".-_:") | CombiningChar | Extender;
 
 // Name      ::=  (Letter | '_' | ':') (NameChar)*
-C Name = (Letter | "_" | ":") & many{NameChar};
-
+C Name = (Letter | "_" | ":") & many(NameChar);
 C prolog = str{""};
 C Misc = str{""};
 
-
-C digit = chr{[](char c) { return '0' <= c && c <= '9'; }};
-C hexdigit = chr{[](char c) {
+C digit = chr([](char c) { return '0' <= c && c <= '9'; });
+C hexdigit = chr([](char c) {
   return ('0' <= c && c <= '9') || ('a' <= c && c <= 'f') ||
          ('A' <= c && c <= 'F');
-}};
+});
 // CharRef      ::=  '&#' [0-9]+ ';' | '&#x' [0-9a-fA-F]+ ';'
 C CharRef =
-    "&#" & one_or_many{digit} & ";" | "&#x" & one_or_many{hexdigit} & ";";
+    "&#" & one_or_many(digit) & ";" | "&#x" & one_or_many(hexdigit) & ";";
 
 C EntityRef = "&" & Name & ";";
 
@@ -218,7 +215,7 @@ C EntityRef = "&" & Name & ";";
 C Reference = EntityRef | CharRef;
 
 C noneof = [](const char *chars) {
-  return chr{[=](char c) { ///
+  return chr([=](char c) { ///
     int i = 0;
     while (char m = chars[i]) {
       if (m == c)
@@ -226,29 +223,29 @@ C noneof = [](const char *chars) {
       i++;
     }
     return true;
-  }};
+  });
 };
 
 // AttValue       ::=  '"' ([^<&"] | Reference)* '"'
 //                 |  "'" ([^<&'] | Reference)* "'"
-C AttValue = "\"" & many{noneof("<&\"") | Reference} & "\"" |
-             "'" & many{noneof("<&'") | Reference} & "'";
+C AttValue = "\"" & many(noneof("<&\"") | Reference) & "\"" |
+             "'" & many(noneof("<&'") | Reference) & "'";
 
 // Attribute     ::=  Name Eq AttValue
 C Attribute = Name & Eq & AttValue;
 
 // EmptyElemTag  ::=  '<' Name (S Attribute)* S? '/>'
-C EmptyElemTag = "<" & Name & many{S & Attribute} & opt{S} & "/>";
+C EmptyElemTag = "<" & Name & many(S & Attribute) & opt(S) & "/>";
 
 // STag          ::=  '<' Name (S Attribute)* S? '>'
-C STag = "<" & Name & many{S & Attribute} & opt{S} & ">";
+C STag = "<" & Name & many(S & Attribute) & opt(S) & ">";
 
 // ETag          ::=  '</' Name S? '>'
-C ETag = "</" & Name & opt{S} & ">";
+C ETag = "</" & Name & opt(S) & ">";
 
 // CharData  ::=  [^<&]* - ([^<&]* ']]>' [^<&]*)
 C CharData =
-    many{noneof("<&")} - many{noneof("<&") & "]]>" & many{noneof("<&")}};
+    many(noneof("<&")) - many(noneof("<&") & "]]>" & many(noneof("<&")));
 C Comment = str{""};
 C CDSect = str{""};
 C PI = str{""};
@@ -260,14 +257,14 @@ struct element {
     //                   ((element | Reference | CDSect | PI | Comment)
     //                   CharData?)*
     auto content =
-        opt{CharData} &
-        many{(*this | Reference | CDSect | PI | Comment) & opt{CharData}};
+        opt(CharData) &
+        many((*this | Reference | CDSect | PI | Comment) & opt(CharData));
     (EmptyElemTag | STag & content & ETag)(in, avail, o);
   }
 };
 
 // document  ::=  prolog element Misc*
-C document = prolog & element{} & many{Misc};
+C document = prolog & element{} & many(Misc);
 
 } // namespace parsec::xml
 
@@ -294,9 +291,9 @@ static void t() {
     });
   };
 
-  //  run("01!`ა\001ბAB", one_or_many{xml::Char});
+  //  run("01!`ა\001ბAB", one_or_many(xml::Char));
   run("<Tag n = 'abo' />", xml::EmptyElemTag);
-  // run("ACBაoBABAB", one_or_many{(str{"A"} | "o" | "B" | "C" | "ა") -
+  // run("ACBაoBABAB", one_or_many((str{"A"} | "o" | "B" | "C" | "ა") -
 }
 
 auto main() -> int {
@@ -319,13 +316,13 @@ auto main() -> int {
                          }});
                  }});
 
-  // auto l = pand(pstr("a"), pstr("b"));
+  // auto l = pand(pstr{"a"}, pstr{"b"});
   // l("abo", _o_{[](int) { std::cout << "error\n"; },
   //                    [](const char *f, const char *s, const char *rest) {
   //                      std::cout << '[' << f << s << "] [" << rest << "]\n";
   //                    }});
 
-  // auto l2 = por(pstr("a"), pstr("b"));
+  // auto l2 = por(pstr{"a"}, pstr{"b"});
   // l2("b", _o_{[](int) { std::cout << "error\n"; },
   //                   [](const char *f, const char *rest) {
   //                     std::cout << '[' << f << "] [" << rest << "]\n";

@@ -1,12 +1,12 @@
 #pragma once
 #include "_o_.hpp"
+#include "m.hpp"
 #include <functional>
 
 namespace parsec {
 struct str {
   const char *str_;
-  template <typename O>
-  void operator()(const char *in, size_t avail, const O &o) const {
+  MO()(const char *in, size_t avail) {
     int i = 0;
     while (char c = str_[i]) {
       if (c != in[i] || avail <= static_cast<size_t>(i))
@@ -16,192 +16,136 @@ struct str {
     o(i);
   }
 };
-inline namespace {    /// u8cp
-template <typename F> struct u8cp {
-  F f;
-  template <typename O>
-  void operator()(const char *s, size_t avail, const O &o) const { ///
-    if (avail < 1)
-      return o(-1);
-    if (0x00 == (0x80 & s[0])) {
-      if (f(s[0]))
-        o(1);
-      else
-        o(-1);
-    } else if (0xc0 == (0xe0 & s[0])) {
-      if (f(((0x1f & s[0]) << 6) | (0x3f & s[1])))
-        o(2);
-      else
-        o(-1);
-    } else if (0xe0 == (0xf0 & s[0])) {
-      if (f(((0x0f & s[0]) << 12) | ((0x3f & s[1]) << 6) | (0x3f & s[2])))
-        o(3);
-      else
-        o(-1);
-    } else if (0xf0 == (0xf8 & s[0])) {
-      if (f(((0x07 & s[0]) << 18) | ((0x3f & s[1]) << 12) |
-            ((0x3f & s[2]) << 6) | (0x3f & s[3])))
-        o(4);
-      else
-        o(-1);
-    } else
-      o(-1);
-  };
-};
-template <typename F, typename = std::enable_if_t<std::is_convertible_v<
-                          decltype(std::declval<F>()(9)), bool>>>
-u8cp(F)->u8cp<F>;
-} // namespace
-inline namespace {    /// chr
-template <typename F> ///
-struct chr {
-  F f;
-  template <typename O>
-  void operator()(const char *in, size_t avail, const O &o) const { ///
-    if (0 < avail && f(in[0]))
+UFB(u8cp);
+MO()(const char *s, size_t avail) { ///
+  if (avail < 1)
+    return o(-1);
+  if (0x00 == (0x80 & s[0])) {
+    if (a(s[0]))
       o(1);
     else
       o(-1);
-  };
+  } else if (0xc0 == (0xe0 & s[0])) {
+    if (a(((0x1f & s[0]) << 6) | (0x3f & s[1])))
+      o(2);
+    else
+      o(-1);
+  } else if (0xe0 == (0xf0 & s[0])) {
+    if (a(((0x0f & s[0]) << 12) | ((0x3f & s[1]) << 6) | (0x3f & s[2])))
+      o(3);
+    else
+      o(-1);
+  } else if (0xf0 == (0xf8 & s[0])) {
+    if (a(((0x07 & s[0]) << 18) | ((0x3f & s[1]) << 12) | ((0x3f & s[2]) << 6) |
+          (0x3f & s[3])))
+      o(4);
+    else
+      o(-1);
+  } else
+    o(-1);
 };
-template <typename F, typename = std::enable_if_t<std::is_convertible_v<
-                          decltype(std::declval<F>()(' ')), bool>>>
-chr(F)->chr<F>;
-} // namespace
-inline namespace { /// concepts
+UFE(u8cp, std::is_convertible<decltype(std::declval<A>()(9)), bool>);
+UFB(chr);
+MO()(const char *in, size_t avail) { ///
+  if (0 < avail && a(in[0]))
+    o(1);
+  else
+    o(-1);
+};
+UFE(chr, std::is_convertible<decltype(std::declval<A>()(' ')), bool>);
 template <typename T>
 using if_bark_t = std::enable_if_t<
     std::is_invocable_r_v<void, T, const char *, size_t, ray<>>>;
-} // namespace
-inline namespace {                /// minus
-template <typename L, typename R> ///
-struct minus {
-  L l;
-  R r;
-  template <typename O>
-  void operator()(const char *in, size_t avail, const O &o) const { ///
-    l(in, avail, [&](int x) {
-      if (x < 0)
-        o(x);
-      else
-        r(in, x, [x_ = x, &o](int x) { o(x < 0 ? x_ : -1); });
-    });
-  };
+BFB(minus);
+MO()(const char *in, size_t avail) { ///
+  a(in, avail, [&](int x) {
+    if (x < 0)
+      o(x);
+    else
+      b(in, x, [x_ = x, &o](int x) { o(x < 0 ? x_ : -1); });
+  });
 };
-template <typename L, typename R, typename = if_bark_t<L>,
-          typename = if_bark_t<R>>
-minus(L, R)->minus<L, R>;
+BFE(minus, std::is_invocable_r<void, A, const char *, size_t, ray<>>);
 
 template <typename L, typename R, typename = if_bark_t<L>,
           typename = if_bark_t<R>>
 constexpr auto operator-(L &&l, R &&r) {
-  return minus{std::forward<L>(l), std::forward<R>(r)};
+  return minus_fn<L, R>{std::forward<L>(l), std::forward<R>(r)};
 }
-} // namespace
-inline namespace {                /// or
-template <typename L, typename R> ///
-struct or_ {
-  L l;
-  R r;
-  template <typename O>
-  void operator()(const char *in, size_t avail, const O &o) const { ///
-    l(in, avail, [&](int x) {
-      if (x < 0)
-        r(in, avail, o);
-      else
-        o(x);
-    });
-  };
+BFB(or_);
+MO()(const char *in, size_t avail) { ///
+  a(in, avail, [&](int x) {
+    if (x < 0)
+      b(in, avail, o);
+    else
+      o(x);
+  });
 };
-template <typename L, typename R, typename = if_bark_t<L>,
-          typename = if_bark_t<R>>
-or_(L, R)->or_<L, R>;
+BFE(or_, std::is_invocable_r<void, A, const char *, size_t, ray<>>,
+    std::is_invocable_r<void, B, const char *, size_t, ray<>>);
 
 template <typename L, typename R, typename = if_bark_t<L>,
           typename = if_bark_t<R>>
 constexpr auto operator|(L &&l, R &&r) {
-  return or_{std::forward<L>(l), std::forward<R>(r)};
+  return or_(std::forward<L>(l), std::forward<R>(r));
 }
 template <typename L, typename = if_bark_t<L>>
 constexpr auto operator|(L &&l, const char *r) {
-  return or_{std::forward<L>(l), str{r}};
+  return or_(std::forward<L>(l), str{r});
 }
-} // namespace
-inline namespace {                /// and
-template <typename L, typename R> ///
-struct and_ {
-  L l;
-  R r;
-  template <typename O>
-  void operator()(const char *in, size_t avail, const O &o) const { ///
-    l(in, avail, [&](int x) {
-      if (x < 0)
-        o(x);
-      else
-        r(in + x, avail - x, [&](int x2) { o(x2 < 0 ? x2 : x2 + x); });
-    });
-  };
+BFB(and_);
+MO()(const char *in, size_t avail) { ///
+  a(in, avail, [&](int x) {
+    if (x < 0)
+      o(x);
+    else
+      b(in + x, avail - x, [&](int x2) { o(x2 < 0 ? x2 : x2 + x); });
+  });
 };
-template <typename L, typename R, typename = if_bark_t<L>,
-          typename = if_bark_t<R>>
-and_(L, R)->and_<L, R>;
+BFE(and_, std::is_invocable_r<void, A, const char *, size_t, ray<>>,
+    std::is_invocable_r<void, B, const char *, size_t, ray<>>);
 
 template <typename L, typename R, typename = if_bark_t<L>,
           typename = if_bark_t<R>>
 constexpr auto operator&(L &&l, R &&r) {
-  return and_{std::forward<L>(l), std::forward<R>(r)};
+  return and_(std::forward<L>(l), std::forward<R>(r));
 }
 template <typename T, typename = if_bark_t<T>>
 constexpr auto operator&(const char *l, T &&r) {
-  return and_{str{l}, std::forward<T>(r)};
+  return and_(str{l}, std::forward<T>(r));
 }
 template <typename T, typename = if_bark_t<T>>
 constexpr auto operator&(T &&l, const char *r) {
-  return and_{std::forward<T>(l), str{r}};
+  return and_(std::forward<T>(l), str{r});
 }
-} // namespace
-inline namespace { /// many
-template <typename P> struct many {
-  P p;
-  template <typename O>
-  void operator()(const char *in, size_t avail, const O &o,
-                  size_t a = 0) const {
-    p(in, avail, [&](int x) {
-      if (x < 0)
-        o(a);
-      else {
-        this->operator()(in + x, avail - x, o, a + x);
-      }
-    });
-  }
-};
-template <typename P, typename = if_bark_t<P>> many(P)->many<P>;
-} // namespace
-inline namespace { /// one_or_many
-template <typename P> struct one_or_many {
-  P p;
-  template <typename O>
-  void operator()(const char *in, size_t avail, const O &o) const {
-    p(in, avail, [&](int x) {
-      if (x < 0)
-        o(x);
-      else {
-        many{p}(in + x, avail - x, o, x);
-      }
-    });
-  }
-};
-template <typename P, typename = if_bark_t<P>> one_or_many(P)->one_or_many<P>;
-} // namespace
-inline namespace { /// opt
-template <typename P> struct opt {
-  P p;
-  template <typename O>
-  void operator()(const char *in, size_t avail, const O &o) const {
-    p(in, avail, [&](int x) { o(x < 0 ? 0 : x); });
-  }
-};
-template <typename P, typename = if_bark_t<P>> opt(P)->opt<P>;
-} // namespace
+UFB(many);
+template <typename O>
+void operator()(const char *in, size_t avail, const O &o,
+                size_t acc = 0) const {
+  a(in, avail, [&](int x) {
+    if (x < 0)
+      o(acc);
+    else {
+      this->operator()(in + x, avail - x, o, acc + x);
+    }
+  });
+}
+UFE(many, std::is_invocable_r<void, A, const char *, size_t, ray<>>);
+UFB(one_or_many);
+MO()(const char *in, size_t avail) {
+  a(in, avail, [&](int x) {
+    if (x < 0)
+      o(x);
+    else {
+      many(a)(in + x, avail - x, o, x);
+    }
+  });
+}
+UFE(one_or_many, std::is_invocable_r<void, A, const char *, size_t, ray<>>);
+UFB(opt);
+MO()(const char *in, size_t avail) {
+  a(in, avail, [&](int x) { o(x < 0 ? 0 : x); });
+}
+UFE(opt, std::is_invocable_r<void, A, const char *, size_t, ray<>>);
 } // namespace parsec
 
