@@ -4,6 +4,7 @@
 #include <git2.h>
 
 namespace git {
+struct pith_tag {};
 template <typename... Args> struct lift;
 template <typename T, typename... Args> struct lift<T *, Args...> {
   int (*ctor)(T **, Args...);
@@ -48,20 +49,21 @@ C blob_lookup = git::lift{git_blob_lookup, git_blob_free};
 
 C bray = [](const auto &o, git_treebuilder *bld, git_repository *repo) {
   return _o_{[=]<typename T>(const char *name, git_filemode_t mode,
-                             T r) { ///
-    if constexpr (std::is_invocable_r_v<void, T, _o_<ray<int>, ray<git_oid *>>>)
-      r(_o_{[&](int err) { o(err); },
-            [&](git_oid *id) {
-              git_treebuilder_insert(nullptr, bld, name, id, mode);
-            }});
-    else
-      r(_o_{[&](int err) { o(err); },
-            [&](git_oid *id) {
-              git_treebuilder_insert(nullptr, bld, name, id, mode);
-            }},
-        repo);
-
-  }};
+                             T r){
+      ///
+      if constexpr (std::is_invocable_r_v<void, T,
+                                          _o_<ray<int>, ray<git_oid *>>>)
+          r(_o_{[&](int err) { o(err); },
+                [&](git_oid *id) {
+                  git_treebuilder_insert(nullptr, bld, name, id, mode);
+                }});
+  else r(_o_{[&](int err) { o(err); },
+             [&](git_oid *id) {
+               git_treebuilder_insert(nullptr, bld, name, id, mode);
+             }},
+         repo);
+}
+}; // namespace git
 };
 
 UFB(bark);
@@ -82,31 +84,19 @@ UFE(bark, std::is_invocable_r<
 template <typename Pith, typename A> struct pin {
   Pith pith;
   A a;
-
   template <typename O, typename... Rest>
-  constexpr auto operator()(const O &o, Rest &&... rest) const noexcept {
+  constexpr void operator()(const O &o, Rest &&... rest) const {
     auto r = _o_{[&](int err) { o(err); },
-                 [&, ... rest = std::forward<Rest>(rest)]<typename A_>(A_ &&a) {
-                   pith(o, std::forward<A_>(a), rest...);
+                 [&, ... rest = std::forward<Rest>(rest)](auto &&a) {
+                   pith(o, std::forward<decltype(a)>(a), rest...);
                  }};
-    if constexpr (std::is_invocable_r<void, A, decltype(r)>::value)
+    if constexpr (std::is_invocable_r_v<void, A, decltype(r)>)
       a(r);
     else
       pith(o, a, rest...);
   }
 };
 template <typename Pith, typename A> pin(Pith, A)->pin<Pith, A>;
-
-C apl = []<typename F, typename Arg>(F b, Arg arg) {
-  return [ b, arg ]<typename O, typename... Rest>(O o, Rest... rest) {
-    auto r = _o_{[&](int err) { o(err); },
-                 [&o, &b, rest...](auto arg) { b(o, arg, rest...); }};
-    if constexpr (std::is_invocable_r<void, Arg, decltype(r)>::value)
-      arg(r);
-    else
-      b(o, arg, rest...);
-  };
-};
 
 template <typename L, typename R> constexpr auto operator^(L &&l, R &&r) {
   return pin{std::forward<L>(l), std::forward<R>(r)};
@@ -116,22 +106,19 @@ template <typename... T> struct print;
 #include <iostream>
 auto main() -> int {
   git_libgit2_init();
-  auto aaa = git::tree_lookup ^ (git::repository_open ^ ".") ^
-             (git::oid_fromstr ^ "2096476c4b64612e8db373e838078ee213527476");
+  auto aaa = git::tree_lookup        //
+             ^ (git::repository_open //
+                ^ ".")               //
+             ^ (git::oid_fromstr     //
+                ^ "2096476c4b64612e8db373e838078ee213527476");
 
   aaa(_o_{[](int err) { std::cout << "bbb" << err << "\n"; },
-          [](git_tree *) { std::cout << "aaa\n"; }});
+          [](auto...) { std::cout << "aaa\n"; }});
 
-  auto x =
-      apl(apl(git::tree_lookup, apl(git::repository_open, ".")),
-          apl(git::oid_fromstr, "2096476c4b64612e8db373e838078ee213527476"));
-  x(_o_{[](int err) { std::cout << "error " << err << "\n"; },
-        [](git_tree *) { std::cout << "tree\n"; }});
 
   git::repository_open( ///
       _o_{[](int) {},
           [](git_repository *repo) {
-
             const auto pid = [](const auto &o) {
               git::oid_fromstr(o, "2096476c4b64612e8db373e838078ee213527476");
             };
