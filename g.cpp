@@ -97,10 +97,8 @@ template <typename Pith, typename A> struct pin {
                  }};
     if constexpr (std::is_invocable_r_v<void, A, decltype(r)>)
       a(r);
-    else if constexpr (std::is_invocable_r_v<void, Pith, A, Rest...>)
-      pith(o, a, rest...);
     else
-      static_assert("na");
+      pith(o, a, rest...);
   }
 };
 template <typename Pith, typename A> pin(Pith, A)->pin<Pith, A>;
@@ -115,9 +113,13 @@ template <typename L, typename R,
 constexpr auto operator^(L &&l, R &&r) {
   return pin{std::forward<L>(l), std::forward<R>(r)};
 }
+
 template <typename... T> struct print;
+
 #ifndef NVIM
+
 #include <iostream>
+
 auto main() -> int {
   git_libgit2_init();
   auto l = git::blob_lookup;
@@ -126,10 +128,12 @@ auto main() -> int {
                 ^ ".")               //
              ^ (git::oid_fromstr     //
                 ^ "080ca003cef9e73967ff818672c3b15e26fe0817");
-  //  print<is_lift<decltype(l)>::type> p;
-  //  ;
   aaa(_o_{[](int err) { std::cout << "bbb" << err << "\n"; },
-          [](git_blob *) { std::cout << "aaa\n"; }});
+          [](git_blob *blob) {
+            auto buff = git_blob_rawcontent(blob);
+            auto size = git_blob_rawsize(blob);
+            std::cout << buff << " - " << size << "aaa\n";
+          }});
 
   git::repository_open( ///
       _o_{[](int) {},
