@@ -34,6 +34,10 @@ lift(int (*)(T **, Args...), void (*)(T *))->lift<T *, Args...>;
 template <typename T, typename... Args>
 lift(int (*)(T *, Args...))->lift<T, Args...>;
 
+template <typename> struct is_lift : std::false_type {};
+template <typename T, typename... A>
+struct is_lift<lift<T, A...>> : std::true_type {};
+
 #define C constexpr inline auto
 
 C BLOB = GIT_FILEMODE_BLOB;
@@ -46,6 +50,7 @@ C treebuilder_new = git::lift{git_treebuilder_new, git_treebuilder_free};
 C treebuilder_write = git::lift{git_treebuilder_write};
 C oid_fromstr = git::lift{git_oid_fromstr};
 C blob_lookup = git::lift{git_blob_lookup, git_blob_free};
+
 
 C bray = [](const auto &o, git_treebuilder *bld, git_repository *repo) {
   return _o_{[=]<typename T>(const char *name, git_filemode_t mode,
@@ -92,13 +97,22 @@ template <typename Pith, typename A> struct pin {
                  }};
     if constexpr (std::is_invocable_r_v<void, A, decltype(r)>)
       a(r);
-    else
+    else if constexpr (std::is_invocable_r_v<void, Pith, A, Rest...>)
       pith(o, a, rest...);
+    else
+      static_assert("na");
   }
 };
 template <typename Pith, typename A> pin(Pith, A)->pin<Pith, A>;
 
-template <typename L, typename R> constexpr auto operator^(L &&l, R &&r) {
+template <typename> struct is_pin : std::false_type {};
+template <typename T, typename A> struct is_pin<pin<T, A>> : std::true_type {};
+
+template <typename L, typename R,
+          typename = std::enable_if_t<std::disjunction_v<
+              git::is_lift<std::decay_t<L>>, is_pin<std::decay_t<L>>>>
+          /**/>
+constexpr auto operator^(L &&l, R &&r) {
   return pin{std::forward<L>(l), std::forward<R>(r)};
 }
 template <typename... T> struct print;
@@ -106,15 +120,16 @@ template <typename... T> struct print;
 #include <iostream>
 auto main() -> int {
   git_libgit2_init();
-  auto aaa = git::tree_lookup        //
+  auto l = git::blob_lookup;
+  auto aaa = l                       //
              ^ (git::repository_open //
                 ^ ".")               //
              ^ (git::oid_fromstr     //
-                ^ "2096476c4b64612e8db373e838078ee213527476");
-
+                ^ "080ca003cef9e73967ff818672c3b15e26fe0817");
+  //  print<is_lift<decltype(l)>::type> p;
+  //  ;
   aaa(_o_{[](int err) { std::cout << "bbb" << err << "\n"; },
-          [](auto...) { std::cout << "aaa\n"; }});
-
+          [](git_blob *) { std::cout << "aaa\n"; }});
 
   git::repository_open( ///
       _o_{[](int) {},
