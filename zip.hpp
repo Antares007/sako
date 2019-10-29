@@ -28,7 +28,8 @@ void read_entries(const uint8_t *cde, const size_t count, const O &o) {
                  count - 1, o);
 }
 
-template <class O> void unzip(const uint8_t *buf, const size_t size, O &&o) {
+template <class O> void unzip(const void *in, const size_t size, O &&o) {
+  const uint8_t *buf = reinterpret_cast<const uint8_t *>(in);
   const uint8_t *eocd = buf + size - 22;
   if (size < 22 || v<uint32_t>(eocd + 0) != 0x06054b50)
     o("cant find end of central dir entry");

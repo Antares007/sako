@@ -272,7 +272,7 @@ C document = prolog & element{} & many(Misc);
 #include <iostream>
 #include <tuple>
 
-static void t() {
+auto main() -> int {
   using namespace parsec;
   auto run = [](const char *in, const auto &parser) {
     size_t Size = 0;
@@ -295,38 +295,4 @@ static void t() {
   //  run("01!`ა\001ბAB", one_or_many(xml::Char));
   run("<Tag n = 'abo' />", xml::EmptyElemTag);
   // run("ACBაoBABAB", one_or_many((str{"A"} | "o" | "B" | "C" | "ა") -
-}
-
-auto main() -> int {
-  t();
-  exit(0);
-  std::ifstream s("MyTest.xlsx", std::ios::binary);
-  s.seekg(0, std::ios_base::end);
-  const size_t size = static_cast<std::size_t>(s.tellg());
-  std::vector<char> buf;
-  buf.reserve(size);
-  s.seekg(0);
-  s.read(buf.data(), size);
-
-  zip::unzip(reinterpret_cast<const uint8_t *>(buf.data()), size,
-             _o_{[](const char *err) { std::cout << err << "\n"; },
-                 [](std::string_view name, auto &&p) {
-                   p(_o_{[&](auto err) { std::cout << err << "\n"; },
-                         [&](auto, auto size) {
-                           std::cout << name << " - " << size << "\n";
-                         }});
-                 }});
-
-  // auto l = pand(pstr{"a"}, pstr{"b"});
-  // l("abo", _o_{[](int) { std::cout << "error\n"; },
-  //                    [](const char *f, const char *s, const char *rest) {
-  //                      std::cout << '[' << f << s << "] [" << rest << "]\n";
-  //                    }});
-
-  // auto l2 = por(pstr{"a"}, pstr{"b"});
-  // l2("b", _o_{[](int) { std::cout << "error\n"; },
-  //                   [](const char *f, const char *rest) {
-  //                     std::cout << '[' << f << "] [" << rest << "]\n";
-  //                   }});
-  //
 }

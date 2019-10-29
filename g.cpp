@@ -1,6 +1,7 @@
 #include "git.hpp"
 #include "m.hpp"
 #include "pin.hpp"
+#include "zip.hpp"
 
 template <typename... T> struct print;
 
@@ -20,6 +21,14 @@ auto main() -> int {
           [](git_blob *blob) {
             auto buff = git_blob_rawcontent(blob);
             auto size = git_blob_rawsize(blob);
+            zip::unzip(buff, size,
+                       _o_{[](const char *err) { std::cout << err << "\n"; },
+                           [](std::string_view name, auto &&p) {
+                             p(_o_{[&](auto err) { std::cout << err << "\n"; },
+                                   [&](auto, auto size) {
+                                     std::cout << name << " - " << size << "\n";
+                                   }});
+                           }});
             std::cout << buff << " - " << size << "aaa\n";
           }});
 
