@@ -1,6 +1,4 @@
 #include "git.hpp"
-#include "m.hpp"
-#include "pin.hpp"
 #include "zip.hpp"
 
 template <typename... T> struct print;
@@ -11,12 +9,19 @@ template <typename... T> struct print;
 
 auto main() -> int {
   git_libgit2_init();
-  auto l = git::blob_lookup;
-  auto aaa = l                       //
+  auto aaa = git::blob_lookup        //
              ^ (git::repository_open //
                 ^ ".")               //
              ^ (git::oid_fromstr     //
                 ^ "080ca003cef9e73967ff818672c3b15e26fe0817");
+
+  //   pin<
+  //     pin<
+  //       lift<git_blob *, git_repository *, const git_oid *>,
+  //       pin<lift<git_repository *, const char *>, const char *>
+  //     >,
+  //     pin<lift<git_oid, const char *>, const char *>
+  //   >
   aaa(_o_{[](int err) { std::cout << "bbb" << err << "\n"; },
           [](git_blob *blob) {
             auto buff = git_blob_rawcontent(blob);

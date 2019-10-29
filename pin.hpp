@@ -1,5 +1,6 @@
+#pragma once
+
 #include "_o_.hpp"
-#include "lift.hpp"
 #include <functional>
 
 template <typename Pith, typename A> struct pin {
@@ -19,13 +20,7 @@ template <typename Pith, typename A> struct pin {
 };
 template <typename Pith, typename A> pin(Pith, A)->pin<Pith, A>;
 
-template <typename> struct is_pin : std::false_type {};
-template <typename T, typename A> struct is_pin<pin<T, A>> : std::true_type {};
-
-template <typename L, typename R,
-          typename = std::enable_if_t<std::disjunction_v<
-              lift::is_lift<std::decay_t<L>>, is_pin<std::decay_t<L>>>>
-          /**/>
-constexpr auto operator^(L &&l, R &&r) {
-  return pin{std::forward<L>(l), std::forward<R>(r)};
+template <typename Pith, typename A, typename R>
+constexpr auto operator^(pin<Pith, A> l, R &&r) {
+  return pin{l, std::forward<R>(r)};
 }

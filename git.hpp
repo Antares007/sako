@@ -1,7 +1,6 @@
 #pragma once
-#include "_o_.hpp"
+
 #include "lift.hpp"
-#include <functional>
 #include <git2.h>
 
 namespace git {
@@ -11,13 +10,13 @@ namespace git {
 C BLOB = GIT_FILEMODE_BLOB;
 C TREE = GIT_FILEMODE_TREE;
 
-C repository_open = lift::lift{git_repository_open, git_repository_free};
-C tree_lookup = lift::lift{git_tree_lookup, git_tree_free};
-C treebuilder_new = lift::lift{git_treebuilder_new, git_treebuilder_free};
+C repository_open = lift{git_repository_open, git_repository_free};
+C tree_lookup = lift{git_tree_lookup, git_tree_free};
+C treebuilder_new = lift{git_treebuilder_new, git_treebuilder_free};
 
-C treebuilder_write = lift::lift{git_treebuilder_write};
-C oid_fromstr = lift::lift{git_oid_fromstr};
-C blob_lookup = lift::lift{git_blob_lookup, git_blob_free};
+C treebuilder_write = lift{git_treebuilder_write};
+C oid_fromstr = lift{git_oid_fromstr};
+C blob_lookup = lift{git_blob_lookup, git_blob_free};
 
 C bray = [](const auto &o, git_treebuilder *bld, git_repository *repo) {
   return _o_{[=]<typename T>(const char *name, git_filemode_t mode,

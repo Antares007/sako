@@ -1,6 +1,7 @@
 #pragma once
-#include <type_traits>
-namespace lift {
+
+#include "pin.hpp"
+
 template <typename... Args> struct lift;
 template <typename T, typename... Args> struct lift<T *, Args...> {
   int (*ctor)(T **, Args...);
@@ -30,7 +31,7 @@ lift(int (*)(T **, Args...), void (*)(T *))->lift<T *, Args...>;
 template <typename T, typename... Args>
 lift(int (*)(T *, Args...))->lift<T, Args...>;
 
-template <typename> struct is_lift : std::false_type {};
-template <typename T, typename... A>
-struct is_lift<lift<T, A...>> : std::true_type {};
-} // namespace lift
+template <typename T, typename R, typename... Args>
+constexpr auto operator^(lift<T, Args...> l, R &&r) {
+  return pin{l, std::forward<R>(r)};
+}
