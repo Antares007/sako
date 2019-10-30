@@ -25,15 +25,16 @@ auto main() -> int {
   aaa(_o_{[](int err) { std::cout << "bbb" << err << "\n"; },
           [](git_blob *blob) {
             auto buff = git_blob_rawcontent(blob);
-            auto size = git_blob_rawsize(blob);
-            zip::unzip(buff, size,
-                       _o_{[](const char *err) { std::cout << err << "\n"; },
-                           [](std::string_view name, auto &&p) {
-                             p(_o_{[&](auto err) { std::cout << err << "\n"; },
-                                   [&](auto, auto size) {
-                                     std::cout << name << " - " << size << "\n";
-                                   }});
-                           }});
+            size_t size = git_blob_rawsize(blob);
+            unzip{buff, size}(_o_{
+                [](int err) { std::cout << err << "\n"; },
+                [](std::string_view name, auto &&p) {
+                  p(_o_{[&](auto err) { std::cout << err << "\n"; },
+                        [&](auto content, auto size) {
+                          std::cout << name << " - " << size << "\n"
+                                    << std::string_view(content, size) << "\n";
+                        }});
+                }});
             std::cout << buff << " - " << size << "aaa\n";
           }});
 
