@@ -2,7 +2,36 @@
 #include "_o_.hpp"
 #include "m.hpp"
 #include <functional>
+namespace next {
 
+template <char C, char... Cs> struct chr {
+  template <typename O>
+  void operator()(const O &o, const char *in, const size_t size) const {
+    o(size > 0 && ((C == in[0]) || ... || (Cs == in[0])) ? 1 : -1);
+  }
+};
+
+template <uint32_t...> struct rng;
+template <uint32_t A, uint32_t B> struct rng<A, B> {
+  template <typename O>
+  void operator()(const O &o, const char *in, const size_t size) const {
+    o(size > 0 && (A <= in[0] && in[0] <= B) ? 1 : -1);
+  }
+};
+template <uint32_t A, uint32_t B, uint32_t... Rest> struct rng<A, B, Rest...> {
+  template <typename O>
+  void operator()(const O &o, const char *in, size_t size) const {
+    rng<A, B>{}(
+        [&](int x) {
+          if (x < 0)
+            rng<Rest...>{}(o, in, size);
+          else
+            o(x);
+        },
+        in, size);
+  }
+};
+} // namespace next
 namespace parsec {
 template <typename T>
 using is_bark = std::is_invocable_r<void, T, ray<>, const char *, size_t>;
