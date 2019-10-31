@@ -5,6 +5,10 @@ template <typename... Ts> struct print;
 
 namespace parsec::xml {
 #define C constexpr inline auto
+
+C Char_ = next::chr<0x9, 0xA, 0xD>{} |
+          next::rng<0x20, 0xD7FF, 0xE000, 0xFFFD, 0x10000, 0x10FFFF>{};
+
 C Char = u8cp([](auto c) {
   return (c == 0x9) | (c == 0xA) | (c == 0xD) | (0x20 <= c && c <= 0xD7FF) |
          (0xE000 <= c && c <= 0xFFFD) | (0x10000 <= c && c <= 0x10FFFF);
