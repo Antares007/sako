@@ -86,11 +86,11 @@ template <typename A, typename B> struct and_ {
   B b;
   MO()(const char *in, size_t avail) {
     a(
-        [&](int x) {
-          if (x < 0)
-            o(x);
+        [&](int xa) {
+          if (xa < 0)
+            o(xa);
           else
-            b([&](int x2) { o(x2 < 0 ? x2 : x2 + x); }, in + x, avail - x);
+            b([&](int xb) { o(xb < 0 ? xb : xa + xb); }, in + xa, avail - xa);
         },
         in, avail);
   };
