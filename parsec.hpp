@@ -9,22 +9,23 @@ namespace next {
 /// 1110xxxx	10xxxxxx	10xxxxxx
 /// 11110xxx	10xxxxxx	10xxxxxx	10xxxxxx
 struct u8cp {
-  MO()(const char *s, size_t avail) {
-    if (avail < 1)
+  MO()(const char *in_, size_t a) {
+    auto in = (const unsigned char *)in_;
+    if (a < 1)
       o(-1);
-    else if (((uint8_t)s[0]) >> 7 == 0)
+    else if (in[0] >> 7 == 0)
       o(1);
-    else if (avail < 2 || ((uint8_t)s[1]) >> 6 != 0b10)
+    else if (a < 2 || in[1] >> 6 != 0b10)
       o(-2);
-    else if (((uint8_t)s[0]) >> 5 == 0b110)
+    else if (in[0] >> 5 == 0b110)
       o(2);
-    else if (avail < 3 || ((uint8_t)s[2]) >> 6 != 0b10)
+    else if (a < 3 || in[2] >> 6 != 0b10)
       o(-3);
-    else if (((uint8_t)s[0]) >> 4 == 0b1110)
+    else if (in[0] >> 4 == 0b1110)
       o(3);
-    else if (avail < 4 || ((uint8_t)s[3]) >> 6 != 0b10)
+    else if (a < 4 || in[3] >> 6 != 0b10)
       o(-4);
-    else if (((uint8_t)s[0]) >> 3 == 0b11110)
+    else if (in[0] >> 3 == 0b11110)
       o(4);
     else
       o(-5);
@@ -32,14 +33,17 @@ struct u8cp {
 };
 
 namespace detail {
-inline uint32_t cp(const char *in, int x) {
-  return x == 1 ? in[0]
-                : x == 2 ? ((0x1f & in[0]) << 6) | (0x3f & in[1])
-                         : x == 3 ? ((0x0f & in[0]) << 12) |
-                                        ((0x3f & in[1]) << 6) | (0x3f & in[2])
-                                  : ((0x07 & in[0]) << 18) |
-                                        ((0x3f & in[1]) << 12) |
-                                        ((0x3f & in[2]) << 6) | (0x3f & in[3]);
+inline uint32_t cp(const char *v) {
+  auto in = (const unsigned char *)v;
+  if (in[0] >> 7 == 0)
+    return in[0];
+  else if (in[0] >> 5 == 0b110)
+    return ((0x1f & in[0]) << 6) | (0x3f & in[1]);
+  else if (in[0] >> 4 == 0b1110)
+    return ((0x0f & in[0]) << 12) | ((0x3f & in[1]) << 6) | (0x3f & in[2]);
+  else
+    return ((0x07 & in[0]) << 18) | ((0x3f & in[1]) << 12) |
+           ((0x3f & in[2]) << 6) | (0x3f & in[3]);
 }
 } // namespace detail
 
@@ -52,7 +56,7 @@ template <uint32_t C, uint32_t... Cs> struct chr {
             if (x < 0)
               o(x);
             else {
-              const uint32_t cp = detail::cp(in, x);
+              const uint32_t cp = detail::cp(in);
               o(((C == cp) || ... || (Cs == cp)) ? x : -1);
             }
           },
@@ -69,7 +73,7 @@ template <uint32_t C, uint32_t... Cs> struct nchr {
           if (x < 0)
             o(x);
           else {
-            const uint32_t cp = detail::cp(in, x);
+            const uint32_t cp = detail::cp(in);
             o(((C != cp) && ... && (Cs != cp)) ? x : -1);
           }
         },
@@ -86,7 +90,7 @@ template <uint32_t A, uint32_t B> struct rng<A, B> {
             if (x < 0)
               o(x);
             else {
-              const uint32_t cp = detail::cp(in, x);
+              const uint32_t cp = detail::cp(in);
               o(A <= cp && cp <= B ? x : -1);
             }
           },
