@@ -13,79 +13,46 @@ struct u8cp {
     if (a < 1)
       o(-1);
     else if ((in[0] & 0x80) == 0)
-      o(1);
+      o(1, in[0]);
     else if (a < 2 || (in[1] & 0xc0) != 0x80)
       o(-2);
     else if ((in[0] & 0xe0) == 0xc0)
-      o(2);
+      o(2, (0x1f & in[0]) << 6 | (0x3f & in[1]));
     else if (a < 3 || (in[2] & 0xc0) != 0x80)
       o(-3);
     else if ((in[0] & 0xf0) == 0xe0)
-      o(3);
+      o(3, (0x0f & in[0]) << 12 | (0x3f & in[1]) << 6 | (0x3f & in[2]));
     else if (a < 4 || (in[3] & 0xc0) != 0x80)
       o(-4);
     else if ((in[0] & 0xf8) == 0xf0)
-      o(4);
+      o(4, (0x07 & in[0]) << 18 | (0x3f & in[1]) << 12 | (0x3f & in[2]) << 6 |
+               (0x3f & in[3]));
     else
       o(-5);
-
-    // if (0x00 == (0x80 & in[0]))
-    //  //in[0];
-    // else if (0xc0 == (0xe0 & in[0]))
-    //  //(0x1f & in[0]) << 6 | (0x3f & in[1]);
-    // else if (0xe0 == (0xf0 & in[0]))
-    //  //(0x0f & in[0]) << 12 | (0x3f & in[1]) << 6 | (0x3f & in[2]);
-    // else if (0xf0 == (0xf8 & in[0]))
-    //  //(0x07 & in[0]) << 18 | (0x3f & in[1]) << 12 | (0x3f & in[2]) << 6 |
-    //  (0x3f & in[3]);
   }
 };
-
-namespace detail {
-inline uint32_t cp(const char *in_) {
-  auto in = reinterpret_cast<const unsigned char *>(in_);
-  if (in[0] >> 7 == 0)
-    return in[0];
-  if (in[0] >> 5 == 0b110)
-    return ((0x1f & in[0]) << 6) | (0x3f & in[1]);
-  if (in[0] >> 4 == 0b1110)
-    return ((0x0f & in[0]) << 12) | ((0x3f & in[1]) << 6) | (0x3f & in[2]);
-  return ((0x07 & in[0]) << 18) | ((0x3f & in[1]) << 12) |
-         ((0x3f & in[2]) << 6) | (0x3f & in[3]);
-}
-} // namespace detail
 
 template <uint32_t C, uint32_t... Cs> struct chr {
   static constexpr bool hasU8cp = ((C > 127) || ... || (Cs > 127));
   M()(const char *in, const size_t size) {
     if constexpr (hasU8cp)
-      u8cp{}(
-          [&](int x) {
-            if (x < 0)
-              o(x);
-            else {
-              const uint32_t cp = detail::cp(in);
-              o(((C == cp) || ... || (Cs == cp)) ? x : -1);
-            }
-          },
-          in, size);
+      u8cp{}(_o_{o,
+                 [&](int x, uint32_t cp) {
+                   o(((C == cp) || ... || (Cs == cp)) ? x : -1);
+                 }},
+             in, size);
     else
       o(size > 0 && ((C == in[0]) || ... || (Cs == in[0])) ? 1 : -1);
   }
 };
 
 template <uint32_t C, uint32_t... Cs> struct nchr {
-  M()(const char *in, const size_t size) { //
-    u8cp{}(
-        [&](int x) {
-          if (x < 0)
-            o(x);
-          else {
-            const uint32_t cp = detail::cp(in);
-            o(((C != cp) && ... && (Cs != cp)) ? x : -1);
-          }
-        },
-        in, size);
+  M()(const char *in, const size_t size) {
+    u8cp{}(_o_{o,
+               [&](int x, uint32_t cp) {
+                 o(((C != cp) && ... && (Cs != cp)) ? x : -1);
+               }},
+           in, size);
   }
 };
 
@@ -94,14 +61,7 @@ template <uint32_t A, uint32_t B> struct rng<A, B> {
   M()(const char *in, const size_t size) {
     if constexpr (A > 127 || B > 127)
       u8cp{}(
-          [&](int x) {
-            if (x < 0)
-              o(x);
-            else {
-              const uint32_t cp = detail::cp(in);
-              o(A <= cp && cp <= B ? x : -1);
-            }
-          },
+          _o_{o, [&](int x, uint32_t cp) { o(A <= cp && cp <= B ? x : -1); }},
           in, size);
     else
       o(size > 0 && A <= in[0] && in[0] <= B ? 1 : -1);
@@ -191,7 +151,7 @@ namespace parsec {
     }
   };
   UFB(u8cp);
-  M()(const char *s, size_t avail) { ///
+  M()(const char *s, size_t avail) {
     if (avail < 1)
       return o(-1);
     if (0x00 == (0x80 & s[0])) {
@@ -296,7 +256,7 @@ namespace parsec {
   UFE(opt, std::is_invocable_r<void, A, ray<>, const char *, size_t>);
 } // namespace parsec
 
-namespace parsec { // operators
+namespace parsec {
 template <typename T>
 using if_bark_t = std::enable_if_t<
     std::is_invocable_r_v<void, T, ray<>, const char *, size_t>>;
