@@ -38,7 +38,7 @@ C bray = [](const auto &o, git_treebuilder *bld, git_repository *repo) {
 };
 #include "m.hpp"
 UFB(bark);
-MO()(git_repository *repo) {
+M()(git_repository *repo) {
   treebuilder_new(_o_{o,
                       [&](git_treebuilder *bld) {
                         a(bray(o, bld, repo));

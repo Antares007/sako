@@ -1,6 +1,6 @@
 #pragma once
-#define MO(...) template <typename O> constexpr void operator ()(MO_ARGS_
-#define MO_ARGS_(...) const O &o, __VA_ARGS__) const noexcept
+#define M(...) template <typename O> constexpr void operator ()(M_ARGS_
+#define M_ARGS_(...) const O &o, __VA_ARGS__) const noexcept
 #define UFB(name)                                                              \
   template <typename A> struct name##_fn {                                     \
     A a

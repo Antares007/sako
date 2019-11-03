@@ -9,47 +9,55 @@ namespace next {
 /// 1110xxxx	10xxxxxx	10xxxxxx
 /// 11110xxx	10xxxxxx	10xxxxxx	10xxxxxx
 struct u8cp {
-  MO()(const char *in_, size_t a) {
-    auto in = (const unsigned char *)in_;
+  M()(const char *in, size_t a) {
     if (a < 1)
       o(-1);
-    else if (in[0] >> 7 == 0)
+    else if ((in[0] & 0x80) == 0)
       o(1);
-    else if (a < 2 || in[1] >> 6 != 0b10)
+    else if (a < 2 || (in[1] & 0xc0) != 0x80)
       o(-2);
-    else if (in[0] >> 5 == 0b110)
+    else if ((in[0] & 0xe0) == 0xc0)
       o(2);
-    else if (a < 3 || in[2] >> 6 != 0b10)
+    else if (a < 3 || (in[2] & 0xc0) != 0x80)
       o(-3);
-    else if (in[0] >> 4 == 0b1110)
+    else if ((in[0] & 0xf0) == 0xe0)
       o(3);
-    else if (a < 4 || in[3] >> 6 != 0b10)
+    else if (a < 4 || (in[3] & 0xc0) != 0x80)
       o(-4);
-    else if (in[0] >> 3 == 0b11110)
+    else if ((in[0] & 0xf8) == 0xf0)
       o(4);
     else
       o(-5);
+
+    // if (0x00 == (0x80 & in[0]))
+    //  //in[0];
+    // else if (0xc0 == (0xe0 & in[0]))
+    //  //(0x1f & in[0]) << 6 | (0x3f & in[1]);
+    // else if (0xe0 == (0xf0 & in[0]))
+    //  //(0x0f & in[0]) << 12 | (0x3f & in[1]) << 6 | (0x3f & in[2]);
+    // else if (0xf0 == (0xf8 & in[0]))
+    //  //(0x07 & in[0]) << 18 | (0x3f & in[1]) << 12 | (0x3f & in[2]) << 6 |
+    //  (0x3f & in[3]);
   }
 };
 
 namespace detail {
-inline uint32_t cp(const char *v) {
-  auto in = (const unsigned char *)v;
+inline uint32_t cp(const char *in_) {
+  auto in = reinterpret_cast<const unsigned char *>(in_);
   if (in[0] >> 7 == 0)
     return in[0];
-  else if (in[0] >> 5 == 0b110)
+  if (in[0] >> 5 == 0b110)
     return ((0x1f & in[0]) << 6) | (0x3f & in[1]);
-  else if (in[0] >> 4 == 0b1110)
+  if (in[0] >> 4 == 0b1110)
     return ((0x0f & in[0]) << 12) | ((0x3f & in[1]) << 6) | (0x3f & in[2]);
-  else
-    return ((0x07 & in[0]) << 18) | ((0x3f & in[1]) << 12) |
-           ((0x3f & in[2]) << 6) | (0x3f & in[3]);
+  return ((0x07 & in[0]) << 18) | ((0x3f & in[1]) << 12) |
+         ((0x3f & in[2]) << 6) | (0x3f & in[3]);
 }
 } // namespace detail
 
 template <uint32_t C, uint32_t... Cs> struct chr {
   static constexpr bool hasU8cp = ((C > 127) || ... || (Cs > 127));
-  MO()(const char *in, const size_t size) {
+  M()(const char *in, const size_t size) {
     if constexpr (hasU8cp)
       u8cp{}(
           [&](int x) {
@@ -67,7 +75,7 @@ template <uint32_t C, uint32_t... Cs> struct chr {
 };
 
 template <uint32_t C, uint32_t... Cs> struct nchr {
-  MO()(const char *in, const size_t size) { //
+  M()(const char *in, const size_t size) { //
     u8cp{}(
         [&](int x) {
           if (x < 0)
@@ -83,7 +91,7 @@ template <uint32_t C, uint32_t... Cs> struct nchr {
 
 template <uint32_t...> struct rng;
 template <uint32_t A, uint32_t B> struct rng<A, B> {
-  MO()(const char *in, const size_t size) {
+  M()(const char *in, const size_t size) {
     if constexpr (A > 127 || B > 127)
       u8cp{}(
           [&](int x) {
@@ -100,7 +108,7 @@ template <uint32_t A, uint32_t B> struct rng<A, B> {
   }
 };
 template <uint32_t A, uint32_t B, uint32_t... Rest> struct rng<A, B, Rest...> {
-  MO()(const char *in, size_t size) {
+  M()(const char *in, size_t size) {
     rng<A, B>{}(
         [&](int x) {
           if (x < 0)
@@ -115,7 +123,7 @@ template <uint32_t A, uint32_t B, uint32_t... Rest> struct rng<A, B, Rest...> {
 template <typename A, typename B> struct or_ {
   A a;
   B b;
-  MO()(const char *in, size_t avail) {
+  M()(const char *in, size_t avail) {
     a(
         [&](int x) {
           if (x < 0)
@@ -130,7 +138,7 @@ template <typename A, typename B> struct or_ {
 template <typename A, typename B> struct and_ {
   A a;
   B b;
-  MO()(const char *in, size_t avail) {
+  M()(const char *in, size_t avail) {
     a(
         [&](int xa) {
           if (xa < 0)
@@ -144,7 +152,7 @@ template <typename A, typename B> struct and_ {
 
 template <typename A> struct many {
   A a;
-  MO()(const char *in, size_t avail, size_t acc = 0) {
+  M()(const char *in, size_t avail, size_t acc = 0) {
     a(
         [&](int x) {
           if (x < 0)
@@ -159,7 +167,7 @@ template <typename A> struct many {
 
 template <typename A> struct opt {
   A a;
-  MO()(const char *in, size_t avail) {
+  M()(const char *in, size_t avail) {
     a([&](int x) { o(x < 0 ? 0 : x); }, in, avail);
   }
 };
@@ -172,7 +180,7 @@ namespace parsec {
 
   struct str {
     const char *str_;
-    MO()(const char *in, size_t avail) {
+    M()(const char *in, size_t avail) {
       int i = 0;
       while (char c = str_[i]) {
         if (c != in[i] || avail <= static_cast<size_t>(i))
@@ -183,7 +191,7 @@ namespace parsec {
     }
   };
   UFB(u8cp);
-  MO()(const char *s, size_t avail) { ///
+  M()(const char *s, size_t avail) { ///
     if (avail < 1)
       return o(-1);
     if (0x00 == (0x80 & s[0])) {
@@ -212,7 +220,7 @@ namespace parsec {
   };
   UFE(u8cp, std::is_convertible<decltype(std::declval<A>()(9)), bool>);
   UFB(chr);
-  MO()(const char *in, size_t avail) {
+  M()(const char *in, size_t avail) {
     if (0 < avail && a(in[0]))
       o(1);
     else
@@ -220,7 +228,7 @@ namespace parsec {
   };
   UFE(chr, std::is_convertible<decltype(std::declval<A>()(' ')), bool>);
   BFB(minus);
-  MO()(const char *in, size_t avail) {
+  M()(const char *in, size_t avail) {
     a(
         [&](int x) {
           if (x < 0)
@@ -232,7 +240,7 @@ namespace parsec {
   };
   BFE(minus, is_bark<A>);
   BFB(or_);
-  MO()(const char *in, size_t avail) {
+  M()(const char *in, size_t avail) {
     a(
         [&](int x) {
           if (x < 0)
@@ -244,7 +252,7 @@ namespace parsec {
   };
   BFE(or_, is_bark<A>, is_bark<B>);
   BFB(and_);
-  MO()(const char *in, size_t avail) {
+  M()(const char *in, size_t avail) {
     a(
         [&](int x) {
           if (x < 0)
@@ -256,7 +264,7 @@ namespace parsec {
   };
   BFE(and_, is_bark<A>, is_bark<B>);
   UFB(many);
-  MO()(const char *in, size_t avail, size_t acc = 0) {
+  M()(const char *in, size_t avail, size_t acc = 0) {
     a(
         [&](int x) {
           if (x < 0)
@@ -269,7 +277,7 @@ namespace parsec {
   }
   UFE(many, is_bark<A>);
   UFB(one_or_many);
-  MO()(const char *in, size_t avail) {
+  M()(const char *in, size_t avail) {
     a(
         [&](int x) {
           if (x < 0)
@@ -282,7 +290,7 @@ namespace parsec {
   }
   UFE(one_or_many, is_bark<A>);
   UFB(opt);
-  MO()(const char *in, size_t avail) {
+  M()(const char *in, size_t avail) {
     a([&](int x) { o(x < 0 ? 0 : x); }, in, avail);
   }
   UFE(opt, std::is_invocable_r<void, A, ray<>, const char *, size_t>);

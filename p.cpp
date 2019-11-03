@@ -255,7 +255,7 @@ C CDSect = str{""};
 C PI = str{""};
 
 struct element {
-  MO()(const char *in, size_t avail) {
+  M()(const char *in, size_t avail) {
     // content       ::=  CharData?
     //                   ((element | Reference | CDSect | PI | Comment)
     //                   CharData?)*
@@ -297,6 +297,6 @@ auto main() -> int {
   };
 
   //  run("01!`ა\001ბAB", one_or_many(xml::Char));
-  run("<Tag n = 'abo' />", xml::EmptyElemTag);
+  run("<Tag n =    'abo' />", xml::EmptyElemTag);
   // run("ACBაoBABAB", one_or_many((str{"A"} | "o" | "B" | "C" | "ა") -
 }
