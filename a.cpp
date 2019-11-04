@@ -112,11 +112,10 @@ C Letter = BaseChar | Ideographic;
 C Char = chr<0x9, 0xA, 0xD>{} |
          rng<0x20, 0xD7FF, 0xE000, 0xFFFD, 0x10000, 0x10FFFF>{};
 
-C W = chr<0x20, 0x9, 0xD, 0xA>{};
-C S = W | many{W};
+C S = many1{chr<0x20, 0x9, 0xD, 0xA>{}};
 
 // Eq           ::=  S? '=' S?
-C Eq = many{W} & "=" & many{W};
+C Eq = opt{S} & "=" & opt{S};
 
 // NameChar  ::=  Letter | Digit |  '.' | '-' | '_' | ':' |  CombiningChar |
 // Extender
@@ -124,7 +123,7 @@ C NameChar =
     Letter | Digit | chr<'.', '-', '_', ':'>{} | CombiningChar | Extender;
 
 // Name      ::=  (Letter | '_' | ':') (NameChar)*
-C Name = (Letter | chr<'_', ':'>{}) & many{NameChar};
+C Name = (Letter | chr<'_', ':'>{}) & many0{NameChar};
 C prolog = str{""};
 C Misc = str{""};
 
@@ -146,17 +145,17 @@ C AttValue = "\"" & *(nchr<'<', '&', '"'>{} | Reference) & "\"" |
 C Attribute = Name & Eq & AttValue;
 
 // EmptyElemTag  ::=  '<' Name (S Attribute)* S? '/>'
-C EmptyElemTag = "<" & Name & many{S & Attribute} & opt{S} & "/>";
+C EmptyElemTag = "<" & Name & many0{S & Attribute} & opt{S} & "/>";
 
 // STag          ::=  '<' Name (S Attribute)* S? '>'
-C STag = "<" & Name & many{S & Attribute} & opt{S} & ">";
+C STag = "<" & Name & many0{S & Attribute} & opt{S} & ">";
 
 // ETag          ::=  '</' Name S? '>'
 C ETag = "</" & Name & opt{S} & ">";
 
 // CharData  ::=  [^<&]* - ([^<&]* ']]>' [^<&]*)  wtf! how to substract one from
 // many?
-C CharData = many{nchr<'<', '&'>{}};
+C CharData = many0{nchr<'<', '&'>{}};
 
 C Comment = str{""};
 C CDSect = str{""};
@@ -201,7 +200,5 @@ auto main() -> int {
         in, Size);
   };
 
-  //  run("01!`ა\001ბAB", one_or_many(xml::Char));
-  //  run("<Tag n =    'abo' />", xml::EmptyElemTag);
-  // run("ACBაoBABAB", one_or_many((str{"A"} | "o" | "B" | "C" | "ა") -
+  run("<Tag n =    'abo' />", xml::Name);
 }

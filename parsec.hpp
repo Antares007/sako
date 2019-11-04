@@ -128,7 +128,7 @@ template <typename A, typename B> struct and_ {
 };
 template <typename A, typename B> and_(A, B)->and_<A, B>;
 
-template <typename A> struct many {
+template <typename A> struct many0 {
   A a;
   M()(const char *in, size_t avail, size_t acc = 0) {
     a(
@@ -142,7 +142,23 @@ template <typename A> struct many {
         in, avail);
   }
 };
-template <typename A> many(A)->many<A>;
+template <typename A> many0(A)->many0<A>;
+
+template <typename A> struct many1 {
+  A a;
+  M()(const char *in, size_t avail, size_t acc = -1) {
+    a(
+        [&](int x) {
+          if (x < 0)
+            o(acc);
+          else {
+            this->operator()(o, in + x, avail - x, (acc == -1 ? x : acc + x));
+          }
+        },
+        in, avail);
+  }
+};
+template <typename A> many1(A)->many1<A>;
 
 template <typename A> struct opt {
   A a;
@@ -159,10 +175,11 @@ using if_bark_t = std::enable_if_t<
     std::is_invocable_r_v<void, T, ray<>, const char *, size_t>>;
 
 template <typename L, typename = if_bark_t<L>> constexpr auto operator*(L &&l) {
-  return many{std::forward<L>(l)};
+  return many0{std::forward<L>(l)};
 }
-template <typename L, typename = if_bark_t<L>> constexpr auto operator++(L l) {
-  return and_{l, many{l}};
+template <typename L, typename = if_bark_t<L>>
+constexpr auto operator++(L &&l) {
+  return many1{std::forward<L>(l)};
 }
 template <typename L, typename R, typename = if_bark_t<L>,
           typename = if_bark_t<R>>
