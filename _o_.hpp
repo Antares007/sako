@@ -9,3 +9,5 @@ template <typename... T> struct ray {
 template <> struct ray<> {
   template <typename U> void operator()(U &&) const {}
 };
+
+template <typename... T> struct print;

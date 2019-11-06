@@ -1,8 +1,6 @@
 #include "git.hpp"
 #include "zip.hpp"
 
-template <typename... T> struct print;
-
 #ifndef NVIM
 
 #include <iostream>
