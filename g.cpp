@@ -11,8 +11,12 @@ auto main() -> int {
   static constexpr auto mainpith = [](auto o, git_repository *r,
                                       git_oid *commit_id) {
     git::commit_lookup(_o_{o,
-                           [](git_commit *) {
-                           
+                           [](git_commit *cid) {
+                             auto m = git_commit_message(cid);
+                             std::cout << m << "\n";
+
+                             auto pid = git_commit_parent_id(cid, 0);
+                             auto pc = git_commit_parentcount(cid);
                              //
                            }},
                        r, commit_id);
