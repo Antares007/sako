@@ -17,6 +17,7 @@ C treebuilder_new = lift{git_treebuilder_new, git_treebuilder_free};
 C treebuilder_write = lift{git_treebuilder_write};
 C oid_fromstr = lift{git_oid_fromstr};
 C blob_lookup = lift{git_blob_lookup, git_blob_free};
+C commit_lookup = lift{git_commit_lookup, git_commit_free};
 
 C bray = [](const auto &o, git_treebuilder *bld, git_repository *repo) {
   return _o_{[=]<typename T>(const char *name, git_filemode_t mode,

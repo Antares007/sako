@@ -7,20 +7,33 @@
 
 auto main() -> int {
   git_libgit2_init();
-  auto aaa = git::blob_lookup        //
-             ^ (git::repository_open //
-                ^ ".")               //
-             ^ (git::oid_fromstr     //
-                ^ "080ca003cef9e73967ff818672c3b15e26fe0817");
 
-  //   pin<
-  //     pin<
-  //       lift<git_blob *, git_repository *, const git_oid *>,
-  //       pin<lift<git_repository *, const char *>, const char *>
-  //     >,
-  //     pin<lift<git_oid, const char *>, const char *>
-  //   >
-  aaa(_o_{[](int err) { std::cout << "bbb" << err << "\n"; },
+  static constexpr auto mainpith = [](auto o, git_repository *r,
+                                      git_oid *commit_id) {
+    git::commit_lookup(_o_{o,
+                           [](git_commit *) {
+                           
+                             //
+                           }},
+                       r, commit_id);
+    /* main pith */
+    o(-1);
+    o(r);
+    o(commit_id);
+  };
+
+  constexpr auto p = pin{mainpith, (git::repository_open ^ ".")};
+
+  auto id = git_oid{};
+  p([](auto...) {}, &id);
+
+  constexpr auto repo = (git::repository_open //
+                         ^ ".");
+  (git::blob_lookup    //
+   ^ repo              //
+   ^ (git::oid_fromstr //
+      ^ "080ca003cef9e73967ff818672c3b15e26fe0817"))(
+      _o_{[](int err) { std::cout << "bbb" << err << "\n"; },
           [](git_blob *blob) {
             auto buff = git_blob_rawcontent(blob);
             size_t size = git_blob_rawsize(blob);

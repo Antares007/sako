@@ -18,7 +18,15 @@ template <typename Pith, typename A> struct pin {
       pith(o, a, rest...);
   }
 };
-template <typename Pith, typename A> pin(Pith, A)->pin<Pith, A>;
+template <typename Pith> struct pin<Pith, void> {
+  Pith pith;
+  template <typename O, typename... Rest>
+  constexpr void operator()(O &&o, Rest &&... rest) const {
+    pith(static_cast<O &&>(o), static_cast<Rest &&>(rest)...);
+  }
+};
+template <typename A> pin(A)->pin<A, void>;
+template <typename... Args> pin(Args...)->pin<Args...>;
 
 template <typename Pith, typename A, typename R>
 constexpr auto operator^(pin<Pith, A> l, R &&r) {

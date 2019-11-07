@@ -4,6 +4,18 @@
 #include <functional>
 namespace parsec {
 
+template <typename F,
+          typename = std::enable_if_t<std::is_invocable_r_v<bool, F, uint32_t>>>
+constexpr inline auto chr(F &&f) {
+  return [f = static_cast<F &&>(f)](auto o, const char *in, size_t a) {
+    if (a < 1)
+      o(-1);
+    else if (f(in[0]))
+      o(1);
+    else
+      o(-2);
+  };
+}
 /// 0xxxxxxx
 /// 110xxxxx	10xxxxxx
 /// 1110xxxx	10xxxxxx	10xxxxxx
