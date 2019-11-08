@@ -18,6 +18,7 @@ C treebuilder_write = lift{git_treebuilder_write};
 C oid_fromstr = lift{git_oid_fromstr};
 C blob_lookup = lift{git_blob_lookup, git_blob_free};
 C commit_lookup = lift{git_commit_lookup, git_commit_free};
+C commit_tree = lift{git_commit_tree, git_tree_free};
 
 C repository_index = lift{git_repository_index, git_index_free};
 C index_write_tree = lift{git_index_write_tree};

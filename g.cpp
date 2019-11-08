@@ -4,13 +4,43 @@
 #ifndef NVIM
 
 #include <iostream>
+constexpr inline auto diff = [](git_tree *lhs, git_tree *rhs) { //
+  return pin{[=](auto o, git_repository *repo) {                //
+    const auto rc = git_tree_entrycount(rhs);
+    if (size_t lc = git_tree_entrycount(lhs))
+      if (rc) {
+        size_t li = 0;
+        size_t ri = 0;
+        while (li < lc || ri < rc) {
+          auto le = git_tree_entry_byindex(lhs, li);
+          auto re = git_tree_entry_byindex(lhs, ri);
+          auto rez = git_tree_entry_cmp(le, re);
+        }
+      } else
+        for (size_t i = 0; i < lc; i++)
+          o("-", git_tree_entry_byindex(lhs, i));
+    else
+      for (size_t i = 0; i < rc; i++)
+        o("+", git_tree_entry_byindex(rhs, i));
+
+    //
+  }};
+};
 
 auto main() -> int {
   git_libgit2_init();
 
   pin{[](auto o, git_repository *r) {
-        pin{[](auto o, auto treeoid, auto commitoid) {
-              std::cout << "tree: " << git_oid_tostr_s(treeoid) << "\n";
+        pin{[&](auto o, auto treeoid, auto commitoid) {
+              pin{[](auto o, git_commit *commit) {
+                    o(git_commit_tree_id(commit));
+                  },
+                  git::commit_lookup ^ r ^ commitoid};
+              auto tree =
+                  git::commit_tree ^ (git::commit_lookup ^ r ^ commitoid);
+              tree([](auto) {});
+
+              std::cout << "tree  : " << git_oid_tostr_s(treeoid) << "\n";
               std::cout << "commit: " << git_oid_tostr_s(commitoid) << "\n";
               o(99);
             },
