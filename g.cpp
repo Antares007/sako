@@ -4,18 +4,35 @@
 #ifndef NVIM
 
 #include <iostream>
+
 constexpr inline auto diff = [](git_tree *lhs, git_tree *rhs) { //
   return pin{[=](auto o, git_repository *repo) {                //
     const auto rc = git_tree_entrycount(rhs);
-    if (size_t lc = git_tree_entrycount(lhs))
+    if (const size_t lc = git_tree_entrycount(lhs))
       if (rc) {
         size_t li = 0;
         size_t ri = 0;
-        while (li < lc || ri < rc) {
-          auto le = git_tree_entry_byindex(lhs, li);
-          auto re = git_tree_entry_byindex(lhs, ri);
-          auto rez = git_tree_entry_cmp(le, re);
+        while (li < lc && ri < rc) {
+          const auto le = git_tree_entry_byindex(lhs, li);
+          const auto re = git_tree_entry_byindex(rhs, ri);
+          const auto rez = git_tree_entry_cmp(le, re);
+          if (rez == 0) {
+            o(le, re);
+            li++;
+            ri++;
+          } else if (rez < 0) {
+            o("-", le);
+            li++;
+          } else {
+            o("+", re);
+            ri++;
+          }
         }
+        while (li < lc)
+          o("+", git_tree_entry_byindex(lhs, li++));
+        while (ri < rc)
+          o("-", git_tree_entry_byindex(rhs, ri++));
+
       } else
         for (size_t i = 0; i < lc; i++)
           o("-", git_tree_entry_byindex(lhs, i));
