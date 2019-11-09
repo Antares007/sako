@@ -5,8 +5,8 @@
 
 #include <iostream>
 
-constexpr inline auto diff = pin{[](auto o, git_tree *lhs, git_tree *rhs) { //
-  const auto rc = git_tree_entrycount(rhs);
+constexpr inline auto diff = [](auto o, git_tree *lhs, git_tree *rhs) { //
+  const size_t rc = git_tree_entrycount(rhs);
   if (const size_t lc = git_tree_entrycount(lhs))
     if (rc) {
       size_t li = 0;
@@ -23,33 +23,48 @@ constexpr inline auto diff = pin{[](auto o, git_tree *lhs, git_tree *rhs) { //
           li++;
           ri++;
         } else if (rez < 0) {
-          o("-", le);
+          o(le, rez);
           li++;
         } else {
-          o("+", re);
+          o(rez, re);
           ri++;
         }
       }
       while (li < lc)
-        o("-", git_tree_entry_byindex(lhs, li++));
+        o(git_tree_entry_byindex(lhs, li++), -1);
       while (ri < rc)
-        o("+", git_tree_entry_byindex(rhs, ri++));
+        o(1, git_tree_entry_byindex(rhs, ri++));
     } else
       for (size_t i = 0; i < lc; i++)
-        o("-", git_tree_entry_byindex(lhs, i));
+        o(git_tree_entry_byindex(lhs, i), -1);
   else
     for (size_t i = 0; i < rc; i++)
-      o("+", git_tree_entry_byindex(rhs, i));
-}};
+      o(1, git_tree_entry_byindex(rhs, i));
+};
 
 auto main() -> int {
   git_libgit2_init();
 
   pin{[](auto o, git_repository *r) {
         pin{[&](auto o, auto treeoid, auto commitoid) {
-              auto tree =
+              auto ctree =
                   git::commit_tree ^ (git::commit_lookup ^ r ^ commitoid);
-              tree([](auto) {});
+              auto tree = git::tree_lookup ^ r ^ treeoid;
+
+              auto log = [](auto m, auto l, auto r) {
+                std::cout << m << std::oct << (int)git_tree_entry_filemode(l)
+                          << " " << (int)git_tree_entry_filemode(r) << " "
+                          << std::string_view(
+                                 git_oid_tostr_s(git_tree_entry_id(l)), 5)
+                          << " "
+                          << std::string_view(
+                                 git_oid_tostr_s(git_tree_entry_id(r)), 5)
+                          << " " << git_tree_entry_name(l) << "\n";
+              };
+              pin{diff, ctree, tree}(_o_{
+                  [&](int) { o(91); }, [&](auto l, auto r) { log("~", l, r); },
+                  [&](int, auto e) { log("+", e, e); },
+                  [&](auto e, int) { log("-", e, e); }});
 
               std::cout << "tree  : " << git_oid_tostr_s(treeoid) << "\n";
               std::cout << "commit: " << git_oid_tostr_s(commitoid) << "\n";

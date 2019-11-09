@@ -1,4 +1,5 @@
 #include <functional>
+
 template <typename... Names> struct print;
 template <class... O> struct overloaded : O... { using O::operator()...; };
 template <class... O> overloaded(O...)->overloaded<O...>;
