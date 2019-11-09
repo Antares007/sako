@@ -5,54 +5,48 @@
 
 #include <iostream>
 
-constexpr inline auto diff = [](git_tree *lhs, git_tree *rhs) { //
-  return pin{[=](auto o, git_repository *repo) {                //
-    const auto rc = git_tree_entrycount(rhs);
-    if (const size_t lc = git_tree_entrycount(lhs))
-      if (rc) {
-        size_t li = 0;
-        size_t ri = 0;
-        while (li < lc && ri < rc) {
-          const auto le = git_tree_entry_byindex(lhs, li);
-          const auto re = git_tree_entry_byindex(rhs, ri);
-          const auto rez = git_tree_entry_cmp(le, re);
-          if (rez == 0) {
+constexpr inline auto diff = pin{[](auto o, git_tree *lhs, git_tree *rhs) { //
+  const auto rc = git_tree_entrycount(rhs);
+  if (const size_t lc = git_tree_entrycount(lhs))
+    if (rc) {
+      size_t li = 0;
+      size_t ri = 0;
+      while (li < lc && ri < rc) {
+        const auto le = git_tree_entry_byindex(lhs, li);
+        const auto re = git_tree_entry_byindex(rhs, ri);
+        const auto rez = git_tree_entry_cmp(le, re);
+        if (rez == 0) {
+          if (git_tree_entry_filemode(le) != git_tree_entry_filemode(re) ||
+              git_oid_cmp(git_tree_entry_id(le), git_tree_entry_id(re))) {
             o(le, re);
-            li++;
-            ri++;
-          } else if (rez < 0) {
-            o("-", le);
-            li++;
-          } else {
-            o("+", re);
-            ri++;
           }
+          li++;
+          ri++;
+        } else if (rez < 0) {
+          o("-", le);
+          li++;
+        } else {
+          o("+", re);
+          ri++;
         }
-        while (li < lc)
-          o("+", git_tree_entry_byindex(lhs, li++));
-        while (ri < rc)
-          o("-", git_tree_entry_byindex(rhs, ri++));
-
-      } else
-        for (size_t i = 0; i < lc; i++)
-          o("-", git_tree_entry_byindex(lhs, i));
-    else
-      for (size_t i = 0; i < rc; i++)
-        o("+", git_tree_entry_byindex(rhs, i));
-
-    //
-  }};
-};
+      }
+      while (li < lc)
+        o("-", git_tree_entry_byindex(lhs, li++));
+      while (ri < rc)
+        o("+", git_tree_entry_byindex(rhs, ri++));
+    } else
+      for (size_t i = 0; i < lc; i++)
+        o("-", git_tree_entry_byindex(lhs, i));
+  else
+    for (size_t i = 0; i < rc; i++)
+      o("+", git_tree_entry_byindex(rhs, i));
+}};
 
 auto main() -> int {
   git_libgit2_init();
 
   pin{[](auto o, git_repository *r) {
         pin{[&](auto o, auto treeoid, auto commitoid) {
-              pin{[](auto o, git_commit *commit) {
-                    o(git_commit_tree_id(commit));
-                  },
-                  git::commit_lookup ^ r ^ commitoid};
               auto tree =
                   git::commit_tree ^ (git::commit_lookup ^ r ^ commitoid);
               tree([](auto) {});
