@@ -42,6 +42,39 @@ constexpr inline auto diff = [](auto o, git_tree *lhs, git_tree *rhs) { //
       o(1, git_tree_entry_byindex(rhs, i));
 };
 
+constexpr inline auto map = [](auto o, git_repository *r, git_tree *tree) {
+  const auto ec = git_tree_entrycount(tree);
+  constexpr auto go = [&](auto go, size_t index) {
+    if (index < ec)
+      go(go, index + 1);
+  };
+  go(go, 0);
+  for (size_t i = 0; i < ec; i++) {
+    const auto e = git_tree_entry_byindex(tree, i);
+    const auto mode = git_tree_entry_filemode(e);
+    if (mode == 0100644 &&
+        std::string_view(git_tree_entry_name(e)).ends_with(".xlsx"))
+      git::blob_lookup(
+          _o_{o,
+              [&](git_blob *blob) {
+                auto buff = git_blob_rawcontent(blob);
+                size_t size = git_blob_rawsize(blob);
+                unzip{buff, size}(
+                    _o_{[](int err) { std::cout << err << "\n"; },
+                        [](std::string_view name, auto &&p) {
+                          p(_o_{[&](auto err) { std::cout << err << "\n"; },
+                                [&](auto, auto size) {
+                                  std::cout << name << " - " << size << "\n";
+                                  // << std::string_view(content, size) << "\n";
+                                }});
+                        }});
+              }},
+          r, git_tree_entry_id(e));
+    else if (mode == 040000)
+      ;
+  }
+};
+
 auto main() -> int {
   git_libgit2_init();
   pin{[](auto o, git_repository *r) {
