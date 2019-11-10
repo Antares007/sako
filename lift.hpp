@@ -33,5 +33,5 @@ lift(int (*)(T *, Args...))->lift<T, Args...>;
 
 template <typename T, typename R, typename... Args>
 constexpr auto operator^(lift<T, Args...> l, R &&r) {
-  return pin{l, std::forward<R>(r)};
+  return pin{l, static_cast<R &&>(r)};
 }

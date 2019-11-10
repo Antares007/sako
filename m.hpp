@@ -11,7 +11,7 @@
       []<typename A,                                                           \
          typename = std::enable_if_t<std::conjunction_v<__VA_ARGS__>>>(A &&    \
                                                                        a) {    \
-    return name##_fn<A>{std::forward<A>(a)};                                   \
+    return name##_fn<A>{static_cast<A &&>(a)};                                 \
   }
 #define BFB(name)                                                              \
   template <typename A, typename B> struct name##_fn {                         \
@@ -24,7 +24,7 @@
       []<typename A, typename B,                                               \
          typename = std::enable_if_t<std::conjunction_v<__VA_ARGS__>>>(        \
           A && a, B && b) {                                                    \
-    return name##_fn<A, B>{std::forward<A>(a), std::forward<B>(b)};            \
+    return name##_fn<A, B>{static_cast<A &&>(a), static_cast<B &&>(b)};        \
   }
 #define BOP(oper, ...)                                                         \
   template <typename L, typename R,                                            \

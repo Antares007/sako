@@ -62,9 +62,9 @@ auto main() -> int {
                           << " " << git_tree_entry_name(l) << "\n";
               };
               pin{diff, ctree, tree}(_o_{
-                  [&](int) { o(91); }, [&](auto l, auto r) { log("~", l, r); },
+                  [&](auto l, auto r) { log("~", l, r); },
                   [&](int, auto e) { log("+", e, e); },
-                  [&](auto e, int) { log("-", e, e); }});
+                  [&](auto e, int) { log("-", e, e); }, [&](int i) { o(i); }});
 
               std::cout << "tree  : " << git_oid_tostr_s(treeoid) << "\n";
               std::cout << "commit: " << git_oid_tostr_s(commitoid) << "\n";

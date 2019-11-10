@@ -1,8 +1,7 @@
 #pragma once
 
 #include "_o_.hpp"
-#include <functional>
-#include <tuple>
+#include <type_traits>
 
 template <typename...> struct pin;
 template <typename Pith, typename A> struct pin<Pith, A> {
@@ -34,5 +33,5 @@ template <typename... Args> pin(Args...)->pin<Args...>;
 
 template <typename Pith, typename A, typename R>
 constexpr auto operator^(pin<Pith, A> l, R &&r) {
-  return pin{l, std::forward<R>(r)};
+  return pin{l, static_cast<R &&>(r)};
 }
