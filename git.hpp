@@ -2,6 +2,7 @@
 
 #include "lift.hpp"
 #include <git2.h>
+#include <string>
 
 namespace git {
 
@@ -23,38 +24,32 @@ C commit_tree = lift{git_commit_tree, git_tree_free};
 C repository_index = lift{git_repository_index, git_index_free};
 C index_write_tree = lift{git_index_write_tree};
 C reference_name_to_id = lift{git_reference_name_to_id};
+C blob_create_frombuffer = lift{git_blob_create_frombuffer};
 
-C bray = [](const auto &o, git_treebuilder *bld, git_repository *repo) {
-  return _o_{[=]<typename T>(const char *name, git_filemode_t mode,
-                             T r){
-      ///
-      if constexpr (std::is_invocable_r_v<void, T,
-                                          _o_<ray<int>, ray<git_oid *>>>)
-          r(_o_{[&](int err) { o(err); },
-                [&](git_oid *id) {
-                  git_treebuilder_insert(nullptr, bld, name, id, mode);
-                }});
-  else r(_o_{[&](int err) { o(err); },
-             [&](git_oid *id) {
-               git_treebuilder_insert(nullptr, bld, name, id, mode);
-             }},
-         repo);
-}
-}; // namespace git
+template <typename Pith> struct tree_bark {
+  Pith pith;
+  template <typename O>
+  constexpr void operator()(const O &o, git_repository *r,
+                            const git_tree *source = nullptr) const {
+    git::treebuilder_new(
+        _o_{[&](int err) { o(err); },
+            [&](git_treebuilder *bld) {
+              pith(_o_{[&](int err) { o(err); },
+                       [&](std::string name, const char *b, const size_t s) {
+                         git::blob_create_frombuffer(
+                             _o_{[&](int err) { o(err); },
+                                 [&](git_oid *id) {
+                                   git_treebuilder_insert(nullptr, bld,
+                                                          name.c_str(), id,
+                                                          git::BLOB);
+                                 }},
+                             r, b, s);
+                       }});
+              git::treebuilder_write(o, bld);
+            }},
+        r, source);
+  }
 };
-#include "m.hpp"
-UFB(bark);
-M()(git_repository *repo) {
-  treebuilder_new(_o_{o,
-                      [&](git_treebuilder *bld) {
-                        a(bray(o, bld, repo));
-                        treebuilder_write(o, bld);
-                      }},
-                  repo, nullptr);
-}
-UFE(bark, std::is_invocable_r<
-              void, A,
-              decltype(bray(std::declval<_o_<ray<int>, ray<git_oid *>>>(),
-                            nullptr, nullptr))>);
+template <typename Pith> tree_bark(Pith)->tree_bark<Pith>;
 } // namespace git
 

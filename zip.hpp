@@ -61,7 +61,7 @@ struct unzip {
                       if (int err = inflateInit2(&s, -15) != Z_OK)
                         return o(-7);
                       if (inflate(&s, Z_FINISH) == Z_STREAM_END)
-                        o((const char *)buff.data(), usize);
+                        o(reinterpret_cast<const char *>(buff.data()), usize);
                       else
                         o(-7);
                       inflateEnd(&s);
