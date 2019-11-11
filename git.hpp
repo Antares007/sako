@@ -44,7 +44,8 @@ template <typename Pith> struct tree_bark {
                                                           git::BLOB);
                                  }},
                              r, b, s);
-                       }});
+                       }},
+                   r);
               git::treebuilder_write(o, bld);
             }},
         r, source);

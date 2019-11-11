@@ -36,59 +36,49 @@ constexpr inline auto diff = [](auto o, git_tree *lhs, git_tree *rhs) { //
     o(1, git_tree_entry_byindex(rhs, ri++));
 };
 
-constexpr inline auto map = [](auto o, git_repository *r, git_tree *tree) {
-  const auto ec = git_tree_entrycount(tree);
+constexpr inline auto map = [](git_tree *tree) {
+  return git::tree_bark{[=](auto o, auto r) {
+    const auto ec = git_tree_entrycount(tree);
 
-  constexpr auto ls = [&](auto ls, const size_t i = 0) {
-    if (i >= ec)
-      return;
+    constexpr auto ls = [&](auto ls, const size_t i = 0) {
+      if (i >= ec)
+        return;
 
-    const auto e = git_tree_entry_byindex(tree, i);
-    const auto mode = git_tree_entry_filemode(e);
+      const auto e = git_tree_entry_byindex(tree, i);
+      const auto mode = git_tree_entry_filemode(e);
 
-    if (mode == 0100644 &&
-        std::string_view(git_tree_entry_name(e)).ends_with(".xlsx"))
-      git::blob_lookup(
-          _o_{o,
-              [&](git_blob *blob) {
-                auto buff = git_blob_rawcontent(blob);
-                size_t size = git_blob_rawsize(blob);
-                o(
-                    git_tree_entry_name(e), git::TREE,
-                    git::tree_bark{
-                        [&](auto o) {
-                          unzip{buff, size}(_o_{
-                              o, [&](std::string_view name, auto &&p) {
-                                p(_o_{o, [&](const char *buff, size_t size) {
-                                        o(name, buff, size);
-                                      }});
-                              }});
+      if (mode == 0100644 &&
+          std::string_view(git_tree_entry_name(e)).ends_with(".xlsx"))
+        git::blob_lookup(
+            _o_{o,
+                [&](git_blob *blob) {
+                  auto buff = git_blob_rawcontent(blob);
+                  size_t size = git_blob_rawsize(blob);
+                  o(
+                      git_tree_entry_name(e), git::tree_bark{[&](auto o) {
+                        unzip{buff, size}(_o_{
+                            o, [&](std::string_view name, auto &&p) {
+                              p(_o_{o, [&](const void *buff, size_t size) {
+                                      o(name, buff, size);
+                                    }});
+                            }});
 
-                          ls(ls, i + 1);
-                        }});
-              }},
-          r, git_tree_entry_id(e));
-    else if (mode == 040000)
-      ;
-  };
-  ls(ls);
+                        ls(ls, i + 1);
+                      }});
+                }},
+            r, git_tree_entry_id(e));
+      else if (mode == 040000)
+        ;
+    };
+    ls(ls);
+  }};
 };
-
 auto main() -> int {
   git_libgit2_init();
   pin{[](auto o, git_repository *r) {
         const auto pcommitoid = git::reference_name_to_id ^ r ^ "HEAD";
-
         const auto ptreeoid =
             git::index_write_tree ^ (git::repository_index ^ r);
-
-        git::tree_bark{[&](auto o) { //
-          o("readme.txt", "file content", sizeof("file content"));
-        }}(_o_{o,
-               [](git_oid *id) {
-                 std::cout << "A:" << git_oid_tostr_s(id) << "\n";
-               }},
-           r, nullptr);
 
         pin{[&](auto o, auto treeoid, auto commitoid) {
               auto ctree =
