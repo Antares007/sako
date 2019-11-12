@@ -55,7 +55,7 @@ constexpr inline auto map = [](git_tree *tree) {
                   auto buff = git_blob_rawcontent(blob);
                   size_t size = git_blob_rawsize(blob);
                   o(git_tree_entry_name(e), git::tree_bark{[&](auto o) {
-                      unzip{}(
+                      unzip(
                           _o_{o,
                               [&](std::string_view name, auto &&p) {
                                 p(_o_{o, [&](const void *buff, size_t size) {
@@ -126,7 +126,7 @@ auto main() -> int {
           [](git_blob *blob) {
             auto buff = git_blob_rawcontent(blob);
             size_t size = git_blob_rawsize(blob);
-            unzip{}(
+            unzip(
                 _o_{[](int err) { std::cout << err << "\n"; },
                     [](std::string_view name, auto &&p) {
                       p(_o_{[&](auto err) { std::cout << err << "\n"; },
