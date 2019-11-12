@@ -54,17 +54,18 @@ constexpr inline auto map = [](git_tree *tree) {
                 [&](git_blob *blob) {
                   auto buff = git_blob_rawcontent(blob);
                   size_t size = git_blob_rawsize(blob);
-                  o(
-                      git_tree_entry_name(e), git::tree_bark{[&](auto o) {
-                        unzip{buff, size}(_o_{
-                            o, [&](std::string_view name, auto &&p) {
-                              p(_o_{o, [&](const void *buff, size_t size) {
-                                      o(name, buff, size);
-                                    }});
-                            }});
+                  o(git_tree_entry_name(e), git::tree_bark{[&](auto o) {
+                      unzip{}(
+                          _o_{o,
+                              [&](std::string_view name, auto &&p) {
+                                p(_o_{o, [&](const void *buff, size_t size) {
+                                        o(name, buff, size);
+                                      }});
+                              }},
+                          buff, size);
 
-                        ls(ls, i + 1);
-                      }});
+                      ls(ls, i + 1);
+                    }});
                 }},
             r, git_tree_entry_id(e));
       else if (mode == 040000)
@@ -125,7 +126,7 @@ auto main() -> int {
           [](git_blob *blob) {
             auto buff = git_blob_rawcontent(blob);
             size_t size = git_blob_rawsize(blob);
-            unzip{buff, size}(
+            unzip{}(
                 _o_{[](int err) { std::cout << err << "\n"; },
                     [](std::string_view name, auto &&p) {
                       p(_o_{[&](auto err) { std::cout << err << "\n"; },
@@ -133,7 +134,8 @@ auto main() -> int {
                               std::cout << name << " - " << size << "\n";
                               // << std::string_view(content, size) << "\n";
                             }});
-                    }});
+                    }},
+                buff, size);
             std::cout << buff << " - " << size << "aaa\n";
           }});
 

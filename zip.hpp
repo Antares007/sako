@@ -5,8 +5,6 @@
 #include <zlib.h>
 
 struct unzip {
-  const void *in;
-  const size_t size;
 
   template <class T>
   static inline auto v =
@@ -31,7 +29,7 @@ struct unzip {
                        v<uint16_t>(cde + 32 /* File comment length (k) */),
                    count - 1);
   }
-  template <class O> void operator()(O &&o) {
+  template <class O> void operator()(O &&o, const void *in, const size_t size) {
     const char *buf = reinterpret_cast<const char *>(in);
     const char *eocd = buf + size - 22;
     if (size < 22 || v<uint32_t>(eocd + 0) != 0x06054b50)
