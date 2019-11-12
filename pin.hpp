@@ -35,3 +35,7 @@ template <typename Pith, typename A, typename R>
 constexpr auto operator^(pin<Pith, A> l, R &&r) {
   return pin{l, static_cast<R &&>(r)};
 }
+template <typename Pith, typename A, typename R>
+constexpr auto operator|(pin<Pith, A> l, R &&r) {
+  return pin{static_cast<R &&>(r), l};
+}
