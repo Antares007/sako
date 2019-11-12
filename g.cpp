@@ -46,7 +46,6 @@ constexpr inline auto map = [](git_tree *tree) {
 
       const auto e = git_tree_entry_byindex(tree, i);
       const auto mode = git_tree_entry_filemode(e);
-
       if (mode == 0100644 &&
           std::string_view(git_tree_entry_name(e)).ends_with(".xlsx"))
         git::blob_lookup(
@@ -77,6 +76,21 @@ constexpr inline auto map = [](git_tree *tree) {
 auto main() -> int {
   git_libgit2_init();
   pin{[](auto o, git_repository *r) {
+        auto pblob =
+            git::blob_lookup ^ r ^
+            (git::oid_fromstr ^ "080ca003cef9e73967ff818672c3b15e26fe0817");
+        const auto pbuff_and_size =
+            pin{[](auto o, git_blob *blob) {
+                  o(git_blob_rawcontent(blob), git_blob_rawsize(blob));
+                },
+                pblob};
+        const auto px = pin{unzip, pbuff_and_size};
+        px(_o_{[](int) {},
+               [](auto a, auto b) {
+                 //         print<decltype(a), decltype(b)> //
+                 //             p;
+               }});
+
         const auto pcommitoid = git::reference_name_to_id ^ r ^ "HEAD";
         const auto ptreeoid =
             git::index_write_tree ^ (git::repository_index ^ r);
