@@ -31,23 +31,23 @@ C blob_create_frombuffer = lift{git_blob_create_frombuffer};
 namespace git {
 template <typename Pith> struct tree_bark {
   Pith pith;
+  template <typename O> struct R {
+    O o;
+    git_treebuilder *bld;
+    constexpr void operator()(int err) const { o(err); }
+    constexpr void operator()(const char *filename, const git_oid *id,
+                              git_filemode_t filemode) const {
+      git_treebuilder_insert(nullptr, bld, filename, id, filemode);
+    }
+    template <typename Pith_> constexpr void operator()(Pith_ pith_) const {
+      pith_(*this);
+    }
+  };
   template <typename O>
   constexpr void operator()(const O &o, git_repository *r,
                             const git_tree *source = nullptr) const {
     (git::treebuilder_new ^ r ^ source | [&](auto o, git_treebuilder *bld) {
-      pith(_o_{[&](int err) { o(err); },
-               [&](const char *filename, const git_oid *id,
-                   git_filemode_t filemode) {
-                 git_treebuilder_insert(nullptr, bld, filename, id, filemode);
-               },
-               [&](auto pith) {
-                 pith(_o_{[&](int err) { o(err); },
-                          [&](const char *filename, const git_oid *id,
-                              git_filemode_t filemode) {
-                            git_treebuilder_insert(nullptr, bld, filename, id,
-                                                   filemode);
-                          }});
-               }});
+      pith(R<O>{o, bld}, r);
       git::treebuilder_write(o, bld);
     })(o);
   }
@@ -59,4 +59,3 @@ template <typename Pith, typename R>
 constexpr auto operator^(git::tree_bark<Pith> l, R &&r) {
   return pin{l, static_cast<R &&>(r)};
 }
-
