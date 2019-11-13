@@ -55,14 +55,14 @@ constexpr inline auto diff = [](auto o, git_tree *lhs, git_tree *rhs) { //
 // })(o);
 
 constexpr inline auto ls = [](auto o, git_tree *tree) {
-  const auto rec = [&](auto rec, size_t i) {
-    if (i < 0)
+  const auto rec = [=](auto rec, size_t i) {
+    if (i-- < 1)
       return;
     const auto e = git_tree_entry_byindex(tree, i);
     o(git_tree_entry_name(e), git_tree_entry_id(e), git_tree_entry_filemode(e));
-    rec(rec, i - 1);
+    rec(rec, i);
   };
-  rec(rec, git_tree_entrycount(tree) - 1);
+  rec(rec, git_tree_entrycount(tree));
 };
 
 auto main() -> int {
@@ -70,27 +70,19 @@ auto main() -> int {
   pin{[](auto o, git_repository *r) {
         const auto ptreeoid =
             git::index_write_tree ^ (git::repository_index ^ r);
-        o("1");
+
         pin{ls, git::tree_lookup ^ r ^ ptreeoid}(
             _o_{[](int err) { std::cout << err << "\n"; },
                 [](auto a, auto, auto) { std::cout << a << "\n"; }});
 
         //      const auto px = pin{ls, git::tree_lookup ^ r ^ ptreeoid};
-        //        const auto b =
-        //            git::tree_bark{[&](auto o, auto r) {
-        //              (git::tree_lookup ^ r ^ ptreeoid | [](auto o, git_tree
-        //              *) {
-        //                o("ok");
-        //              })([](auto a) { std::cout << a << "\n"; });
-        //
-        //              o(ptreeoid | [](auto o, git_oid *id) { o("A", id,
-        //              git::TREE); });
-        //            }} ^ r |
-        //            [](auto o, git_oid *id) { o(git_oid_tostr_s(id)); };
-        //
-        //        b(_o_{[](int err) { std::cout << err << "\n"; },
-        //              [](auto a) { std::cout << a << "\n"; }});
-        //
+        const auto b = git::tree_bark{[&](auto o, auto r) {
+                         o(pin{ls, git::tree_lookup ^ r ^ ptreeoid});
+                       }} ^ r |
+                       [](auto o, git_oid *id) { o(git_oid_tostr_s(id)); };
+
+        b(_o_{[](int err) { std::cout << err << "\n"; },
+              [](auto a) { std::cout << a << "\n"; }});
 
         // const auto pcommitoid = git::reference_name_to_id ^ r ^ "HEAD";
 
