@@ -67,59 +67,25 @@ constexpr inline auto ls = [](auto o, git_tree *tree) {
 
 auto main() -> int {
   git_libgit2_init();
-  pin{[](auto, git_repository *r) {
+  auto see = pin{[](auto o, int a, int b, int c) { o(a + b + c); },
+                 [](auto o) { o(1, 2, 6); }};
+  see(_o_{[](int err) { exit(err); }, [](auto x) { std::cout << x << "\n"; }});
+
+  auto pith =
+      git::repository_open ^ "." | [](auto o, git_repository *r) {
         const auto ptreeoid =
             git::index_write_tree ^ (git::repository_index ^ r);
 
-        //      const auto px = pin{ls, git::tree_lookup ^ r ^ ptreeoid};
-        const auto b = git::tree_bark{[&](auto o, auto r) {
-                         o(git::tree_lookup ^ r ^ ptreeoid | ls);
-                       }} ^ r |
-                       [](auto o, git_oid *id) { o(git_oid_tostr_s(id)); };
+        (git::tree_bark{[&](auto o, auto r) {
+           o(git::tree_lookup ^ r ^ ptreeoid | ls |
+             [](auto o, const char *a, const git_oid *b, git_filemode_t c) {
+               o(a, b, c);
+             });
+         }} ^ r |
+         [](auto o, git_oid *id) { o(git_oid_tostr_s(id)); })(o);
 
-        b(_o_{[](int err) { std::cout << err << "\n"; },
-              [](auto a) { std::cout << a << "\n"; }});
-
-        // const auto pcommitoid = git::reference_name_to_id ^ r ^ "HEAD";
-
-        // pin{[&](auto o, auto treeoid, auto commitoid) {
-        //      auto ctree =
-        //          git::commit_tree ^ (git::commit_lookup ^ r ^ commitoid);
-        //      auto tree = git::tree_lookup ^ r ^ treeoid;
-        //      auto f = [=] {
-        //        auto log = [](auto m, auto l, auto r) {
-        //          std::cout
-        //              << m << std::oct << (int)git_tree_entry_filemode(l) << "
-        //              "
-        //              << (int)git_tree_entry_filemode(r) << " "
-        //              <<
-        //              std::string_view(git_oid_tostr_s(git_tree_entry_id(l)),
-        //                                  5)
-        //              << " "
-        //              <<
-        //              std::string_view(git_oid_tostr_s(git_tree_entry_id(r)),
-        //                                  5)
-        //              << " " << git_tree_entry_name(l) << "\n";
-        //        };
-        //        pin{diff, ctree,
-        //            tree}(_o_{[&](auto l, auto r) { log("~", l, r); },
-        //                      [&](int, auto e) { log("+", e, e); },
-        //                      [&](auto e, int) { log("-", e, e); },
-        //                      [&](int i) { o(i); }});
-        //      };
-        //      f();
-        //      std::cout << "tree  : " << git_oid_tostr_s(treeoid) << "\n";
-        //      std::cout << "commit: " << git_oid_tostr_s(commitoid) << "\n";
-        //      o(99);
-        //    },
-        //    ptreeoid, pcommitoid}(
-        //    _o_{o, [](git_oid *id) {
-        //          std::cout << "\n\ntree: " << git_oid_tostr_s(id) << "\n\n";
-        //        }});
-      },
-      git::repository_open ^ "."}(
-      _o_{[](int err) { exit(err); }, [](auto m) { std::cout << m << "\n"; }});
-
+      };
+  pith(_o_{[](int err) { exit(err); }, [](auto x) { std::cout << x << "\n"; }});
   return 3;
 }
 #endif
