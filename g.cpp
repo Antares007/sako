@@ -67,17 +67,13 @@ constexpr inline auto ls = [](auto o, git_tree *tree) {
 
 auto main() -> int {
   git_libgit2_init();
-  pin{[](auto o, git_repository *r) {
+  pin{[](auto, git_repository *r) {
         const auto ptreeoid =
             git::index_write_tree ^ (git::repository_index ^ r);
 
-        pin{ls, git::tree_lookup ^ r ^ ptreeoid}(
-            _o_{[](int err) { std::cout << err << "\n"; },
-                [](auto a, auto, auto) { std::cout << a << "\n"; }});
-
         //      const auto px = pin{ls, git::tree_lookup ^ r ^ ptreeoid};
         const auto b = git::tree_bark{[&](auto o, auto r) {
-                         o(pin{ls, git::tree_lookup ^ r ^ ptreeoid});
+                         o(git::tree_lookup ^ r ^ ptreeoid | ls);
                        }} ^ r |
                        [](auto o, git_oid *id) { o(git_oid_tostr_s(id)); };
 
