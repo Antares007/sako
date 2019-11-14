@@ -25,11 +25,12 @@ C repository_index = lift{git_repository_index, git_index_free};
 C index_write_tree = lift{git_index_write_tree};
 C reference_name_to_id = lift{git_reference_name_to_id};
 C blob_create_frombuffer = lift{git_blob_create_frombuffer};
+C empty_tree_oid = oid_fromstr ^ "4b825dc642cb6eb9a060e54bf8d69288fbee4904";
 
 } // namespace git
 
 namespace git {
-constexpr inline auto ls = [](auto o, git_tree *tree) {
+constexpr inline auto ls = [](auto o, const git_tree *tree) {
   const auto rec = [=](auto rec, size_t i) {
     if (i-- < 1)
       return;
@@ -56,17 +57,9 @@ template <typename Pith> struct tree_bark {
   };
   template <typename O>
   constexpr void operator()(O o, git_repository *r,
-                            const git_tree *source = nullptr) const {
+                            const git_tree *source) const {
     (git::treebuilder_new ^ r ^ source | [&](auto o, git_treebuilder *bld) {
-      if (source == nullptr) {
-        git_oid id = {};
-        git_oid_fromstr(&id, "4b825dc642cb6eb9a060e54bf8d69288fbee4904"); //
-        git_tree *empty = {};
-        git_tree_lookup(&empty, r, &id);
-
-        pith(R<O>{o, bld}, r, empty);
-      } else
-        pith(R<O>{o, bld}, r, source);
+      pith(R<O>{o, bld}, r, source);
       git::treebuilder_write(o, bld);
     })(o);
   }

@@ -54,17 +54,17 @@ constexpr inline auto diff = [](auto o, git_tree *lhs, git_tree *rhs) { //
 //   // git::treebuilder_write;
 // })(o);
 
-inline auto test = rec{[](auto, git_oid *id) {
-  return git::tree_bark{[=](auto o, auto r, auto) {
-    o(git::tree_lookup ^ r ^ id | git::ls |
-      [&](auto o, const char *a, const git_oid *b, git_filemode_t c) {
-        if (c == git::TREE)
-          o(git::tree_lookup ^ r ^ b | git::ls);
-        else
-          o(a, b, c);
-      });
-  }};
-}};
+// inline auto test = rec{[](auto, git_oid *id) {
+//  return git::tree_bark{[=](auto o, auto r, auto) {
+//    o(git::tree_lookup ^ r ^ id | git::ls |
+//      [&](auto o, const char *a, const git_oid *b, git_filemode_t c) {
+//        if (c == git::TREE)
+//          o(git::tree_lookup ^ r ^ b | git::ls);
+//        else
+//          o(a, b, c);
+//      });
+//  }};
+//}};
 
 auto main() -> int {
   git_libgit2_init();
@@ -73,15 +73,16 @@ auto main() -> int {
         const auto ptreeoid =
             git::index_write_tree ^ (git::repository_index ^ r);
 
-        (git::tree_bark{[&](auto o, auto r, auto) {
-           o(git::tree_lookup ^ r ^ ptreeoid | git::ls |
+        (git::tree_bark{[&](auto o, auto, const git_tree *tree) {
+           o(pin{git::ls, tree} |
              [](auto o, const char *a, const git_oid *b, git_filemode_t c) {
                if (c == git::TREE)
                  o((std::string("a") + a).c_str(), b, c);
                else
                  o(a, b, c);
              });
-         }} ^ r |
+         }} ^ r ^
+             (git::tree_lookup ^ r ^ ptreeoid) |
          [](auto o, git_oid *id) { o(git_oid_tostr_s(id)); })(o);
 
       };
