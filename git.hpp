@@ -64,7 +64,7 @@ template <typename Pith> struct tree_bark {
     })(o);
   }
 };
-template <typename Pith> tree_bark(Pith) -> tree_bark<Pith>;
+template <typename Pith> tree_bark(Pith)->tree_bark<Pith>;
 } // namespace git
 
 template <typename Pith, typename R>

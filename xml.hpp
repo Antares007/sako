@@ -16,7 +16,6 @@ constexpr inline auto EntityDecl = [](auto...) {};
 constexpr inline auto NotationDecl = [](auto...) {};
 constexpr inline auto Mixed = [](auto...) {};
 
-
 // cp       ::= (Name | choice | seq) ('?' | '*' | '+')?
 // seq      ::= '(' S? cp ( S? ',' S? cp )* S? ')'
 // choice   ::= '(' S? cp ( S? '|' S? cp )+ S? ')'

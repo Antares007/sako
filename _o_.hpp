@@ -17,6 +17,6 @@ template <typename F> struct rec {
     return f(*this, static_cast<Us &&>(us)...);
   }
 };
-template <typename F> rec(F) -> rec<F>;
+template <typename F> rec(F)->rec<F>;
 
 template <typename... T> struct print;
