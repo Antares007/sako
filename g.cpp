@@ -65,28 +65,27 @@ constexpr inline auto diff = [](auto o, git_tree *lhs, git_tree *rhs) { //
 //      });
 //  }};
 //}};
+
 #include "purry.hpp"
+
 auto main() -> int {
   git_libgit2_init();
 
   auto pith = git::repository_open ^ "." | [](auto o, git_repository *r) {
-    const auto ptreeoid = git::index_write_tree ^ (git::repository_index ^ r);
-
-    const auto x =
+    const auto ptreeoid =
         purry{git::index_write_tree}(purry{git::repository_index}(r)).pith;
-    //    print<decltype(x)> p;
 
-    (git::tree_bark{[&](auto o, auto, const git_tree *tree) {
-       o(pin{git::ls, tree} |
-         [](auto o, const char *a, const git_oid *b, git_filemode_t c) {
-           if (c == git::TREE)
-             o((std::string("a") + a).c_str(), b, c);
-           else
-             o(a, b, c);
-         });
-     }} ^ r ^
-         (git::tree_lookup ^ r ^ ptreeoid) |
-     [](auto o, git_oid *id) { o(git_oid_tostr_s(id)); })(o);
+    auto u = git::tree_bark{[&](auto o, auto, const git_tree *tree) {
+               o(pin{git::ls, tree} |
+                 [](auto o, const char *a, const git_oid *b, git_filemode_t c) {
+                   if (c == git::TREE)
+                     o((std::string("a") + a).c_str(), b, c);
+                   else
+                     o(a, b, c);
+                 });
+             }} ^
+             r ^ (git::tree_lookup ^ r ^ ptreeoid);
+    (u | [](auto o, git_oid *id) { o(git_oid_tostr_s(id)); })(o);
   };
   pith(_o_{[](int err) { exit(err); }, [](auto x) { std::cout << x << "\n"; }});
   return 3;
