@@ -65,11 +65,16 @@ constexpr inline auto diff = [](auto o, git_tree *lhs, git_tree *rhs) { //
 //      });
 //  }};
 //}};
-
+#include "purry.hpp"
 auto main() -> int {
   git_libgit2_init();
+
   auto pith = git::repository_open ^ "." | [](auto o, git_repository *r) {
     const auto ptreeoid = git::index_write_tree ^ (git::repository_index ^ r);
+
+    const auto x =
+        purry{git::index_write_tree}(purry{git::repository_index}(r)).pith;
+    //    print<decltype(x)> p;
 
     (git::tree_bark{[&](auto o, auto, const git_tree *tree) {
        o(pin{git::ls, tree} |
