@@ -5,9 +5,8 @@
 
 #ifndef NVIM
 
-auto main() -> int {
+int main() {
   git_libgit2_init();
-
   auto pith = (git::repository_open ^ ".") | [](auto o, git_repository *r) {
     o("ABO");
     const auto ptreeoid = git::index_write_tree ^ (git::repository_index ^ r);
