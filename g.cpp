@@ -12,7 +12,6 @@ auto main() -> int {
     o("ABO");
     const auto ptreeoid = git::index_write_tree ^ (git::repository_index ^ r);
     auto u = git::tree_bark{[&](auto o, auto, const git_tree *tree) {
-               git::ls ^ tree;
                o(git::ls ^ tree |
                  [](auto o, const char *a, const git_oid *b, git_filemode_t c) {
                    if (c == git::TREE)
