@@ -30,7 +30,7 @@ C empty_tree_oid = oid_fromstr ^ "4b825dc642cb6eb9a060e54bf8d69288fbee4904";
 } // namespace git
 
 namespace git {
-constexpr inline auto ls = [](auto o, const git_tree *tree) {
+constexpr inline auto ls = purry{[](auto o, const git_tree *tree) {
   const auto rec = [=](auto rec, size_t i) {
     if (i-- < 1)
       return;
@@ -39,7 +39,7 @@ constexpr inline auto ls = [](auto o, const git_tree *tree) {
     rec(rec, i);
   };
   rec(rec, git_tree_entrycount(tree));
-};
+}};
 
 template <typename Pith> struct tree_bark {
   Pith pith;
@@ -69,5 +69,5 @@ template <typename Pith> tree_bark(Pith)->tree_bark<Pith>;
 
 template <typename Pith, typename R>
 constexpr auto operator^(git::tree_bark<Pith> l, R &&r) {
-  return pin{l, static_cast<R &&>(r)};
+  return purry{l, static_cast<R &&>(r)};
 }

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "pin.hpp"
+#include "purry.hpp"
 
 template <typename... Args> struct lift;
 template <typename T, typename... Args> struct lift<T *, Args...> {
@@ -33,5 +33,5 @@ lift(int (*)(T *, Args...))->lift<T, Args...>;
 
 template <typename T, typename R, typename... Args>
 constexpr auto operator^(lift<T, Args...> l, R &&r) {
-  return pin{l, static_cast<R &&>(r)};
+  return purry{l, static_cast<R &&>(r)};
 }

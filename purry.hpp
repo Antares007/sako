@@ -1,35 +1,49 @@
-#include "pin.hpp"
+#pragma once
+#include "_o_.hpp"
+#include <type_traits>
 
-template <typename> struct purry;
-template <typename Pith> purry(Pith)->purry<Pith>;
+template <typename Test, template <typename...> class Ref>
+struct is_specialization : std::false_type {};
 
-template <typename Pith> struct purry {
+template <template <typename...> class Ref, typename... Args>
+struct is_specialization<Ref<Args...>, Ref> : std::true_type {};
+
+template <typename F, typename... Args>
+concept invocable = requires(F f, Args... args) {
+  { f(args...) }
+  ->void;
+};
+
+template <typename...> struct purry;
+template <typename... Args> purry(Args...)->purry<Args...>;
+
+template <typename Pith> struct purry<Pith> {
   Pith pith;
-  template <typename O> auto operator()(O &&o) const {
-    if constexpr (!!invocable<Pith, O>)
-      pith(static_cast<O &&>(o));
-    else
-      return purry<pin<Pith, O>>{pin<Pith, O>{pith, static_cast<O &&>(o)}};
+  template <typename... Args> constexpr void operator()(Args &&... args) const {
+    pith(static_cast<Args &&>(args)...);
   }
 };
-template <typename Pith, typename A> struct purry<pin<Pith, A>> {
-  pin<Pith, A> pith;
-  template <typename O> auto operator()(O &&o) const {
-    if constexpr (!!invocable<Pith, O, A>)
-      pith(static_cast<O &&>(o));
+
+template <typename Pith, typename A> struct purry<Pith, A> {
+  Pith pith;
+  A a;
+  template <typename O, typename... Rest>
+  constexpr void operator()(O &&o, Rest &&... rest) const {
+    if constexpr (!!invocable<A, void (*)(...)>)
+      a(_o_{[&](int err) { o(err); },
+            [&, ... rest = static_cast<Rest &&>(rest)](auto &&... a) {
+              pith(o, static_cast<decltype(a) &&>(a)..., rest...);
+            }});
     else
-      return purry<pin<pin<Pith, A>, O>>{
-          pin<pin<Pith, A>, O>{pith, static_cast<O &&>(o)}};
+      pith(static_cast<O &&>(o), a, static_cast<Rest &&>(rest)...);
   }
 };
-template <typename Pith, typename A, typename B>
-struct purry<pin<pin<Pith, A>, B>> {
-  pin<pin<Pith, A>, B> pith;
-  template <typename O> auto operator()(O &&o) const {
-    if constexpr (!!invocable<Pith, O, A, B>)
-      pith(static_cast<O &&>(o));
-    else
-      return purry<pin<pin<pin<Pith, A>, B>, O>>{
-          pin<pin<pin<Pith, A>, B>, O>{pith, static_cast<O &&>(o)}};
-  }
-};
+
+template <typename T> concept purriable = is_specialization<T, purry>::value;
+
+template <purriable L, typename R> constexpr auto operator^(L l, R &&r) {
+  return purry{l, static_cast<R &&>(r)};
+}
+template <purriable L, typename R> constexpr auto operator|(L l, R &&r) {
+  return purry{static_cast<R &&>(r), l};
+}

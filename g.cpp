@@ -3,9 +3,6 @@
 
 #ifndef NVIM
 
-#include <iostream>
-#include <string>
-
 constexpr inline auto diff = [](auto o, git_tree *lhs, git_tree *rhs) { //
   const size_t rc = git_tree_entrycount(rhs);
   const size_t lc = git_tree_entrycount(lhs);
@@ -36,6 +33,33 @@ constexpr inline auto diff = [](auto o, git_tree *lhs, git_tree *rhs) { //
     o(1, git_tree_entry_byindex(rhs, ri++));
 };
 
+#include <iostream>
+#include <string>
+
+auto main() -> int {
+  git_libgit2_init();
+
+  auto pith = (git::repository_open ^ ".") | [](auto o, git_repository *r) {
+    o("ABO");
+    const auto ptreeoid = git::index_write_tree ^ (git::repository_index ^ r);
+    auto u = git::tree_bark{[&](auto o, auto, const git_tree *tree) {
+               git::ls ^ tree;
+               o(git::ls ^ tree |
+                 [](auto o, const char *a, const git_oid *b, git_filemode_t c) {
+                   if (c == git::TREE)
+                     o((std::string("a") + a).c_str(), b, c);
+                   else
+                     o(a, b, c);
+                 });
+             }} ^
+             r ^ (git::tree_lookup ^ r ^ ptreeoid);
+    (u | [](auto o, git_oid *id) { o(git_oid_tostr_s(id)); })(o);
+  };
+  pith(_o_{[](int err) { exit(err); }, [](auto x) { std::cout << x << "\n"; }});
+  return 3;
+}
+#endif
+
 //(git::treebuilder_new ^ r ^ nullptr |
 // [&](auto o, git_treebuilder *bld) {
 //   (
@@ -65,29 +89,3 @@ constexpr inline auto diff = [](auto o, git_tree *lhs, git_tree *rhs) { //
 //      });
 //  }};
 //}};
-
-#include "purry.hpp"
-
-auto main() -> int {
-  git_libgit2_init();
-
-  auto pith = git::repository_open ^ "." | [](auto o, git_repository *r) {
-    const auto ptreeoid =
-        purry{git::index_write_tree}(purry{git::repository_index}(r)).pith;
-
-    auto u = git::tree_bark{[&](auto o, auto, const git_tree *tree) {
-               o(pin{git::ls, tree} |
-                 [](auto o, const char *a, const git_oid *b, git_filemode_t c) {
-                   if (c == git::TREE)
-                     o((std::string("a") + a).c_str(), b, c);
-                   else
-                     o(a, b, c);
-                 });
-             }} ^
-             r ^ (git::tree_lookup ^ r ^ ptreeoid);
-    (u | [](auto o, git_oid *id) { o(git_oid_tostr_s(id)); })(o);
-  };
-  pith(_o_{[](int err) { exit(err); }, [](auto x) { std::cout << x << "\n"; }});
-  return 3;
-}
-#endif

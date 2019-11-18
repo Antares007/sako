@@ -1,13 +1,12 @@
 #include "purry.hpp"
 
-#include "_o_.hpp"
-#include <iostream>
 int main() {
   int r = 0;
 
-  purry{[](auto o, auto a, auto b) { o(a, b); }}('A')('B')(
-      _o_{[](int err) { std::cout << err << '\n'; },
-          [&](auto a, auto b) { std::cout << a << b << '\n'; }});
+  auto p = purry{[](auto o, auto a, auto b, auto c) { o(a + b + c); }} ^
+           [](auto o) { o(1, 2); } ^ 6;
+
+  p([&](auto x) { r = x; });
 
   return r;
 }
