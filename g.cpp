@@ -1,40 +1,9 @@
 #include "git.hpp"
 #include "zip.hpp"
-
-#ifndef NVIM
-
-constexpr inline auto diff = [](auto o, git_tree *lhs, git_tree *rhs) { //
-  const size_t rc = git_tree_entrycount(rhs);
-  const size_t lc = git_tree_entrycount(lhs);
-  size_t li = 0;
-  size_t ri = 0;
-  while (li < lc && ri < rc) {
-    const auto le = git_tree_entry_byindex(lhs, li);
-    const auto re = git_tree_entry_byindex(rhs, ri);
-    const auto rez = git_tree_entry_cmp(le, re);
-    if (rez == 0) {
-      if (git_tree_entry_filemode(le) != git_tree_entry_filemode(re) ||
-          git_oid_cmp(git_tree_entry_id(le), git_tree_entry_id(re))) {
-        o(le, re);
-      }
-      li++;
-      ri++;
-    } else if (rez < 0) {
-      o(le, rez);
-      li++;
-    } else {
-      o(rez, re);
-      ri++;
-    }
-  }
-  while (li < lc)
-    o(git_tree_entry_byindex(lhs, li++), -1);
-  while (ri < rc)
-    o(1, git_tree_entry_byindex(rhs, ri++));
-};
-
 #include <iostream>
 #include <string>
+
+#ifndef NVIM
 
 auto main() -> int {
   git_libgit2_init();
