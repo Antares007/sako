@@ -8,12 +8,6 @@ struct is_specialization : std::false_type {};
 template <template <typename...> class Ref, typename... Args>
 struct is_specialization<Ref<Args...>, Ref> : std::true_type {};
 
-template <typename F, typename... Args>
-concept invocable = requires(F f, Args... args) {
-  { f(args...) }
-  ->void;
-};
-
 template <typename...> struct purry;
 template <typename... Args> purry(Args...)->purry<Args...>;
 
@@ -29,7 +23,7 @@ template <typename Pith, typename A> struct purry<Pith, A> {
   A a;
   template <typename O, typename... Rest>
   constexpr void operator()(O &&o, Rest &&... rest) const {
-    if constexpr (!!invocable<A, void (*)(...)>)
+    if constexpr (std::is_invocable_r_v<void, A, void (*)(...)>)
       a(_o_{[&](int err) { o(err); },
             [&, ... rest = static_cast<Rest &&>(rest)](auto &&... a) {
               pith(o, static_cast<decltype(a) &&>(a)..., rest...);
@@ -39,11 +33,13 @@ template <typename Pith, typename A> struct purry<Pith, A> {
   }
 };
 
-template <typename T> concept purriable = is_specialization<T, purry>::value;
-
-template <purriable L, typename R> constexpr auto operator^(L l, R &&r) {
+template <typename L, typename R,
+          typename = std::enable_if_t<is_specialization<L, purry>::value>>
+constexpr auto operator^(L l, R &&r) {
   return purry{l, static_cast<R &&>(r)};
 }
-template <purriable L, typename R> constexpr auto operator|(L l, R &&r) {
+template <typename L, typename R,
+          typename = std::enable_if_t<is_specialization<L, purry>::value>>
+constexpr auto operator|(L l, R &&r) {
   return purry{static_cast<R &&>(r), l};
 }

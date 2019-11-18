@@ -4,4 +4,3 @@
 -Wextra
 -Wpedantic
 -Wno-parentheses
--fconcepts
