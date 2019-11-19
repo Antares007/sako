@@ -5,22 +5,39 @@
 
 #ifndef NVIM
 
+constexpr inline auto ring_ = git::tree_bark{[](auto o, auto r, auto source) {
+  o(git::ls ^ source | [&](auto o, auto a, const git_oid *b, git_filemode_t c) {
+    if (c == git::TREE)
+      (
+          git::tree_lookup ^ r ^ b                                          //
+          | [&, bark = o.bark](auto o, auto source) { bark(o, r, source); } //
+          | [&](auto o,
+                auto oid) { o((std::string("A ") + a).c_str(), oid, c); })(o);
+    else
+      o(a, b, c);
+  });
+}};
+
 int main() {
   git_libgit2_init();
 
   auto pith = (git::repository_open ^ ".") | [](auto o, git_repository *r) {
     o("ABO");
-    (git::tree_bark{[&](auto o, auto, auto tree) {
+
+    (git::tree_bark{[&](auto o, auto r, auto tree) {
+       ring_([](auto) {}, r, tree);
        o(git::ls ^ tree |
          [](auto o, const char *a, const git_oid *b, git_filemode_t c) {
            if (c == git::TREE)
              o((std::string("A ") + a).c_str(), b, c);
+
            else
              o(a, b, c);
          });
      }} ^ r ^
          (git::tree_lookup ^ r ^
           (git::index_write_tree ^ (git::repository_index ^ r))) |
+
      [](auto o, git_oid *id) { o(git_oid_tostr_s(id)); })(o);
   };
 

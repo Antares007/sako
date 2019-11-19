@@ -29,16 +29,18 @@ C empty_tree_oid = oid_fromstr ^ "4b825dc642cb6eb9a060e54bf8d69288fbee4904";
 
 } // namespace git
 
+#include <functional>
 namespace git {
+
 constexpr inline auto ls = purry{[](auto o, const git_tree *tree) {
-  const auto rec = [=](auto rec, size_t i) {
+  auto r = [=](auto r, size_t i) {
     if (i-- < 1)
       return;
     const auto e = git_tree_entry_byindex(tree, i);
     o(git_tree_entry_name(e), git_tree_entry_id(e), git_tree_entry_filemode(e));
-    rec(rec, i);
+    r(r, i);
   };
-  rec(rec, git_tree_entrycount(tree));
+  r(r, git_tree_entrycount(tree));
 }};
 
 constexpr inline auto diff = purry{[](auto o, git_tree *lhs, git_tree *rhs) { //
@@ -76,6 +78,7 @@ template <typename Pith> struct tree_bark {
   template <typename O> struct R {
     O o;
     git_treebuilder *bld;
+    const tree_bark bark;
     constexpr void operator()(int err) const { o(err); }
     constexpr void operator()(const char *filename, const git_oid *id,
                               git_filemode_t filemode) const {
@@ -85,11 +88,15 @@ template <typename Pith> struct tree_bark {
       pith_(*this);
     }
   };
-  template <typename O, typename... Rest>
-  constexpr void operator()(O o, git_repository *r, Rest &&... rest) const {
+  template <typename O>
+  constexpr void operator()(O o, git_repository *r,
+                            const git_tree *source) const {
     (git::treebuilder_new ^ r ^ nullptr | [&](auto o, git_treebuilder *bld) {
-      pith(R<O>{o, bld}, r, static_cast<Rest &&>(rest)...);
+      //
+      pith(R<O>{o, bld, *this}, r, source);
+      //
       git::treebuilder_write(o, bld);
+      //
     })(o);
   }
 };
