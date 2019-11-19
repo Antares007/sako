@@ -7,22 +7,25 @@
 
 int main() {
   git_libgit2_init();
+
   auto pith = (git::repository_open ^ ".") | [](auto o, git_repository *r) {
     o("ABO");
-    const auto ptreeoid = git::index_write_tree ^ (git::repository_index ^ r);
-    auto u = git::tree_bark{[&](auto o, auto, const git_tree *tree) {
-               o(git::ls ^ tree |
-                 [](auto o, const char *a, const git_oid *b, git_filemode_t c) {
-                   if (c == git::TREE)
-                     o((std::string("a") + a).c_str(), b, c);
-                   else
-                     o(a, b, c);
-                 });
-             }} ^
-             r ^ (git::tree_lookup ^ r ^ ptreeoid);
-    (u | [](auto o, git_oid *id) { o(git_oid_tostr_s(id)); })(o);
+    (git::tree_bark{[&](auto o, auto, auto tree) {
+       o(git::ls ^ tree |
+         [](auto o, const char *a, const git_oid *b, git_filemode_t c) {
+           if (c == git::TREE)
+             o((std::string("A ") + a).c_str(), b, c);
+           else
+             o(a, b, c);
+         });
+     }} ^ r ^
+         (git::tree_lookup ^ r ^
+          (git::index_write_tree ^ (git::repository_index ^ r))) |
+     [](auto o, git_oid *id) { o(git_oid_tostr_s(id)); })(o);
   };
+
   pith(_o_{[](int err) { exit(err); }, [](auto x) { std::cout << x << "\n"; }});
+
   return 3;
 }
 #endif
