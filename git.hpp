@@ -93,7 +93,7 @@ template <typename Pith> struct tree_bark {
                             const git_tree *source) const {
     (git::treebuilder_new ^ r ^ nullptr | [&](O o, git_treebuilder *bld) {
       //
-      pith(*this, R<O>{o, bld}, r, source);
+      pith(pith, R<O>{o, bld}, r, source);
       //
       git::treebuilder_write(o, bld);
       //
@@ -101,6 +101,7 @@ template <typename Pith> struct tree_bark {
   }
 };
 template <typename Pith> tree_bark(Pith)->tree_bark<Pith>;
+
 } // namespace git
 
 template <typename Pith, typename R>

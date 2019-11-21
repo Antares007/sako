@@ -24,6 +24,15 @@ template <typename Pith, typename A> struct purry<Pith, A> {
       pith(static_cast<O &&>(o), a, static_cast<Rest &&>(rest)...);
   }
 };
+template <typename Pith, typename A, typename B> struct purry<Pith, A, B> {
+  Pith pith;
+  A a;
+  B b;
+  template <typename... Args> constexpr void operator()(Args &&... args) const {
+    purry<purry<Pith, A>, B>{purry<Pith, A>{pith, a},
+                             b}(static_cast<Args &&>(args)...);
+  }
+};
 template <typename R, typename... Args>
 constexpr auto operator^(purry<Args...> l, R &&r) {
   return purry{l, static_cast<R &&>(r)};
