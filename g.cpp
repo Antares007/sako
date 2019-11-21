@@ -16,30 +16,14 @@ int main() {
   auto ooo = out{};
 
   auto pith = (git::repository_open ^ ".") | +[](out o, git_repository *r) {
-    auto p = [](auto, git::R<out> o, git_repository *, const git_tree *source) {
-      if (source == nullptr)
-        return;
-      o(git::ls ^ source |
-        [&](auto o, auto a, const git_oid *b, git_filemode_t c) {
-          if (c == git::TREE)
-            ;
-          //                       p->operator()([](auto) {}, r,
-          //                       nullptr);
-          //(
-          //    git::tree_lookup ^ r ^ b |
-          //    [&](auto o, auto source) {
-          //      p->operator()([](auto) {}, r, source);
-          //    } |
-          //    [&](auto o, auto oid) {
-          //      o((std::string("A ") + a).c_str(), oid, c);
-          //    })(o);
-          else
-            o(a, b, c);
-        });
-    };
-    git::tree_bark<decltype(p)>{p}(o, r, nullptr);
     o("ABO");
-    auto u = git::tree_bark{[&](auto, auto o, auto, const git_tree *tree) {
+    auto u = git::tree_bark{[&](auto, auto o, auto r, const git_tree *tree) {
+               git::tree_bark{[](auto p, auto, auto r, auto source) {
+                 if (source == nullptr)
+                   return;
+                 p([](auto) {}, r, nullptr);
+               }}([](auto) {}, r, tree);
+
                o(git::ls ^ tree |
                  [](auto o, const char *a, const git_oid *b, git_filemode_t c) {
                    if (c == git::TREE)
@@ -56,6 +40,23 @@ int main() {
   };
 
   pith(ooo);
+  // if (source == nullptr)
+  //  return;
+  //(git::ls ^ source |
+  // [&](git::R<out> o, auto a, const git_oid *b, git_filemode_t c) {
+  //   if (c == git::TREE)
+  //     ; // p(o, r, nullptr);
+  //   //(
+  //   //    git::tree_lookup ^ r ^ b |
+  //   //    [&](auto o, auto source) {
+  //   //      p->operator()([](auto) {}, r, source);
+  //   //    } |
+  //   //    [&](auto o, auto oid) {
+  //   //      o((std::string("A ") + a).c_str(), oid, c);
+  //   //    })(o);
+  //   else
+  //     o(a, b, c);
+  // })(o);
 
   return 3;
 }

@@ -16,7 +16,8 @@ template <typename Pith, typename A> struct purry<Pith, A> {
   constexpr void operator()(O &&o, Rest &&... rest) const {
     if constexpr (std::is_invocable_r_v<void, A, void (*)(...)>)
       a(_o_{[&](int err) { o(err); },
-            [&, ... rest = static_cast<Rest &&>(rest)](auto &&... a) {
+            [pith = this->pith, o = static_cast<O &&>(o),
+             ... rest = static_cast<Rest &&>(rest)](auto &&... a) {
               pith(o, static_cast<decltype(a) &&>(a)..., rest...);
             }});
     else
