@@ -16,27 +16,31 @@ constexpr inline int (*fib)(int) = +[](int n) {
   return n < 2 ? n : fib(n - 2) + fib(n - 1);
 };
 
-constexpr inline auto map = [](auto map, auto o, git_repository *r,
-                               const git_oid *id) {
-  purry{[&](auto o, git_treebuilder *bld, git_tree *source) {
-          purry{[&](auto o, const char *a, const git_oid *b, git_filemode_t c) {
+template <size_t N = 10, typename O>
+constexpr inline void map(O o, git_repository *r, const git_oid *id) {
+  if constexpr (N == 0)
+    o(-1);
+  else
+    purry{[&](auto o, git_treebuilder *bld, git_tree *source) {
+            purry{
+                [&](auto o, const char *a, const git_oid *b, git_filemode_t c) {
                   if (c != git::TREE)
                     git_treebuilder_insert(nullptr, bld, a, b, c);
                   else
-                    map(map,
-                        _o_{[&](int err) { o(err); },
-                            [=](const git_oid *oid) {
-                              git_treebuilder_insert(
-                                  nullptr, bld, (std::string("A ") + a).c_str(),
-                                  oid, c);
-                            }},
-                        r, b);
+                    map<N - 1>(_o_{[o](int err) { o(err); },
+                                   [a, c, bld](const git_oid *oid) {
+                                     git_treebuilder_insert(
+                                         nullptr, bld,
+                                         (std::string("A ") + a).c_str(), oid,
+                                         c);
+                                   }},
+                               r, b);
                 },
                 git::ls ^ source}(o);
-          git::treebuilder_write(o, bld);
-        },
-        git::treebuilder_new ^ r ^ nullptr, git::tree_lookup ^ r ^ id}(o);
-};
+            git::treebuilder_write(o, bld);
+          },
+          git::treebuilder_new ^ r ^ nullptr, git::tree_lookup ^ r ^ id}(o);
+}
 
 int main() {
   git_libgit2_init();
@@ -46,9 +50,9 @@ int main() {
   auto ooo = out{};
 
   auto pith = (git::repository_open ^ ".") | +[](out o, git_repository *r) {
-    o("ABO");
     auto toid = git::index_write_tree ^ (git::repository_index ^ r) |
-                [&](auto o, auto id) { map(map, o, r, id); };
+                [&](auto o, auto id) { map(o, r, id); };
+    o("ABO");
     toid(out{});
 
     auto u = git::tree_bark{[&](auto, auto o, auto, const git_tree *tree) {
