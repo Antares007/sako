@@ -88,14 +88,14 @@ template <typename O> struct R {
 
 template <typename Pith, size_t D = 10> struct tree_bark {
   Pith pith;
-  template <typename O>
-  constexpr void operator()(const O &o, git_repository *r,
-                            const git_tree *source) const {
-    const auto rec = purry{tree_bark<Pith, D - 1>{pith}, r};
-    (git::treebuilder_new ^ r ^ nullptr | [&](O o, git_treebuilder *bld) {
-      pith(rec, R<O>{o, bld}, r, source);
-      git::treebuilder_write(o, bld);
-    })(o);
+  template <typename O, typename... Rest>
+  constexpr void operator()(O &&o, git_repository *r, Rest &&... rest) const {
+    const auto rec = tree_bark<Pith, D - 1>{pith};
+    (git::treebuilder_new ^ r ^ nullptr |
+     [&, ... rest = static_cast<Rest &&>(rest)](O o, git_treebuilder *bld) {
+       pith(rec, R<O>{o, bld}, r, rest...);
+       git::treebuilder_write(o, bld);
+     })(o);
   }
 };
 template <typename Pith> struct tree_bark<Pith, 0> {
