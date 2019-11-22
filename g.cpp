@@ -40,15 +40,15 @@ int main() {
     o("ABO");
     o([&](auto o) { o(fib(8)); });
 
-    auto step1 = git::tree_bark{[](auto self, auto o, auto r, auto tree) {
-      o(git::ls ^ (git::tree_lookup ^ r ^ tree) |
-        [&](auto o, auto name, auto oid, auto mode) {
+    auto step1 = git::tree_bark{[](auto self, auto o, auto r, auto treeid) {
+      o(git::ls ^ (git::tree_lookup ^ r ^ treeid) |
+        [&](auto o, std::string name, auto oid, auto mode) {
           if (mode == git::TREE)
             o(self ^ r ^ oid | [&](auto o, auto oid) {
-              o((std::string("A ") + name).c_str(), oid, git::TREE);
+              o(("A " + name).c_str(), oid, git::TREE);
             });
           else
-            o(name, oid, mode);
+            o(name.c_str(), oid, mode);
         });
     }};
 
