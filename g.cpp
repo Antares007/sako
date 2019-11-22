@@ -60,60 +60,33 @@ template <typename F> rec_(F) -> rec_<F>;
 
 int main() {
   git_libgit2_init();
-  rec_{[](auto r, auto o) {
-    o(1);
-    r([&](auto a) { o(a); });
-  }}(out{});
 
-  auto ooo = out{};
-
-  auto pith = (git::repository_open ^ ".") | +[](out o, git_repository *r) {
-    auto toid = git::index_write_tree ^ (git::repository_index ^ r) |
-                [&](auto o, auto id) { map(o, r, id); };
+  auto pith = git::repository_open ^ "." | +[](out o, git_repository *r) {
+    o("ABO");
     constexpr auto rez = fib(8);
     o([&](auto o) { o(rez); });
-    o("ABO");
 
+    auto step1 = git::tree_bark{[](auto self, auto o, auto r, auto tree) {
+      o(git::ls ^ tree | [&](auto o, auto name, auto oid, auto mode) {
+        if (mode == git::TREE)
+          o(self ^ (git::tree_lookup ^ r ^ oid) | [&](auto o, auto oid) {
+            o((std::string("A ") + name).c_str(), oid, git::TREE);
+          });
+        else
+          o(name, oid, mode);
+      });
+    }};
+
+    o(step1 ^ r ^
+          (git::tree_lookup ^ r ^
+           (git::index_write_tree ^ (git::repository_index ^ r))) |
+      [](auto o, git_oid *id) { o(git_oid_tostr_s(id)); });
+
+    auto toid = git::index_write_tree ^ (git::repository_index ^ r) |
+                [&](auto o, auto id) { map(o, r, id); };
     toid(out{});
-
-    auto u = git::tree_bark{[](auto o, auto, const git_tree *tree) {
-               auto rec = purry{o};
-               o(git::ls ^ tree | [&](auto o, const char *a, const git_oid *b,
-                                      git_filemode_t c) {
-                 if (c == git::TREE)
-                   (rec ^ b | [&](auto o, auto oid) {
-                     o((std::string("A ") + a).c_str(), oid, git::TREE);
-                   });
-                 else
-                   o(a, b, c);
-               });
-             }} ^
-             r ^
-             (git::tree_lookup ^ r ^
-              (git::index_write_tree ^ (git::repository_index ^ r)));
-
-    (u | [](auto o, git_oid *id) { o(git_oid_tostr_s(id)); })(o);
   };
-
-  pith(ooo);
-  // if (source == nullptr)
-  //  return;
-  //(git::ls ^ source |
-  // [&](git::R<out> o, auto a, const git_oid *b, git_filemode_t c) {
-  //   if (c == git::TREE)
-  //     ; // p(o, r, nullptr);
-  //   //(
-  //   //    git::tree_lookup ^ r ^ b |
-  //   //    [&](auto o, auto source) {
-  //   //      p->operator()([](auto) {}, r, source);
-  //   //    } |
-  //   //    [&](auto o, auto oid) {
-  //   //      o((std::string("A ") + a).c_str(), oid, c);
-  //   //    })(o);
-  //   else
-  //     o(a, b, c);
-  // })(o);
-
+  pith(out{});
   return 3;
 }
 #endif
