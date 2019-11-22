@@ -10,6 +10,11 @@ struct out {
   void operator()(const git_oid *oid) const {
     std::cout << git_oid_tostr_s(oid) << '\n';
   }
+  template <typename Pith,
+            typename = std::enable_if_t<std::is_invocable_r_v<void, Pith, out>>>
+  void operator()(Pith &&pith) const {
+    pith(*this);
+  }
 };
 
 constexpr inline int (*fib)(int) = +[](int n) {
@@ -41,18 +46,34 @@ constexpr inline void map(O o, git_repository *r, const git_oid *id) {
           },
           git::treebuilder_new ^ r ^ nullptr, git::tree_lookup ^ r ^ id}(o);
 }
+template <typename F, size_t N = 3> struct rec_ {
+  F f;
+  template <typename... Us> constexpr void operator()(Us &&... us) const {
+    f(rec_<F, N - 1>{f}, static_cast<Us &&>(us)...);
+  }
+};
+template <typename F> struct rec_<F, 0> {
+  F f;
+  template <typename... Us> constexpr void operator()(Us &&...) const {}
+};
+template <typename F> rec_(F) -> rec_<F>;
 
 int main() {
   git_libgit2_init();
-  constexpr auto rez = fib(8);
-  std::cout << rez << '\n';
+  rec_{[](auto r, auto o) {
+    o(1);
+    r([&](auto a) { o(a); });
+  }}(out{});
 
   auto ooo = out{};
 
   auto pith = (git::repository_open ^ ".") | +[](out o, git_repository *r) {
     auto toid = git::index_write_tree ^ (git::repository_index ^ r) |
                 [&](auto o, auto id) { map(o, r, id); };
+    constexpr auto rez = fib(8);
+    o([&](auto o) { o(rez); });
     o("ABO");
+
     toid(out{});
 
     auto u = git::tree_bark{[](auto o, auto, const git_tree *tree) {
