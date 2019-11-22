@@ -86,7 +86,7 @@ template <typename O> struct R {
   }
 };
 
-template <typename Pith, size_t D = 10> struct tree_bark {
+template <typename Pith, size_t D = 8> struct tree_bark {
   Pith pith;
   template <typename O, typename... Rest>
   constexpr void operator()(O &&o, git_repository *r, Rest &&... rest) const {
@@ -105,7 +105,7 @@ template <typename Pith> struct tree_bark<Pith, 0> {
     o(-10);
   }
 };
-template <typename Pith> tree_bark(Pith) -> tree_bark<Pith>;
+template <typename Pith> tree_bark(Pith)->tree_bark<Pith>;
 
 } // namespace git
 

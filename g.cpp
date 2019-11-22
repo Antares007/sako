@@ -31,7 +31,7 @@ template <typename F> struct rec_<F, 0> {
   F f;
   template <typename... Us> constexpr void operator()(Us &&...) const {}
 };
-template <typename F> rec_(F) -> rec_<F>;
+template <typename F> rec_(F)->rec_<F>;
 
 int main() {
   git_libgit2_init();
@@ -41,15 +41,32 @@ int main() {
     o([&](auto o) { o(fib(8)); });
 
     auto step1 = git::tree_bark{[](auto self, auto o, auto r, auto treeid) {
-      o(git::ls ^ (git::tree_lookup ^ r ^ treeid) |
-        [&](auto o, std::string name, auto oid, auto mode) {
-          if (mode == git::TREE)
-            o(self ^ r ^ oid | [&](auto o, auto oid) {
-              o(("A " + name).c_str(), oid, git::TREE);
-            });
-          else
-            o(name.c_str(), oid, mode);
-        });
+      o(git::ls ^ (git::tree_lookup ^ r ^ treeid) | [&](auto o, auto name,
+                                                        auto oid, auto mode) {
+        if (mode == git::TREE)
+          o(self ^ r ^ oid | [&](auto o, auto oid) {
+            if (std::string_view(git_oid_tostr_s(oid)) !=
+                "4b825dc642cb6eb9a060e54bf8d69288fbee4904")
+              o(name, oid, git::TREE);
+          });
+        else if (mode == git::BLOB && std::string_view(name).ends_with(".xlsx"))
+          o(purry{git::tree_bark{[](auto, auto o, auto r, auto blob) {
+                    o(purry{unzip, git_blob_rawcontent(blob),
+                            git_blob_rawsize(blob)} |
+                      [&](auto o, auto n, auto b, auto s) {
+                        o(git::blob_create_frombuffer ^ r ^ b ^ s |
+                          [&](auto o, git_oid *id) {
+                            auto name = std::string(n);
+                            for (size_t i = 0; i < name.size(); i++)
+                              if (name[i] == '/')
+                                name[i] = '_';
+                            o(name.c_str(), id, git::BLOB);
+                          });
+                      });
+                  }},
+                  r, git::blob_lookup ^ r ^ oid} |
+            [&](auto o, auto oid) { o(name, oid, git::TREE); });
+      });
     }};
 
     o(step1 ^ r ^ (git::index_write_tree ^ (git::repository_index ^ r)) |
