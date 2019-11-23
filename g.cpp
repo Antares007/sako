@@ -12,8 +12,10 @@ constexpr inline auto out =
 constexpr inline int (*fib)(int) = +[](int n) {
   return n < 2 ? n : fib(n - 2) + fib(n - 1);
 };
+struct L;
+constexpr inline L *left = nullptr;
 
-int main() {
+int main(int argc, const char **argv) {
   git_libgit2_init();
 
   auto pith = git::repository_open ^ "." | +[](decltype(out) o,
@@ -53,6 +55,15 @@ int main() {
   };
 
   pith(out);
+  auto l = [](auto o, auto b) {
+    if (b)
+      o(left);
+    else
+      o(1);
+  };
+  l(_o_{[&](L *) { std::cout << "left " << argv[1] << "\n"; },
+        [](int) { std::cout << "right\n"; }},
+    argc > 2);
 
   return 3;
 }
