@@ -31,21 +31,21 @@ int main() {
               o(name, oid, git::TREE);
           });
         else if (mode == git::BLOB && std::string_view(name).ends_with(".xlsx"))
-          o(git::tree_bark{[](auto, auto o, auto r, auto blob) {
-              o(purry{unzip, git_blob_rawcontent(blob),
-                      git_blob_rawsize(blob)} |
-                [&](auto o, auto n, auto b, auto s) {
-                  o(git::blob_create_frombuffer ^ r ^ b ^ s |
-                    [&](auto o, git_oid *id) {
-                      auto name = std::string(n);
-                      for (size_t i = 0; i < name.size(); i++)
-                        if (name[i] == '/')
-                          name[i] = '_';
-                      o(name.c_str(), id, git::BLOB);
-                    });
-                });
-            }} ^ r ^
-                (git::blob_lookup ^ r ^ oid) |
+          o(purry{git::tree_bark{[](auto, auto o, auto r, auto blob) {
+                    o(purry{unzip, git_blob_rawcontent(blob),
+                            git_blob_rawsize(blob)} |
+                      [&](auto o, auto n, auto b, auto s) {
+                        o(git::blob_create_frombuffer ^ r ^ b ^ s |
+                          [&](auto o, git_oid *id) {
+                            auto name = std::string(n);
+                            for (size_t i = 0; i < name.size(); i++)
+                              if (name[i] == '/')
+                                name[i] = '_';
+                            o(name.c_str(), id, git::BLOB);
+                          });
+                      });
+                  }},
+                  r, git::blob_lookup ^ r ^ oid} |
             [&](auto o, auto oid) { o(name, oid, git::TREE); });
       });
     }};
