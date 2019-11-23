@@ -73,19 +73,6 @@ constexpr inline auto diff = purry{[](auto o, git_tree *lhs, git_tree *rhs) { //
     o(1, git_tree_entry_byindex(rhs, ri++));
 }};
 
-template <typename O> struct R {
-  O o;
-  git_treebuilder *bld;
-  constexpr void operator()(int err) const { o(err); }
-  constexpr void operator()(const char *filename, const git_oid *id,
-                            git_filemode_t filemode) const {
-    git_treebuilder_insert(nullptr, bld, filename, id, filemode);
-  }
-  template <typename Pith_> constexpr void operator()(Pith_ pith_) const {
-    pith_(*this);
-  }
-};
-
 template <typename Pith, size_t D = 8> struct tree_bark {
   Pith pith;
   template <typename O, typename... Rest>
@@ -93,7 +80,14 @@ template <typename Pith, size_t D = 8> struct tree_bark {
     const auto rec = tree_bark<Pith, D - 1>{pith};
     o(git::treebuilder_new ^ r ^ nullptr |
       [&, ... rest = static_cast<Rest &&>(rest)](O o, git_treebuilder *bld) {
-        pith(rec, R<O>{o, bld}, r, rest...);
+        pith(rec,
+             _o_{[&](int err) { o(err); },
+                 [&](const char *filename, const git_oid *id,
+                     git_filemode_t filemode) {
+                   git_treebuilder_insert(nullptr, bld, filename, id, filemode);
+                 }},
+             r, rest...);
+
         git::treebuilder_write(o, bld);
       });
   }
