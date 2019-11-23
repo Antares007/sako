@@ -13,8 +13,8 @@ constexpr inline auto unzip = [](auto o, const void *in, const size_t size) {
   const char *eocd = buf + size - 22;
   if (size < 22 || v<uint32_t>(eocd + 0) != 0x06054b50)
     return o(-7);
-  auto read_entries = rec{[&o, &buf](auto read_entries, const char *cde,
-                                     const size_t count) {
+  auto read_entries = [&o, &buf](auto read_entries, const char *cde,
+                                 const size_t count) {
     if (v<uint32_t>(cde) != 0x02014b50)
       return o(-7);
     const auto n = v<uint16_t>(cde + 28);
@@ -53,8 +53,10 @@ constexpr inline auto unzip = [](auto o, const void *in, const size_t size) {
       }
     }
     if (count)
-      read_entries(cde + 46 + n + v<uint16_t>(cde + 30) + v<uint16_t>(cde + 32),
+      read_entries(read_entries,
+                   cde + 46 + n + v<uint16_t>(cde + 30) + v<uint16_t>(cde + 32),
                    count - 1);
-  }};
-  read_entries(buf + v<uint32_t>(eocd + 16), v<uint16_t>(eocd + 10) - 1);
+  };
+  read_entries(read_entries, buf + v<uint32_t>(eocd + 16),
+               v<uint16_t>(eocd + 10) - 1);
 };

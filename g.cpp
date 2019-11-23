@@ -4,39 +4,20 @@
 #include <string>
 
 #ifndef NVIM
-struct out {
-  void operator()(int err) const { std::cerr << err << '\n'; }
-  void operator()(const char *cstr) const { std::cout << cstr << '\n'; }
-  void operator()(const git_oid *oid) const {
-    std::cout << git_oid_tostr_s(oid) << '\n';
-  }
-  template <typename Pith,
-            typename = std::enable_if_t<std::is_invocable_r_v<void, Pith, out>>>
-  void operator()(Pith &&pith) const {
-    pith(*this);
-  }
-};
+constexpr inline auto out =
+    _o_{[](int err) { std::cerr << err << '\n'; },
+        [](const char *cstr) { std::cout << cstr << '\n'; },
+        [](const git_oid *oid) { std::cout << git_oid_tostr_s(oid) << '\n'; }};
 
 constexpr inline int (*fib)(int) = +[](int n) {
   return n < 2 ? n : fib(n - 2) + fib(n - 1);
 };
 
-template <typename F, size_t N = 3> struct rec_ {
-  F f;
-  template <typename... Us> constexpr void operator()(Us &&... us) const {
-    f(rec_<F, N - 1>{f}, static_cast<Us &&>(us)...);
-  }
-};
-template <typename F> struct rec_<F, 0> {
-  F f;
-  template <typename... Us> constexpr void operator()(Us &&...) const {}
-};
-template <typename F> rec_(F)->rec_<F>;
-
 int main() {
   git_libgit2_init();
 
-  auto pith = git::repository_open ^ "." | +[](out o, git_repository *r) {
+  auto pith = git::repository_open ^ "." | +[](decltype(out) o,
+                                               git_repository *r) {
     o("ABO");
     o([&](auto o) { o(fib(8)); });
 
@@ -73,7 +54,7 @@ int main() {
       [](auto o, git_oid *id) { o(git_oid_tostr_s(id)); });
   };
 
-  pith(out{});
+  pith(out);
 
   return 3;
 }

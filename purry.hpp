@@ -1,6 +1,6 @@
 #pragma once
 #include "_o_.hpp"
-#include <type_traits>
+
 template <typename...> struct purry;
 template <typename... Args> purry(Args...)->purry<Args...>;
 template <typename Pith> struct purry<Pith> {
