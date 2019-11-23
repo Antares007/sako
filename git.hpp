@@ -107,3 +107,7 @@ template <typename Pith, typename R, size_t N>
 constexpr auto operator^(git::tree_bark<Pith, N> l, R &&r) {
   return purry{l, static_cast<R &&>(r)};
 }
+template <typename Pith, typename R>
+constexpr auto operator^(git::tree_bark<Pith> l, R &&r) {
+  return purry{l, static_cast<R &&>(r)};
+}
