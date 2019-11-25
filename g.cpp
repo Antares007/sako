@@ -24,7 +24,7 @@ int main(int argc, const char **argv) {
     o([&](auto o) { o(fib(8)); });
 
     auto xlsx2tree = git::tree_bark{[](auto, auto o, auto r, auto blob) {
-      o(purry{unzip, git_blob_rawcontent(blob), git_blob_rawsize(blob)} |
+      o(purry{unzip} ^ git_blob_rawcontent(blob) ^ git_blob_rawsize(blob) |
         [&](auto o, auto n, auto b, auto s) {
           o(git::blob_create_frombuffer ^ r ^ b ^ s | [&](auto o, git_oid *id) {
             auto name = std::string(n);
@@ -45,7 +45,7 @@ int main(int argc, const char **argv) {
               o(name, oid, git::TREE);
           });
         else if (mode == git::BLOB && std::string_view(name).ends_with(".xlsx"))
-          o(purry{xlsx2tree, r, git::blob_lookup ^ r ^ oid} |
+          o(purry{xlsx2tree} ^ r ^ (git::blob_lookup ^ r ^ oid) |
             [&](auto o, auto oid) { o(name, oid, git::TREE); });
       });
     }};

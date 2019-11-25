@@ -27,11 +27,11 @@ template <typename T, typename... Args> struct lift<T, Args...> {
   }
 };
 template <typename T, typename... Args>
-lift(int (*)(T **, Args...), void (*)(T *))->lift<T *, Args...>;
+lift(int (*)(T **, Args...), void (*)(T *)) -> lift<T *, Args...>;
 template <typename T, typename... Args>
-lift(int (*)(T *, Args...))->lift<T, Args...>;
+lift(int (*)(T *, Args...)) -> lift<T, Args...>;
 
 template <typename T, typename R, typename... Args>
 constexpr auto operator^(lift<T, Args...> l, R &&r) {
-  return purry{l, static_cast<R &&>(r)};
+  return purry<lift<T, Args...>, int, R>{l, static_cast<R &&>(r)};
 }
