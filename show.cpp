@@ -6,7 +6,7 @@ struct B {};
 struct C {};
 struct D {};
 
-int main() {
+void show0() {
   auto compose = [](auto f, auto g) {
     return purry{[=](auto o, auto a) { o(g ^ (f ^ a)); }};
   };
@@ -20,16 +20,21 @@ int main() {
 
   (gof_1 ^ A{})(_o_{[](int) {}, [](D) {}});
   (gof_2 ^ A{})(_o_{[](int) {}, [](D) {}});
+}
 
-  auto compose_ = [](auto f, auto g) {
-    return [=](auto a) { return g(f(a)); };
-  };
-  auto f_ = [](A) { return B{}; };
-  auto g_ = [](B) { return C{}; };
-  auto h_ = [](C) { return D{}; };
+void show1() {
+  auto compose = [](auto f, auto g) { return [=](auto a) { return g(f(a)); }; };
+  auto f = [](A) { return B{}; };
+  auto g = [](B) { return C{}; };
+  auto h = [](C) { return D{}; };
 
-  auto gofoh_ = compose_(compose_(f_, g_), h_);
-  auto r_ = gofoh_(A{});
+  auto gofoh_ = compose(compose(f, g), h);
+  auto rez = gofoh_(A{});
 
-  static_assert(std::is_same_v<decltype(r_), D>);
+  static_assert(std::is_same_v<decltype(rez), D>);
+}
+
+int main() {
+  show0();
+  show1();
 }
