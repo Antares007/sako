@@ -1,29 +1,33 @@
 #pragma once
 #include "_o_.hpp"
 
-template <typename Pith, typename L, typename R> struct purry {
+template <typename Pith, typename L, typename A> struct purry {
   Pith pith;
-  R r;
+  A a;
   template <typename O, typename... Rest>
   constexpr void operator()(O &&o, Rest &&... rest) const {
-    if constexpr (std::is_invocable_r_v<void, R, void (*)(...)>)
-      r(_o_{[o = static_cast<O &&>(o)](L err) { o(err); },
+    if constexpr (std::is_invocable_r_v<void, A, void (*)(...)>)
+      a(_o_{[o = static_cast<O &&>(o)](L err) { o(err); },
             [o = static_cast<O &&>(o), this,
              ... rest = static_cast<Rest &&>(rest)](auto &&... a) {
               this->pith(o, static_cast<decltype(a) &&>(a)..., rest...);
             }});
     else
-      pith(static_cast<O &&>(o), r, static_cast<Rest &&>(rest)...);
+      pith(static_cast<O &&>(o), a, static_cast<Rest &&>(rest)...);
   }
 };
+
 template <typename Pith, typename L> struct purry<Pith, L, void> : Pith {
   using Pith::operator();
 };
+
 template <typename Pith> purry(Pith) -> purry<Pith, int, void>;
 
-template <typename Pith, typename L, typename R>
-constexpr auto operator^(purry<Pith, L, void> l, R &&r) {
-  return purry<Pith, L, R>{l, static_cast<R &&>(r)};
+constexpr auto inline a = purry{[](auto o, auto a, auto b) { o(a + b); }};
+
+template <typename Pith, typename L, typename A>
+constexpr auto operator^(purry<Pith, L, void> l, A &&a) {
+  return purry<Pith, L, A>{l, static_cast<A &&>(a)};
 }
 template <typename Pith, typename L, typename A, typename R>
 constexpr auto operator^(purry<Pith, L, A> l, R &&r) {

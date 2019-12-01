@@ -6,11 +6,33 @@ struct B {};
 struct C {};
 struct D {};
 
+void showadd() {
+  auto add = purry{[](auto o, auto a, auto b) {
+    if (false)
+      o(A{});
+    o(a + b);
+  }};
+  auto out = _o_{[](A) {}, [](int r) { std::cout << r << '\n'; }};
+  (add ^ 3 ^ 6)(out);
+  (add ^ [](auto o) { o(3, 6); })(out);
+  (add ^ 3 ^ 6)(out);
+  add(out, 3, 6);
+}
+
+void showo() {
+  auto oset = _o_{[](A) { return C{}; }, [](B) {},
+                  [](auto x) {
+                    if constexpr (true)
+                      std::cout << x << '\n';
+                  }};
+  oset("abo");
+  oset(B{});
+}
+
 void show0() {
   auto compose = [](auto f, auto g) {
     return purry{[=](auto o, auto a) { o(g ^ (f ^ a)); }};
   };
-
   auto f = purry{[](auto o, A) { o(B{}); }};
   auto g = purry{[](auto o, B) { o(C{}); }};
   auto h = purry{[](auto o, C) { o(D{}); }};

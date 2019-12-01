@@ -12,16 +12,20 @@ constexpr inline auto out =
 constexpr inline int (*fib)(int) = +[](int n) {
   return n < 2 ? n : fib(n - 2) + fib(n - 1);
 };
+
 struct L;
+
 constexpr inline L *left = nullptr;
 
-int main(int argc, const char **argv) {
+int main() {
   git_libgit2_init();
 
-  auto pith = git::repository_open ^ "." | +[](decltype(out) o,
-                                               git_repository *r) {
+  auto pith = git::repository_open ^ "." | [](auto o, git_repository *r) {
     o("ABO");
-    o([&](auto o) { o(fib(8)); });
+    o([&](auto o) {
+      constexpr auto x = fib(8);
+      o(x);
+    });
 
     auto xlsx2tree = git::tree_bark{[](auto, auto o, auto r, auto blob) {
       o(purry{unzip} ^ git_blob_rawcontent(blob) ^ git_blob_rawsize(blob) |
@@ -55,15 +59,14 @@ int main(int argc, const char **argv) {
   };
 
   pith(out);
-  auto l = [](auto o, auto b) {
-    if (b)
+  auto l = [](auto o) {
+    if (true)
       o(left);
     else
       o(1);
   };
-  l(_o_{[&](L *) { std::cout << "left " << argv[1] << "\n"; },
-        [](int) { std::cout << "right\n"; }},
-    argc > 2);
+  l(_o_{[&](L *) { std::cout << "left\n"; },
+        [](int) { std::cout << "right\n"; }});
 
   return 3;
 }
