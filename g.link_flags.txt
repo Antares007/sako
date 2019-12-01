@@ -1,0 +1,7 @@
+-lglfw
+-lGL
+-lGLU
+-lm
+-lGLEW
+/usr/lib/libz.so
+/usr/lib/libgit2.so
