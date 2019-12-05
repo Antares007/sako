@@ -21,22 +21,23 @@ template <typename Pith, typename L> struct purry<Pith, L, void> : Pith {
   using Pith::operator();
 };
 
-template <typename Pith> purry(Pith) -> purry<Pith, int, void>;
-
-constexpr auto inline a = purry{[](auto o, auto a, auto b) { o(a + b); }};
+template <typename Pith> purry(Pith)->purry<Pith, int, void>;
 
 template <typename Pith, typename L, typename A>
 constexpr auto operator^(purry<Pith, L, void> l, A &&a) {
   return purry<Pith, L, A>{l, static_cast<A &&>(a)};
 }
+
 template <typename Pith, typename L, typename A, typename R>
 constexpr auto operator^(purry<Pith, L, A> l, R &&r) {
   return purry<purry<Pith, L, A>, L, R>{l, static_cast<R &&>(r)};
 }
+
 template <typename Pith, typename L, typename R>
 constexpr auto operator|(purry<Pith, L, void> l, R &&r) {
   return purry<R, L, Pith>{static_cast<R &&>(r), l};
 }
+
 template <typename Pith, typename L, typename A, typename R>
 constexpr auto operator|(purry<Pith, L, A> l, R &&r) {
   return purry<R, L, purry<Pith, L, A>>{static_cast<R &&>(r), l};

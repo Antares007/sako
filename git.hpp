@@ -73,41 +73,30 @@ constexpr inline auto diff = purry{[](auto o, git_tree *lhs, git_tree *rhs) { //
     o(1, git_tree_entry_byindex(rhs, ri++));
 }};
 
-template <typename Pith, size_t D = 8> struct tree_bark {
+template <typename Pith> struct tree_bark {
   Pith pith;
-  template <typename O, typename... Rest>
-  constexpr void operator()(O &&o, git_repository *r, Rest &&... rest) const {
-    const auto rec = tree_bark<Pith, D - 1>{pith};
-    o(git::treebuilder_new ^ r ^ nullptr |
-      [&, ... rest = static_cast<Rest &&>(rest)](O o, git_treebuilder *bld) {
-        pith(rec,
-             _o_{[&](int err) { o(err); },
-                 [&](const char *filename, const git_oid *id,
-                     git_filemode_t filemode) {
-                   git_treebuilder_insert(nullptr, bld, filename, id, filemode);
-                 }},
-             r, rest...);
 
-        git::treebuilder_write(o, bld);
-      });
+  template <typename O>
+  constexpr void operator()(O o, git_treebuilder *bld) const {
+    pith(_o_{[&o](int err) { o(err); },
+             [&bld](const char *filename, const git_oid *id,
+                    git_filemode_t filemode) {
+               git_treebuilder_insert(nullptr, bld, filename, id, filemode);
+             }});
+    git::treebuilder_write(o, bld);
   }
 };
-template <typename Pith> struct tree_bark<Pith, 0> {
-  Pith pith;
-  template <typename O, typename... Us>
-  constexpr void operator()(O &&o, Us &&...) const {
-    o(-10);
-  }
-};
-template <typename Pith> tree_bark(Pith) -> tree_bark<Pith>;
 
+template <typename Pith> tree_bark(Pith)->tree_bark<Pith>;
+
+constexpr inline auto tree_ring = [](auto o, auto pith, git_repository *r) {
+  o(treebuilder_new ^ r ^ nullptr | [&](auto o, git_treebuilder *bld) {
+    pith(_o_{[&o](int err) { o(err); },
+             [&bld](const char *filename, const git_oid *id,
+                    git_filemode_t filemode) {
+               git_treebuilder_insert(nullptr, bld, filename, id, filemode);
+             }});
+    git::treebuilder_write(o, bld);
+  });
+};
 } // namespace git
-
-template <typename Pith, typename R, size_t N>
-constexpr auto operator^(git::tree_bark<Pith, N> l, R &&r) {
-  return purry<git::tree_bark<Pith, N>, int, R>{l, static_cast<R &&>(r)};
-}
-template <typename Pith, typename R>
-constexpr auto operator^(git::tree_bark<Pith> l, R &&r) {
-  return purry<git::tree_bark<Pith>, int, R>{l, static_cast<R &&>(r)};
-}
