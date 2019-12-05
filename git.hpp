@@ -89,14 +89,15 @@ template <typename Pith> struct tree_bark {
 
 template <typename Pith> tree_bark(Pith)->tree_bark<Pith>;
 
-constexpr inline auto tree_ring = [](auto o, auto pith, git_repository *r) {
-  o(treebuilder_new ^ r ^ nullptr | [&](auto o, git_treebuilder *bld) {
-    pith(_o_{[&o](int err) { o(err); },
-             [&bld](const char *filename, const git_oid *id,
-                    git_filemode_t filemode) {
-               git_treebuilder_insert(nullptr, bld, filename, id, filemode);
-             }});
-    git::treebuilder_write(o, bld);
-  });
-};
+constexpr inline auto tree_ring =
+    purry{[](auto o, auto pith, git_repository *r) {
+      o(treebuilder_new ^ r ^ nullptr | [&](auto o, git_treebuilder *bld) {
+        pith(_o_{[&o](int err) { o(err); },
+                 [&bld](const char *filename, const git_oid *id,
+                        git_filemode_t filemode) {
+                   git_treebuilder_insert(nullptr, bld, filename, id, filemode);
+                 }});
+        git::treebuilder_write(o, bld);
+      });
+    }};
 } // namespace git

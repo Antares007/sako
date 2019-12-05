@@ -72,7 +72,7 @@ int main() {
       o(x);
     });
     // auto treeId = git::index_write_tree ^ (git::repository_index ^ r);
-    o(purry{git::tree_bark{[](auto o) { o(-1); }}} ^
+    o(purry{git::tree_ring{[](auto o) { o(-1); }}} ^
       (git::treebuilder_new ^ r ^ nullptr));
 
     /*
