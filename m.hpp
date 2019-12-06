@@ -1,7 +1,27 @@
 #pragma once
-#define M(...) template <typename O> constexpr void operator ()(M_ARGS_
+
+#define MB(name)                                                               \
+  template <typename Pith> struct name##_fn {                                  \
+    Pith pith
+
+#define ME(name)                                                               \
+  }                                                                            \
+  ;                                                                            \
+  template <typename Pith> name##_fn(Pith)->name##_fn<Pith>;                   \
+  constexpr inline auto name = [](auto &&pith) {                               \
+    return purry{name##_fn{static_cast<decltype(pith) &&>(pith)}};             \
+  }
+
+#define MO(...)                                                                \
+  template <typename O>                                                        \
+  constexpr void operator()(O o, __VA_ARGS__) const noexcept {                 \
+    M_ARGS_
+#define M_ARGS_(...)                                                           \
+  o(__VA_ARGS__);                                                              \
+  }
+
 #define G(name) template <typename T> name(T)->name<T>;
-#define M_ARGS_(...) const O &o, __VA_ARGS__) const noexcept
+
 #define UFB(name)                                                              \
   template <typename A> struct name##_fn {                                     \
     A a
