@@ -1,6 +1,6 @@
 #pragma once
-
 #include "lift.hpp"
+#include "m.hpp"
 #include <git2.h>
 #include <string>
 
@@ -75,29 +75,29 @@ constexpr inline auto diff = purry{[](auto o, git_tree *lhs, git_tree *rhs) { //
 
 template <typename Pith> struct tree_bark {
   Pith pith;
-
-  template <typename O>
-  constexpr void operator()(O o, git_treebuilder *bld) const {
-    pith(_o_{[&o](int err) { o(err); },
-             [&bld](const char *filename, const git_oid *id,
-                    git_filemode_t filemode) {
-               git_treebuilder_insert(nullptr, bld, filename, id, filemode);
-             }});
-    git::treebuilder_write(o, bld);
+  M()(git_repository *r) {
+    o(treebuilder_new ^ r ^ nullptr | [&](auto o, git_treebuilder *bld) {
+      pith(_o_{[&o](int err) { o(err); },
+               [&bld](const char *filename, const git_oid *id,
+                      git_filemode_t filemode) {
+                 git_treebuilder_insert(nullptr, bld, filename, id, filemode);
+               }});
+      git::treebuilder_write(o, bld);
+    });
   }
 };
+G(tree_bark)
 
-template <typename Pith> tree_bark(Pith)->tree_bark<Pith>;
-
-constexpr inline auto tree_ring =
-    purry{[](auto o, auto pith, git_repository *r) {
-      o(treebuilder_new ^ r ^ nullptr | [&](auto o, git_treebuilder *bld) {
-        pith(_o_{[&o](int err) { o(err); },
-                 [&bld](const char *filename, const git_oid *id,
-                        git_filemode_t filemode) {
-                   git_treebuilder_insert(nullptr, bld, filename, id, filemode);
-                 }});
-        git::treebuilder_write(o, bld);
-      });
-    }};
+constexpr inline auto tree_ring = [](auto pith) {
+  return purry{[=](auto o, git_repository *r) {
+    o(treebuilder_new ^ r ^ nullptr | [&](auto o, git_treebuilder *bld) {
+      pith(_o_{[&o](int err) { o(err); },
+               [&bld](const char *filename, const git_oid *id,
+                      git_filemode_t filemode) {
+                 git_treebuilder_insert(nullptr, bld, filename, id, filemode);
+               }});
+      git::treebuilder_write(o, bld);
+    });
+  }};
+};
 } // namespace git

@@ -72,8 +72,8 @@ int main() {
       o(x);
     });
     // auto treeId = git::index_write_tree ^ (git::repository_index ^ r);
-    o(purry{git::tree_ring{[](auto o) { o(-1); }}} ^
-      (git::treebuilder_new ^ r ^ nullptr));
+    o(git::tree_ring([](auto) {}) ^ r);
+    o(purry{git::tree_bark{[](auto) {}}} ^ r);
 
     /*
     auto step1 = git::tree_bark{[&](auto self, auto o, auto r, auto treeid) {
