@@ -33,34 +33,33 @@ constexpr inline L *left = nullptr;
 struct mapPith {
   template <typename O>
   void operator()(O o, git_repository *r, const git_oid *id) const { //
-    //    o(git::ls ^ (git::tree_lookup ^ r ^ id) |
-    //      [&](auto o, auto name, auto oid, auto mode) {
-    //        if (mode == git::TREE)
-    //          ;
-    //        // o(git::tree_bark{*this} ^ r ^ oid | [&](auto o, auto oid) {
-    //        //   if (std::string_view(git_oid_tostr_s(oid)) !=
-    //        //       "4b825dc642cb6eb9a060e54bf8d69288fbee4904")
-    //        //     o(name, oid, git::TREE);
-    //        // });
-    //        else if (mode == git::BLOB &&
-    //        std::string_view(name).ends_with(".xlsx"))
-    //          o(git::tree_bark{[](auto o, auto r, auto blob) {
-    //              o(purry{unzip} ^ git_blob_rawcontent(blob) ^
-    //                    git_blob_rawsize(blob) |
-    //                [&](auto o, auto n, auto b, auto s) {
-    //                  o(git::blob_create_frombuffer ^ r ^ b ^ s |
-    //                    [&](auto o, git_oid *id) {
-    //                      auto name = std::string(n);
-    //                      for (size_t i = 0; i < name.size(); i++)
-    //                        if (name[i] == '/')
-    //                          name[i] = '_';
-    //                      o(name.c_str(), id, git::BLOB);
-    //                    });
-    //                });
-    //            }} ^ r ^
-    //                (git::blob_lookup ^ r ^ oid) |
-    //            [&](auto o, auto oid) { o(name, oid, git::TREE); });
-    //      });
+    o(git::ls ^ (git::tree_lookup ^ r ^ id) |
+      [&](auto o, auto name, auto oid, auto mode) {
+        auto aaa = purry{[](auto o, auto r, auto blob) {
+          o(purry{unzip} ^ git_blob_rawcontent(blob) ^ git_blob_rawsize(blob) |
+            [&](auto o, auto n, auto b, auto s) {
+              o(git::blob_create_frombuffer ^ r ^ b ^ s |
+                [&](auto o, git_oid *id) {
+                  auto name = std::string(n);
+                  for (size_t i = 0; i < name.size(); i++)
+                    if (name[i] == '/')
+                      name[i] = '_';
+                  o(name.c_str(), id, git::BLOB);
+                });
+            });
+        }};
+        if (mode == git::TREE)
+          ;
+        // o(git::tree_ring(purry{*this} ^ r ^ oid) ^ r | [&](auto o, auto oid)
+        // {
+        //  if (std::string_view(git_oid_tostr_s(oid)) !=
+        //      "4b825dc642cb6eb9a060e54bf8d69288fbee4904")
+        //    o(name, oid, git::TREE);
+        //});
+        else if (mode == git::BLOB && std::string_view(name).ends_with(".xlsx"))
+          o(git::tree_ring(aaa ^ r ^ (git::blob_lookup ^ r ^ oid)) ^ r |
+            [&](auto o, auto oid) { o(name, oid, git::TREE); });
+      });
   }
 };
 
@@ -73,9 +72,9 @@ int main() {
       constexpr auto x = fib(8);
       o(x);
     });
-    // auto treeId = git::index_write_tree ^ (git::repository_index ^ r);
-    o(git::tree_ring([](auto) {}) ^ r);
-    o(git::tree_bark([](auto) {}) ^ r);
+    auto treeId = git::index_write_tree ^ (git::repository_index ^ r);
+    o(git::tree_ring(purry{mapPith{}} ^ r ^ treeId) ^ r);
+    // o(git::tree_bark([](auto) {}) ^ r);
 
     /*
     auto step1 = git::tree_bark{[&](auto self, auto o, auto r, auto treeid) {
