@@ -30,24 +30,25 @@ constexpr inline L *left = nullptr;
 //       });
 //     });
 // }};
+
+constexpr inline auto aaa = purry{[](auto o, auto r, auto blob) {
+  o(unzip ^ git_blob_rawcontent(blob) ^ git_blob_rawsize(blob) |
+    [&](auto o, auto n, auto b, auto s) {
+      o(git::blob_create_frombuffer ^ r ^ b ^ s | [&](auto o, git_oid *id) {
+        auto name = std::string(n);
+        for (size_t i = 0; i < name.size(); i++)
+          if (name[i] == '/')
+            name[i] = '_';
+        o(name.c_str(), id, git::BLOB);
+      });
+    });
+}};
+
 struct mapPith {
   template <typename O>
   void operator()(O o, git_repository *r, const git_oid *id) const { //
     o(git::ls ^ (git::tree_lookup ^ r ^ id) |
       [&](auto o, auto name, auto oid, auto mode) {
-        auto aaa = purry{[](auto o, auto r, auto blob) {
-          o(purry{unzip} ^ git_blob_rawcontent(blob) ^ git_blob_rawsize(blob) |
-            [&](auto o, auto n, auto b, auto s) {
-              o(git::blob_create_frombuffer ^ r ^ b ^ s |
-                [&](auto o, git_oid *id) {
-                  auto name = std::string(n);
-                  for (size_t i = 0; i < name.size(); i++)
-                    if (name[i] == '/')
-                      name[i] = '_';
-                  o(name.c_str(), id, git::BLOB);
-                });
-            });
-        }};
         if (mode == git::TREE)
           ;
         // o(git::tree_ring(purry{*this} ^ r ^ oid) ^ r | [&](auto o, auto oid)

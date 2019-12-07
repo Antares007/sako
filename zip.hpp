@@ -1,5 +1,6 @@
 #pragma once
 #include "_o_.hpp"
+#include "purry.hpp"
 #include <string_view>
 #include <vector>
 #include <zlib.h>
@@ -8,7 +9,8 @@ template <class T>
 static inline auto v =
     [](const char *buf) -> T { return *reinterpret_cast<const T *>(buf); };
 
-constexpr inline auto unzip = [](auto o, const void *in, const size_t size) {
+constexpr inline auto unzip = purry{[](auto o, const void *in,
+                                       const size_t size) {
   const char *buf = reinterpret_cast<const char *>(in);
   const char *eocd = buf + size - 22;
   if (size < 22 || v<uint32_t>(eocd + 0) != 0x06054b50)
@@ -59,4 +61,4 @@ constexpr inline auto unzip = [](auto o, const void *in, const size_t size) {
   };
   read_entries(read_entries, buf + v<uint32_t>(eocd + 16),
                v<uint16_t>(eocd + 10) - 1);
-};
+}};

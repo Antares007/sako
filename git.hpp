@@ -32,7 +32,7 @@ C empty_tree_oid = oid_fromstr ^ "4b825dc642cb6eb9a060e54bf8d69288fbee4904";
 #include <functional>
 namespace git {
 
-constexpr inline auto ls = purry{[](auto o, const git_tree *tree) {
+C ls = purry{[](auto o, const git_tree *tree) {
   auto r = [=](auto r, size_t i) {
     if (i-- < 1)
       return;
@@ -43,7 +43,7 @@ constexpr inline auto ls = purry{[](auto o, const git_tree *tree) {
   r(r, git_tree_entrycount(tree));
 }};
 
-constexpr inline auto diff = purry{[](auto o, git_tree *lhs, git_tree *rhs) { //
+C diff = purry{[](auto o, git_tree *lhs, git_tree *rhs) { //
   const size_t rc = git_tree_entrycount(rhs);
   const size_t lc = git_tree_entrycount(lhs);
   size_t li = 0;
@@ -73,7 +73,7 @@ constexpr inline auto diff = purry{[](auto o, git_tree *lhs, git_tree *rhs) { //
     o(1, git_tree_entry_byindex(rhs, ri++));
 }};
 
-constexpr inline auto tree_ring = [](auto pith) {
+C tree_ring = [](auto pith) {
   return purry{[pith](auto o, git_repository *r) {
     o(treebuilder_new ^ r ^ nullptr | [&](auto o, git_treebuilder *bld) {
       pith(_o_{[&o](int err) { o(err); },

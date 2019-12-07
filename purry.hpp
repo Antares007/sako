@@ -5,11 +5,10 @@ template <typename Pith, typename L, typename A> struct purry {
   Pith pith;
   A a;
   template <typename O, typename... Rest>
-  constexpr void operator()(O &&o, Rest &&... rest) const {
+  void operator()(O o, Rest &&... rest) const {
     if constexpr (std::is_invocable_r_v<void, A, void (*)(...)>)
-      a(_o_{[o = static_cast<O &&>(o)](L err) { o(err); },
-            [o = static_cast<O &&>(o), this,
-             ... rest = static_cast<Rest &&>(rest)](auto &&... a) {
+      a(_o_{[&o](L err) { o(err); },
+            [&o, this, ... rest = static_cast<Rest &&>(rest)](auto &&... a) {
               this->pith(o, static_cast<decltype(a) &&>(a)..., rest...);
             }});
     else
