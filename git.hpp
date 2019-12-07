@@ -73,16 +73,18 @@ constexpr inline auto diff = purry{[](auto o, git_tree *lhs, git_tree *rhs) { //
     o(1, git_tree_entry_byindex(rhs, ri++));
 }};
 
-MB(tree_bark);
-MO(git_repository *r)
-(treebuilder_new ^ r ^ nullptr | [&](auto o, git_treebuilder *bld) {
-  pith(_o_{
-      [&o](int err) { o(err); },
-      [&bld](const char *filename, const git_oid *id, git_filemode_t filemode) {
-        git_treebuilder_insert(nullptr, bld, filename, id, filemode);
-      }});
-  git::treebuilder_write(o, bld);
-});
+template <typename Pith> MB(tree_bark) {
+  Pith pith;
+  MO(git_repository * r)
+  (treebuilder_new ^ r ^ nullptr | [&](auto o, git_treebuilder *bld) {
+    pith(_o_{[&o](int err) { o(err); },
+             [&bld](const char *filename, const git_oid *id,
+                    git_filemode_t filemode) {
+               git_treebuilder_insert(nullptr, bld, filename, id, filemode);
+             }});
+    git::treebuilder_write(o, bld);
+  });
+};
 ME(tree_bark);
 
 constexpr inline auto tree_ring = [](auto pith) {

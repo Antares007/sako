@@ -1,12 +1,8 @@
 #pragma once
 
-#define MB(name)                                                               \
-  template <typename Pith> struct name##_fn {                                  \
-    Pith pith
+#define MB(name) struct name##_fn
 
 #define ME(name)                                                               \
-  }                                                                            \
-  ;                                                                            \
   template <typename Pith> name##_fn(Pith)->name##_fn<Pith>;                   \
   constexpr inline auto name = [](auto &&pith) {                               \
     return purry{name##_fn{static_cast<decltype(pith) &&>(pith)}};             \
