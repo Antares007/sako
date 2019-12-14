@@ -77,7 +77,8 @@ template <typename A> struct many0 {
   A a;
   template <typename U, typename = if_bark_t<U>>
   constexpr explicit many0<U>(U &&u) : a(static_cast<U &&>(u)) {}
-  M()(const char *in, size_t avail, size_t acc = 0) {
+  template <typename O>
+  void operator()(O o, const char *in, size_t avail, size_t acc = 0) {
     a(
         [&](int x) {
           if (x < 0)
@@ -89,13 +90,14 @@ template <typename A> struct many0 {
         in, avail);
   }
 };
-template <typename A> many0(A)->many0<A>;
+template <typename A> many0(A) -> many0<A>;
 
 template <typename A> struct many1 {
   A a;
   template <typename U, typename = if_bark_t<U>>
   constexpr explicit many1<U>(U &&u) : a(static_cast<U &&>(u)) {}
-  M()(const char *in, size_t avail, size_t acc = -1) {
+  template <typename O>
+  void operator()(O o, const char *in, size_t avail, size_t acc = -1) {
     a(
         [&](int x) {
           if (x < 0)
@@ -108,7 +110,7 @@ template <typename A> struct many1 {
         in, avail);
   }
 };
-template <typename A> many1(A)->many1<A>;
+template <typename A> many1(A) -> many1<A>;
 
 template <typename P, typename = if_bark_t<P>>
 constexpr inline auto opt(P &&p) {
