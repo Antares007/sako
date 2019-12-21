@@ -30,16 +30,16 @@ constexpr inline L *left = nullptr;
 //     });
 // }};
 
-constexpr inline auto aaa = [](auto o, auto r, auto blob) {
-  o([&](auto o, auto n, auto b, auto s) {
+constexpr inline auto aaa = [](auto o, auto repo, auto blob) {
+  o([&](auto o, auto name_, auto buffer, auto size) {
     o([&](auto o, git_oid *id) {
-      auto name = std::string(n);
+      auto name = std::string(name_);
       for (size_t i = 0; i < name.size(); i++)
         if (name[i] == '/')
           name[i] = '_';
       o(name.c_str(), id, git::BLOB);
     } ^
-      (git::blob_create_frombuffer ^ r ^ b ^ s));
+      (git::blob_create_frombuffer ^ repo ^ buffer ^ size));
   } ^
     (unzip ^ git_blob_rawcontent(blob) ^ git_blob_rawsize(blob)));
 };
