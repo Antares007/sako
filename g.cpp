@@ -4,7 +4,7 @@
 #include <string>
 
 constexpr inline auto out =
-    _o_{[](left_ray *, int err) { std::cerr << err << '\n'; },
+    _o_{[](error_ray *, int err) { std::cerr << err << '\n'; },
         [](const char *cstr) { std::cout << cstr << '\n'; },
         [](const git_oid *oid) { std::cout << git_oid_tostr_s(oid) << '\n'; }};
 

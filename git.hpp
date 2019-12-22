@@ -76,7 +76,7 @@ C diff = [](auto o, git_tree *lhs, git_tree *rhs) { //
 C tree_ring = [](auto pith) {
   return [pith](auto o, git_repository *r) {
     o([&](auto o, git_treebuilder *bld) {
-      pith(_o_{[&o](left_ray *, int err) { o(left_ray_v, err); },
+      pith(_o_{[&o](error_ray *, int err) { o(error_ray_v, err); },
                [&bld](const char *filename, const git_oid *id,
                       git_filemode_t filemode) {
                  git_treebuilder_insert(nullptr, bld, filename, id, filemode);

@@ -2,8 +2,8 @@
 
 #include "_o_.hpp"
 
-struct left_ray;
-constexpr inline left_ray *left_ray_v = nullptr;
+struct error_ray;
+constexpr inline error_ray *error_ray_v = nullptr;
 
 template <typename Pith, typename A> struct purry {
   Pith pith;
@@ -11,7 +11,7 @@ template <typename Pith, typename A> struct purry {
   template <typename O, typename... Rest>
   void operator()(const O &o, Rest &&... rest) const {
     if constexpr (std::is_invocable_r_v<void, A, void (*)(...)>)
-      a(_o_{[&o](left_ray *l, auto &&... rest) {
+      a(_o_{[&o](error_ray *l, auto &&... rest) {
               o(l, static_cast<decltype(rest) &&>(rest)...);
             },
             [&o, this, ... rest = static_cast<Rest &&>(rest)](auto &&... a) {
