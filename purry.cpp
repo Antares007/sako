@@ -1,7 +1,7 @@
 #include "purry.hpp"
 #include <iostream>
 constexpr inline auto out =
-    _o_{[](left_ray *, auto...) { std::cerr << "error\n"; },
+    _o_{[](error_ray *, auto...) { std::cerr << "error\n"; },
         [](auto cstr) { std::cout << cstr << '\n'; }};
 struct A {};
 struct B {};
@@ -25,7 +25,7 @@ void show1() {
   };
   auto gof = compose(f, g);
 
-  (gof ^ A{})(_o_{[](left_ray *) {}, [](C) {}});
+  (gof ^ A{})(_o_{[](error_ray *) {}, [](C) {}});
 }
 
 int main() {
