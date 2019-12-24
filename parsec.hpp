@@ -103,7 +103,7 @@ template <typename L, typename R> struct or_ {
   R r;
   MOB()(const char *in) {
     l(_o_{[&](error_ray *, int) {
-            r(_o_{[&](error_ray *, int err) { o(err); },
+            r(_o_{[&](error_ray *, int err) { o(error_ray_v, err); },
                   [&](int len) { o(len); }},
               in);
           },
@@ -119,7 +119,7 @@ template <typename L, typename R> struct and_ {
   MOB()(const char *in) {
     l(_o_{[&](error_ray *, int err) { o(err); },
           [&](int llen) {
-            r(_o_{[&](error_ray *, int err) { o(err); },
+            r(_o_{[&](error_ray *, int err) { o(error_ray_v, err); },
                   [&](int rlen) { o(llen + rlen); }},
               in + llen);
           }},
