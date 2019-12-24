@@ -12,27 +12,9 @@ constexpr inline int (*fib)(int) = +[](int n) {
   return n < 2 ? n : fib(n - 2) + fib(n - 1);
 };
 
-struct L;
-
-constexpr inline L *left = nullptr;
-
-// constexpr inline auto xlsx2tree = git::tree_bark{[](auto o, auto r, auto
-// blob) {
-//   o(purry{unzip} ^ git_blob_rawcontent(blob) ^ git_blob_rawsize(blob) |
-//     [&](auto o, auto n, auto b, auto s) {
-//       o(git::blob_create_frombuffer ^ r ^ b ^ s | [&](auto o, git_oid *id) {
-//         auto name = std::string(n);
-//         for (size_t i = 0; i < name.size(); i++)
-//           if (name[i] == '/')
-//             name[i] = '_';
-//         o(name.c_str(), id, git::BLOB);
-//       });
-//     });
-// }};
-
-constexpr inline auto aaa = [](auto o, auto repo, auto blob) {
-  o([&](auto o, auto name_, auto buffer, auto size) {
-    o([&](auto o, git_oid *id) {
+constexpr inline auto aaa = OB()(auto repo, auto blob) {
+  o(OB(&)(auto name_, auto buffer, auto size) {
+    o(OB(&)(git_oid * id) {
       auto name = std::string(name_);
       for (size_t i = 0; i < name.size(); i++)
         if (name[i] == '/')
@@ -45,9 +27,8 @@ constexpr inline auto aaa = [](auto o, auto repo, auto blob) {
 };
 
 struct mapPith {
-  template <typename O>
-  void operator()(O o, git_repository *r, const git_oid *id) const { //
-    o([&](auto o, auto name, auto oid, auto mode) {
+  MOB()(git_repository *r, const git_oid *id) { //
+    o(OB(&)(auto name, auto oid, auto mode) {
       if (mode == git::TREE)
         ;
       // o(git::tree_ring(purry{*this} ^ r ^ oid) ^ r | [&](auto o, auto oid)
@@ -57,7 +38,7 @@ struct mapPith {
       //    o(name, oid, git::TREE);
       //});
       else if (mode == git::BLOB && std::string_view(name).ends_with(".xlsx"))
-        o([&](auto o, auto oid) { o(name, oid, git::TREE); } ^
+        o(OB(&)(auto oid) { o(name, oid, git::TREE); } ^
           (git::tree_ring(aaa ^ r ^ (git::blob_lookup ^ r ^ oid)) ^ r));
     } ^
       (git::ls ^ (git::tree_lookup ^ r ^ id)));
@@ -67,11 +48,12 @@ struct mapPith {
 int main() {
   git_libgit2_init();
 
-  auto pith = [](auto o, git_repository *r) {
+  auto pith = OB()(git_repository * r) {
     o("ABO");
     auto treeId = git::index_write_tree ^ (git::repository_index ^ r);
     o(git::tree_ring(mapPith{} ^ r ^ treeId) ^ r);
-  } ^ (git::repository_open ^ ".");
+  }
+  ^(git::repository_open ^ ".");
 
   pith(out);
   return 3;

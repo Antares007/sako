@@ -1,5 +1,4 @@
 #pragma once
-#include "_o_.hpp"
 #include "purry.hpp"
 #include <string_view>
 #include <vector>
@@ -9,7 +8,7 @@ template <class T>
 static inline auto v =
     [](const char *buf) -> T { return *reinterpret_cast<const T *>(buf); };
 
-constexpr inline auto unzip = [](auto o, const void *in, const size_t size) {
+constexpr inline auto unzip = OB()(const void *in, const size_t size) {
   const char *buf = reinterpret_cast<const char *>(in);
   const char *eocd = buf + size - 22;
   if (size < 22 || v<uint32_t>(eocd + 0) != 0x06054b50)

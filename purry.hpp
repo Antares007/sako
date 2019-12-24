@@ -1,6 +1,6 @@
 #pragma once
 
-#include "_o_.hpp"
+#include "ob.hpp"
 
 struct error_ray;
 constexpr inline error_ray *error_ray_v = nullptr;
@@ -8,8 +8,7 @@ constexpr inline error_ray *error_ray_v = nullptr;
 template <typename Pith, typename A> struct purry {
   Pith pith;
   A a;
-  template <typename O, typename... Rest>
-  void operator()(const O &o, Rest &&... rest) const {
+  MOB(typename... Rest)(Rest &&... rest) {
     if constexpr (std::is_invocable_r_v<void, A, void (*)(...)>)
       a(_o_{[&o](error_ray *l, auto &&... rest) {
               o(l, static_cast<decltype(rest) &&>(rest)...);

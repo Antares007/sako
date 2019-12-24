@@ -1,6 +1,5 @@
 #pragma once
 #include "lift.hpp"
-#include "m.hpp"
 #include <git2.h>
 #include <string>
 
@@ -32,7 +31,7 @@ C empty_tree_oid = oid_fromstr ^ "4b825dc642cb6eb9a060e54bf8d69288fbee4904";
 #include <functional>
 namespace git {
 
-C ls = [](auto o, const git_tree *tree) {
+C ls = OB()(const git_tree *tree) {
   auto r = [=](auto r, size_t i) {
     if (i-- < 1)
       return;
@@ -43,7 +42,7 @@ C ls = [](auto o, const git_tree *tree) {
   r(r, git_tree_entrycount(tree));
 };
 
-C diff = [](auto o, git_tree *lhs, git_tree *rhs) { //
+C diff = OB()(git_tree * lhs, git_tree *rhs) { //
   const size_t rc = git_tree_entrycount(rhs);
   const size_t lc = git_tree_entrycount(lhs);
   size_t li = 0;
@@ -74,7 +73,7 @@ C diff = [](auto o, git_tree *lhs, git_tree *rhs) { //
 };
 
 C tree_ring = [](auto pith) {
-  return [pith](auto o, git_repository *r) {
+  return OB(pith)(git_repository * r) {
     o([&](auto o, git_treebuilder *bld) {
       pith(_o_{[&o](error_ray *, int err) { o(error_ray_v, err); },
                [&bld](const char *filename, const git_oid *id,
