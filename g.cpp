@@ -8,10 +8,6 @@ constexpr inline auto out =
         [](const char *cstr) { std::cout << cstr << '\n'; },
         [](const git_oid *oid) { std::cout << git_oid_tostr_s(oid) << '\n'; }};
 
-constexpr inline int (*fib)(int) = +[](int n) {
-  return n < 2 ? n : fib(n - 2) + fib(n - 1);
-};
-
 constexpr inline auto unzip_pith = OB()(auto repo, auto blob) {
   o(OB(&)(auto name_, auto buffer, auto size) {
     o(OB(&)(git_oid * id) {
@@ -32,8 +28,7 @@ template <size_t N = 3> struct mapPith {
       if (mode == git::TREE) {
         if constexpr (N > 0)
           o(OB(&)(auto oid) {
-            if (std::string_view(git_oid_tostr_s(oid)) !=
-                "4b825dc642cb6eb9a060e54bf8d69288fbee4904")
+            if (git_oid_streq(oid, "4b825dc642cb6eb9a060e54bf8d69288fbee4904"))
               o(name, oid, git::TREE);
           } ^
             (git::tree_ring(mapPith<N - 1>{} ^ r ^ oid) ^ r));

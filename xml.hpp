@@ -11,8 +11,8 @@ namespace parsec::xml {
 // [#xFDF0-#xFFFD] | [#x10000-#xEFFFF]
 C NameStartChar =
     chr{[](auto c) {
-      return c == ':' || c == '_' || 'a' <= c && c <= 'z' ||
-             'A' <= c && c <= 'Z';
+      return 'a' <= c && c <= 'z' || 'A' <= c && c <= 'Z' || c == ':' ||
+             c == '_';
     }} |
     u8cp{[](auto cp) {
       return 0xC0 <= cp && cp <= 0xD6 || 0xD8 <= cp && cp <= 0xF6 ||
