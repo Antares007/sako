@@ -77,13 +77,13 @@ static void window_create(Display *display, Window windowRoot, int x, int y,
     glXSwapBuffers(display, window);
   }
 }
-#include <thread>
+#include <iostream>
 
 int main() {
-  //  XInitThreads();
   auto display = XOpenDisplay(NULL);
   auto windowRoot = DefaultRootWindow(display);
 
-  window_create(display, windowRoot, 100, 100, 100, 100, 0xFF0000FF);
+  window_create(display, windowRoot, 0, 0, 100, 100, 0xFF0000FF);
+  std::cout << "hello";
   return 9;
 }
