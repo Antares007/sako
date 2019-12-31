@@ -6,8 +6,8 @@
 typedef int(glSwapInterval_t)(Display *dpy, GLXDrawable drawable, int interval);
 // static glSwapInterval_t *glSwapIntervalEXT;
 
-static void olc_WindowCreate(Display *display, Window windowRoot,
-                             uint32_t color) {
+static void window_create(Display *display, Window windowRoot, int x, int y,
+                          int width, int height, uint32_t color) {
   int attribs[] = {GLX_RGBA, GLX_DEPTH_SIZE, 24, GLX_DOUBLEBUFFER, None};
   auto visualinfo = glXChooseVisual(display, 0, attribs);
   auto colourmap =
@@ -21,15 +21,9 @@ static void olc_WindowCreate(Display *display, Window windowRoot,
                           PointerMotionMask | FocusChangeMask |
                           StructureNotifyMask;
 
-  int nScreenWidth = 200;
-  int nPixelWidth = 1;
-  int nScreenHeight = 500;
-  int nPixelHeight = 1;
-  // Create the window
   auto window = XCreateWindow(
-      display, windowRoot, 0, 0, nScreenWidth * nPixelWidth,
-      nScreenHeight * nPixelHeight, 0, visualinfo->depth, InputOutput,
-      visualinfo->visual, CWColormap | CWEventMask, &attributes);
+      display, windowRoot, x, y, width, height, 0, visualinfo->depth,
+      InputOutput, visualinfo->visual, CWColormap | CWEventMask, &attributes);
 
   Atom wmDelete = XInternAtom(display, "WM_DELETE_WINDOW", true);
   XSetWMProtocols(display, window, &wmDelete, 1);
@@ -54,21 +48,21 @@ static void olc_WindowCreate(Display *display, Window windowRoot,
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
   glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
 
-  auto buff = new uint32_t[nScreenWidth * nScreenHeight];
-  for (int i = 0; i < nScreenWidth * nScreenHeight; i++) {
+  auto buff = new uint32_t[width * height];
+  for (int i = 0; i < width * height; i++) {
     buff[i] = color;
   }
 
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, nScreenWidth, nScreenHeight, 0,
-               GL_RGBA, GL_UNSIGNED_BYTE, buff);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA,
+               GL_UNSIGNED_BYTE, buff);
   delete[] buff;
 
-  // XEvent xev;
+  XEvent xev;
   while (true) {
-    // while (XPending(display)) {
-    //  XNextEvent(display, &xev);
-    //}
-    // glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, nScreenWidth, nScreenHeight,
+    while (XPending(display)) {
+      XNextEvent(display, &xev);
+    }
+    // glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height,
     //                GL_RGBA, GL_UNSIGNED_BYTE, s1.GetData());
     glBegin(GL_QUADS);
     glTexCoord2f(0.0, 1.0);
@@ -86,18 +80,10 @@ static void olc_WindowCreate(Display *display, Window windowRoot,
 #include <thread>
 
 int main() {
-  XInitThreads();
+  //  XInitThreads();
   auto display = XOpenDisplay(NULL);
   auto windowRoot = DefaultRootWindow(display);
 
-  auto t1 =
-      std::thread([&]() { olc_WindowCreate(display, windowRoot, 0xFF0000FF); });
-  auto t2 =
-      std::thread([&]() { olc_WindowCreate(display, windowRoot, 0xFF00FF00); });
-  auto t3 =
-      std::thread([&]() { olc_WindowCreate(display, windowRoot, 0xFFFF0000); });
-  t1.join();
-  t2.join();
-  t3.join();
+  window_create(display, windowRoot, 100, 100, 100, 100, 0xFF0000FF);
   return 9;
 }
