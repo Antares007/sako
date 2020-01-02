@@ -3,4 +3,5 @@
 -Wall
 -Wextra
 -Wpedantic
--Wno-parentheses
+-Wno-gnu-anonymous-struct
+-Wno-nested-anon-types

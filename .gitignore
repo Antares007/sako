@@ -4,3 +4,4 @@ out/
 *.gch
 .*
 tags
+*.o
