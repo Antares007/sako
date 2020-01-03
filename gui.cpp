@@ -4,7 +4,7 @@
 #include <X11/Xlib.h>
 #include <png.h>
 
-#include "purry.hpp"
+#include "pith.hpp"
 #include "stb_truetype.h"
 #include <iostream>
 #include <math.h>
@@ -43,7 +43,7 @@ static const pixel WHITE(255, 255, 255), GREY(192, 192, 192),
 
 template <int X, int Y, int W, int H, typename Pith> struct frame {
   Pith pith;
-  MOB()() {
+  MP()() {
     pith([&](auto x, auto y) {
       o(x > X + W ? X + W : x < X ? X : x, y > Y + H ? Y + H : y < Y ? Y : y);
     });
@@ -92,12 +92,13 @@ static void initFont() {
 }
 
 A loopB = [](auto pith) {
-  return OB(=)() {
-    pith(_o_{[&](int err) { o(err); },
+  return P(=)() {
+    pith(
+        rays{[&](int err) { o(err); },
              [&](auto f) {
                bool active = true;
                while (active) {
-                 active = f();
+                 f(rays{[&](int err) { o(err); }, [&](bool b) { active = b; }});
                }
              }});
   };
@@ -105,7 +106,7 @@ A loopB = [](auto pith) {
 
 A windowB = [](auto pith, Display *display, Window windowRoot, int x, int y,
                int width, int height) {
-  return OB(=)() {
+  return P(=)() {
     int attribs[] = {GLX_RGBA, GLX_DEPTH_SIZE, 24, GLX_DOUBLEBUFFER, None};
     const auto visualinfo = glXChooseVisual(display, 0, attribs);
     if (!visualinfo)
@@ -139,7 +140,7 @@ A windowB = [](auto pith, Display *display, Window windowRoot, int x, int y,
 };
 
 A pixelB = [](auto pith) {
-  return OB(=)(auto display, auto window) {
+  return P(=)(auto display, auto window) {
     XWindowAttributes gwa;
     XGetWindowAttributes(display, window, &gwa);
     glViewport(0, 0, gwa.width, gwa.height);
@@ -155,51 +156,30 @@ A pixelB = [](auto pith) {
       buff[i] = 0xff000000;
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, gwa.width, gwa.height, 0, GL_RGBA,
                  GL_UNSIGNED_BYTE, buff);
-    pith(_o_{[&](int err) { o(err); },[](){}});
-    o([&]() {
-      glClear(GL_COLOR_BUFFER_BIT);
-      glBegin(GL_QUADS);
-      glTexCoord2f(0.0, 1.0);
-      glVertex3f(-1.0f, -1.0f, 0.0f);
-      glTexCoord2f(0.0, 0.0);
-      glVertex3f(-1.0f, 1.0f, 0.0f);
-      glTexCoord2f(1.0, 0.0);
-      glVertex3f(1.0f, 1.0f, 0.0f);
-      glTexCoord2f(1.0, 1.0);
-      glVertex3f(1.0f, -1.0f, 0.0f);
-      glEnd();
-      glXSwapBuffers(display, window);
-      return true;
-    });
+    pith(rays{[&](int err) { o(err); },
+              [&](auto pith) {
+                o([&](auto o) {
+                  glClear(GL_COLOR_BUFFER_BIT);
+                  pith([&](int x, int y, pixel p) {
+                    buff[x + y * gwa.width] = p.n;
+                  });
+                  glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, gwa.width, gwa.height,
+                                  GL_RGBA, GL_UNSIGNED_BYTE, buff);
+                  glBegin(GL_QUADS);
+                  glTexCoord2f(0.0, 1.0);
+                  glVertex3f(-1.0f, -1.0f, 0.0f);
+                  glTexCoord2f(0.0, 0.0);
+                  glVertex3f(-1.0f, 1.0f, 0.0f);
+                  glTexCoord2f(1.0, 0.0);
+                  glVertex3f(1.0f, 1.0f, 0.0f);
+                  glTexCoord2f(1.0, 1.0);
+                  glVertex3f(1.0f, -1.0f, 0.0f);
+                  glEnd();
+                  glXSwapBuffers(display, window);
+                  // return true;
+                });
+              }});
     delete[] buff;
-
-    // pithF([&](auto pith) {
-    //  XEvent xev;
-    //  bool active = true;
-    //  while (active) {
-    //    while (XPending(display)) {
-    //      XNextEvent(display, &xev);
-    //      std::cout << xev.type << std::endl;
-    //    }
-    //    glClear(GL_COLOR_BUFFER_BIT);
-    //    active =
-    //        pith([&](int x, int y, pixel p) { buff[x + y * width] = p.n; });
-    //    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_RGBA,
-    //                    GL_UNSIGNED_BYTE, buff);
-    //    glBegin(GL_QUADS);
-    //    glTexCoord2f(0.0, 1.0);
-    //    glVertex3f(-1.0f, -1.0f, 0.0f);
-    //    glTexCoord2f(0.0, 0.0);
-    //    glVertex3f(-1.0f, 1.0f, 0.0f);
-    //    glTexCoord2f(1.0, 0.0);
-    //    glVertex3f(1.0f, 1.0f, 0.0f);
-    //    glTexCoord2f(1.0, 1.0);
-    //    glVertex3f(1.0f, -1.0f, 0.0f);
-    //    glEnd();
-    //    glXSwapBuffers(display, window);
-    //  }
-    //  delete[] buff;
-    //});
   };
 };
 #include <fstream>
@@ -221,8 +201,8 @@ int main() {
 
   auto display = XOpenDisplay(NULL);
   auto windowRoot = DefaultRootWindow(display);
-  loopB(windowB(pixelB(OB(&)() {
-                  o(OB(&)() {
+  loopB(windowB(pixelB(P(&)() {
+                  o(P(&)() {
                     // for (int i = 0; i < 128; i++)
                     //  for (int j = 0; j < 128; j++)
                     //    o(i, j, pixel(rand() % 256, rand() % 256, rand() %
@@ -238,11 +218,11 @@ int main() {
                         if (p)
                           o(i, j + 48, pixel(p, p, p));
                       }
-                    return true;
+                    //                    return true;
                   });
                 }),
                 display, windowRoot, 0, 0, 128, 128))([](auto...) {});
-  // window_bark(OB(&)() {
+  // window_bark(P(&)() {
   //})([](auto...) {}, display, windowRoot, 0, 0, 128, 128);
   return 9;
 }
