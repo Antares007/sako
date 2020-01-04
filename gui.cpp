@@ -92,16 +92,17 @@ static void initFont() {
 }
 
 A loopB = [](auto pith) {
-  return P(=)() {
-    pith(rays{[&](error_ray *, int err) { o(error_ray_v, err); },
-              [&](auto f) {
-                bool active = true;
-                while (active) {
-                  f(rays{[&](error_ray *, int err) { o(error_ray_v, err); },
-                         [&](bool b) { active = b; }});
-                }
-              }});
-  };
+  return P()(auto f) {
+    bool active = true;
+    while (active) {
+      (P(&)(bool b) {
+        active = b;
+        o();
+      } ^
+       f)(o);
+    }
+  }
+  ^pith;
 };
 
 A windowB = [](auto pith, Display *display, Window windowRoot, int x, int y,
