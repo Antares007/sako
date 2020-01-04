@@ -93,14 +93,14 @@ static void initFont() {
 
 A loopB = [](auto pith) {
   return P(=)() {
-    pith(
-        rays{[&](int err) { o(err); },
-             [&](auto f) {
-               bool active = true;
-               while (active) {
-                 f(rays{[&](int err) { o(err); }, [&](bool b) { active = b; }});
-               }
-             }});
+    pith(rays{[&](error_ray *, int err) { o(error_ray_v, err); },
+              [&](auto f) {
+                bool active = true;
+                while (active) {
+                  f(rays{[&](error_ray *, int err) { o(error_ray_v, err); },
+                         [&](bool b) { active = b; }});
+                }
+              }});
   };
 };
 
@@ -110,12 +110,12 @@ A windowB = [](auto pith, Display *display, Window windowRoot, int x, int y,
     int attribs[] = {GLX_RGBA, GLX_DEPTH_SIZE, 24, GLX_DOUBLEBUFFER, None};
     const auto visualinfo = glXChooseVisual(display, 0, attribs);
     if (!visualinfo)
-      return o(-1);
+      return o(error_ray_v, -1);
     const auto colourmap =
         XCreateColormap(display, windowRoot, visualinfo->visual, AllocNone);
     if (colourmap == BadAlloc || colourmap == BadMatch ||
         colourmap == BadValue || colourmap == BadWindow)
-      return o(-2);
+      return o(error_ray_v, -2);
     XSetWindowAttributes attributes;
     attributes.colormap = colourmap;
     attributes.event_mask = ExposureMask | KeyPressMask | KeyReleaseMask |
@@ -127,7 +127,7 @@ A windowB = [](auto pith, Display *display, Window windowRoot, int x, int y,
         InputOutput, visualinfo->visual, CWColormap | CWEventMask, &attributes);
     if (window == BadAlloc || window == BadMatch || window == BadValue ||
         window == BadWindow)
-      return o(-3);
+      return o(error_ray_v, -3);
     Atom wmDelete = XInternAtom(display, "WM_DELETE_WINDOW", true);
     XSetWMProtocols(display, window, &wmDelete, 1);
     XMapWindow(display, window);
@@ -156,7 +156,7 @@ A pixelB = [](auto pith) {
       buff[i] = 0xff000000;
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, gwa.width, gwa.height, 0, GL_RGBA,
                  GL_UNSIGNED_BYTE, buff);
-    pith(rays{[&](int err) { o(err); },
+    pith(rays{[&](error_ray *, int err) { o(error_ray_v, err); },
               [&](auto pith) {
                 o([&](auto o) {
                   glClear(GL_COLOR_BUFFER_BIT);
