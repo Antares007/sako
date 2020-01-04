@@ -95,11 +95,7 @@ A loopB = [](auto pith) {
   return P()(auto f) {
     bool active = true;
     while (active) {
-      (P(&)(bool b) {
-        active = b;
-        o();
-      } ^
-       f)(o);
+      f(rays{o, [&](bool b) { active = b; }});
     }
   }
   ^pith;
@@ -157,29 +153,29 @@ A pixelB = [](auto pith) {
       buff[i] = 0xff000000;
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, gwa.width, gwa.height, 0, GL_RGBA,
                  GL_UNSIGNED_BYTE, buff);
-    pith(rays{[&](error_ray *, int err) { o(error_ray_v, err); },
-              [&](auto pith) {
-                o([&](auto o) {
-                  glClear(GL_COLOR_BUFFER_BIT);
-                  pith([&](int x, int y, pixel p) {
-                    buff[x + y * gwa.width] = p.n;
-                  });
-                  glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, gwa.width, gwa.height,
-                                  GL_RGBA, GL_UNSIGNED_BYTE, buff);
-                  glBegin(GL_QUADS);
-                  glTexCoord2f(0.0, 1.0);
-                  glVertex3f(-1.0f, -1.0f, 0.0f);
-                  glTexCoord2f(0.0, 0.0);
-                  glVertex3f(-1.0f, 1.0f, 0.0f);
-                  glTexCoord2f(1.0, 0.0);
-                  glVertex3f(1.0f, 1.0f, 0.0f);
-                  glTexCoord2f(1.0, 1.0);
-                  glVertex3f(1.0f, -1.0f, 0.0f);
-                  glEnd();
-                  glXSwapBuffers(display, window);
-                  // return true;
-                });
-              }});
+    (P(&)(auto pith) {
+      o([&](auto o) {
+        glClear(GL_COLOR_BUFFER_BIT);
+
+        pith(rays{
+            o, [&](int x, int y, pixel p) { buff[x + y * gwa.width] = p.n; }});
+
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, gwa.width, gwa.height, GL_RGBA,
+                        GL_UNSIGNED_BYTE, buff);
+        glBegin(GL_QUADS);
+        glTexCoord2f(0.0, 1.0);
+        glVertex3f(-1.0f, -1.0f, 0.0f);
+        glTexCoord2f(0.0, 0.0);
+        glVertex3f(-1.0f, 1.0f, 0.0f);
+        glTexCoord2f(1.0, 0.0);
+        glVertex3f(1.0f, 1.0f, 0.0f);
+        glTexCoord2f(1.0, 1.0);
+        glVertex3f(1.0f, -1.0f, 0.0f);
+        glEnd();
+        glXSwapBuffers(display, window);
+      });
+    } ^
+     pith)(o);
     delete[] buff;
   };
 };
@@ -202,28 +198,34 @@ int main() {
 
   auto display = XOpenDisplay(NULL);
   auto windowRoot = DefaultRootWindow(display);
-  loopB(windowB(pixelB(P(&)() {
-                  o(P(&)() {
-                    // for (int i = 0; i < 128; i++)
-                    //  for (int j = 0; j < 128; j++)
-                    //    o(i, j, pixel(rand() % 256, rand() % 256, rand() %
-                    //    256));
 
-                    for (int i = 0; i < 128; i++)
-                      for (int j = 0; j < 48; j++) {
-                        o(i, j, pixel(0xFF000000 | fontSprite[i + j * 128]));
-                      }
-                    for (int i = 0; i < 128; i++)
-                      for (int j = 0; j < 48; j++) {
-                        auto p = temp_bitmap[i + j * 128];
-                        if (p)
-                          o(i, j + 48, pixel(p, p, p));
-                      }
-                    //                    return true;
-                  });
-                }),
-                display, windowRoot, 0, 0, 128, 128))([](auto...) {});
-  // window_bark(P(&)() {
-  //})([](auto...) {}, display, windowRoot, 0, 0, 128, 128);
+  size_t framecounter = 0;
+
+  auto sample = loopB(
+      windowB(pixelB(P(&)() {
+                o(P(&)() {
+                  o(++framecounter < 200);
+                  // for (int i = 0; i < 128; i++)
+                  //  for (int j = 0; j < 128; j++)
+                  //    o(i, j, pixel(rand() % 256, rand() % 256, rand() %
+                  //    256));
+
+                  for (int i = 0; i < 128; i++)
+                    for (int j = 0; j < 48; j++) {
+                      o(i, j, pixel(0xFF000000 | fontSprite[i + j * 128]));
+                    }
+                  for (int i = 0; i < 128; i++)
+                    for (int j = 0; j < 48; j++) {
+                      auto p = temp_bitmap[i + j * 128];
+                      if (p)
+                        o(i, j + 48, pixel(p, p, p));
+                    }
+                  //                    return true;
+                });
+              }),
+              display, windowRoot, 0, 0, 128, 128));
+
+  sample(rays{[](error_ray *, auto err) { std::cerr << err << std::endl; },
+              [](auto x) { std::cout << x << std::endl; }});
   return 9;
 }

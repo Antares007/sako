@@ -15,11 +15,13 @@ template <class... Ts> rays(Ts...)->rays<Ts...>;
 struct error_ray;
 constexpr inline error_ray *error_ray_v = nullptr;
 
+constexpr inline auto any_ray = [](auto...) {};
+
 template <typename Pith, typename A> struct purry {
   Pith pith;
   A a;
   MP(typename... Rest)(Rest &&... rest) {
-    if constexpr (std::is_invocable_r_v<void, A, void (*)(...)>)
+    if constexpr (std::is_invocable_r_v<void, A, decltype(any_ray)>)
       a(rays{[&o](error_ray *l, auto &&... rest) {
                o(l, static_cast<decltype(rest) &&>(rest)...);
              },
