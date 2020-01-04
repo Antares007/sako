@@ -120,7 +120,7 @@ A windowB = [](auto pith, Display *display, Window windowRoot, int x, int y,
                             PointerMotionMask | FocusChangeMask |
                             StructureNotifyMask;
     const auto window = XCreateWindow(
-        display, windowRoot, x, y, width * 3, height * 3, 0, visualinfo->depth,
+        display, windowRoot, x, y, width, height, 0, visualinfo->depth,
         InputOutput, visualinfo->visual, CWColormap | CWEventMask, &attributes);
     if (window == BadAlloc || window == BadMatch || window == BadValue ||
         window == BadWindow)
