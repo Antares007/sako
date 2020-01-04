@@ -5,7 +5,7 @@
 #include "pith.hpp"
 
 constexpr inline auto pixelB = [](auto pith) {
-  return P(=)(auto display, auto window) {
+  return [=](auto o, auto display, auto window) {
     XWindowAttributes gwa;
     XGetWindowAttributes(display, window, &gwa);
     glViewport(0, 0, gwa.width, gwa.height);
@@ -21,7 +21,7 @@ constexpr inline auto pixelB = [](auto pith) {
       buff[i] = 0xff000000;
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, gwa.width, gwa.height, 0, GL_RGBA,
                  GL_UNSIGNED_BYTE, buff);
-    (P(&)(auto pith) {
+    ([&](auto o, auto pith) {
       o([&](auto o) {
         glClear(GL_COLOR_BUFFER_BIT);
 

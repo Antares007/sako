@@ -15,7 +15,8 @@ typedef int(glSwapInterval_t)(Display *dpy, GLXDrawable drawable, int interval);
 
 template <int X, int Y, int W, int H, typename Pith> struct frame {
   Pith pith;
-  MP()() {
+
+  template <typename O> void operator()(O o) {
     pith([&](auto x, auto y) {
       o(x > X + W ? X + W : x < X ? X : x, y > Y + H ? Y + H : y < Y ? Y : y);
     });
@@ -111,8 +112,8 @@ int main() {
   size_t framecounter = 0;
 
   auto sample = loopB(windowB(
-      pixelB(P(&)() {
-        o(P(&)() {
+      pixelB([&](auto o) {
+        o([&](auto o) {
           o(++framecounter < 200);
           for (int i = 0; i < 128; i++)
             for (int j = 0; j < 128; j++)

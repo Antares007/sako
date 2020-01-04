@@ -7,7 +7,7 @@
 constexpr inline auto windowB = [](auto pith, Display *display,
                                    Window windowRoot, int x, int y, int width,
                                    int height) {
-  return P(=)() {
+  return [=](auto o) {
     int attribs[] = {GLX_RGBA, GLX_DEPTH_SIZE, 24, GLX_DOUBLEBUFFER, None};
     const auto visualinfo = glXChooseVisual(display, 0, attribs);
     if (!visualinfo)
