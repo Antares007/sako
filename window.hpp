@@ -1,8 +1,8 @@
 #pragma once
 
-#include "pith.hpp"
 #include <GL/glx.h>
-#include <X11/Xlib.h>
+
+#include "pith.hpp"
 
 constexpr inline auto windowB = [](auto pith, Display *display,
                                    Window windowRoot, int x, int y, int width,
