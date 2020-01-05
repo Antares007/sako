@@ -111,28 +111,28 @@ int main() {
 
   size_t framecounter = 0;
 
-  auto sample = loopB(windowB(
-      pixelB([&](auto o) {
-        o([&](auto o) {
-          o(++framecounter < 200);
-          for (int i = 0; i < 128; i++)
-            for (int j = 0; j < 128; j++)
-              o(i, j, pixel(rand() % 256, rand() % 256, rand() % 256).n);
+  auto sample =
+      loopB &
+      (windowB ^ display ^ windowRoot ^ 0 ^ 0 ^ 128 ^ 128 ^
+       (pixelB & [&](auto o) {
+         o([&](auto o) {
+           o(++framecounter < 200);
+           for (int i = 0; i < 128; i++)
+             for (int j = 0; j < 128; j++)
+               o(i, j, pixel(rand() % 256, rand() % 256, rand() % 256).n);
 
-          for (int i = 0; i < 128; i++)
-            for (int j = 0; j < 48; j++) {
-              o(i, j, pixel(0xFF000000 | fontSprite[i + j * 128]).n);
-            }
-          for (int i = 0; i < 128; i++)
-            for (int j = 0; j < 48; j++) {
-              auto p = temp_bitmap[i + j * 128];
-              if (p)
-                o(i, j + 48, pixel(p, p, p).n);
-            }
-          //                    return true;
-        });
-      }),
-      display, windowRoot, 0, 0, 128, 128));
+           for (int i = 0; i < 128; i++)
+             for (int j = 0; j < 48; j++) {
+               o(i, j, pixel(0xFF000000 | fontSprite[i + j * 128]).n);
+             }
+           for (int i = 0; i < 128; i++)
+             for (int j = 0; j < 48; j++) {
+               auto p = temp_bitmap[i + j * 128];
+               if (p)
+                 o(i, j + 48, pixel(p, p, p).n);
+             }
+         });
+       }));
 
   sample(rays{[](error_ray *, auto err) { std::cerr << err << std::endl; },
               [](auto x) { std::cout << x << std::endl; }});
