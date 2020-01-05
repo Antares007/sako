@@ -2,7 +2,7 @@
 
 #include <GL/glx.h>
 
-#include "pith.hpp"
+#include "purry.hpp"
 
 constexpr inline auto windowB = [](auto o, Display *display, Window windowRoot,
                                    int x, int y, int width, int height,

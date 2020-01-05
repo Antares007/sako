@@ -1,10 +1,10 @@
 #pragma once
 
-#include "pith.hpp"
+#include "purry.hpp"
 
-constexpr inline auto loopB = [](auto o, auto f) {
+constexpr inline auto loopB = [](auto o, auto pith) {
   bool active = true;
   while (active) {
-    f(rays{o, [&](bool b) { active = b; }});
+    pith(rays{o, [&](bool b) { active = b; }});
   }
 };

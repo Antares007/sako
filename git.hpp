@@ -24,14 +24,14 @@ C repository_index = lift{git_repository_index, git_index_free};
 C index_write_tree = lift{git_index_write_tree};
 C reference_name_to_id = lift{git_reference_name_to_id};
 C blob_create_frombuffer = lift{git_blob_create_frombuffer};
-C empty_tree_oid = oid_fromstr ^ "4b825dc642cb6eb9a060e54bf8d69288fbee4904";
+C empty_tree_oid = (oid_fromstr, "4b825dc642cb6eb9a060e54bf8d69288fbee4904");
 
 } // namespace git
 
 #include <functional>
 namespace git {
 
-C ls = OB()(const git_tree *tree) {
+C ls = [](auto o, const git_tree *tree) {
   auto r = [=](auto r, size_t i) {
     if (i-- < 1)
       return;
@@ -42,7 +42,7 @@ C ls = OB()(const git_tree *tree) {
   r(r, git_tree_entrycount(tree));
 };
 
-C diff = OB()(git_tree * lhs, git_tree *rhs) { //
+C diff = [](auto o, git_tree *lhs, git_tree *rhs) { //
   const size_t rc = git_tree_entrycount(rhs);
   const size_t lc = git_tree_entrycount(lhs);
   size_t li = 0;
@@ -73,16 +73,16 @@ C diff = OB()(git_tree * lhs, git_tree *rhs) { //
 };
 
 C tree_ring = [](auto pith) {
-  return OB(pith)(git_repository * r) {
-    o([&](auto o, git_treebuilder *bld) {
-      pith(_o_{[&o](error_ray *, int err) { o(error_ray_v, err); },
-               [&bld](const char *filename, const git_oid *id,
-                      git_filemode_t filemode) {
-                 git_treebuilder_insert(nullptr, bld, filename, id, filemode);
-               }});
+  return [=](auto o, git_repository *r) {
+    ([&](auto o, git_treebuilder *bld) {
+      pith(rays{[&o](error_ray *, int err) { o(error_ray_v, err); },
+                [&bld](const char *filename, const git_oid *id,
+                       git_filemode_t filemode) {
+                  git_treebuilder_insert(nullptr, bld, filename, id, filemode);
+                }});
       git::treebuilder_write(o, bld);
     } ^
-      (treebuilder_new ^ r ^ nullptr));
+     (treebuilder_new, r, nullptr))(o);
   };
 };
 } // namespace git

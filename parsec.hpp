@@ -4,7 +4,7 @@
 
 namespace parsec {
 
-constexpr inline auto rays = _o_{[](error_ray *, int) {}, [](int) {}};
+constexpr inline auto rays = ::rays{[](error_ray *, int) {}, [](int) {}};
 
 template <typename T>
 using if_bark_t = std::enable_if_t<
@@ -12,7 +12,7 @@ using if_bark_t = std::enable_if_t<
 
 template <typename F> struct chr {
   F f;
-  MOB()(const char *in) {
+  template <typename O> void operator()(O o, const char *in) const {
     if (in[0] && f(in[0]))
       o(1);
     else
@@ -29,7 +29,7 @@ chr(F)->chr<F>;
 /// 11110xxx	10xxxxxx	10xxxxxx	10xxxxxx
 template <typename F> struct u8cp {
   F f;
-  MOB()(const char *in) {
+  template <typename O> void operator()(O o, const char *in) const {
     if (in[0] == 0)
       o(error_ray_v, -1);
     else if ((in[0] & 0x80) == 0)
@@ -69,7 +69,7 @@ u8cp(F)->u8cp<F>;
 
 struct str {
   const char *match;
-  MOB()(const char *in) {
+  template <typename O> void operator()(O o, const char *in) const {
     int i = 0;
     while (char c = match[i]) {
       if (c != in[i])
@@ -82,9 +82,10 @@ struct str {
 
 template <typename Parser> struct many0 {
   Parser parser;
-  MOB()(const char *in, size_t acc = 0) {
-    parser(_o_{[&](error_ray *, int) { o(acc); },
-               [&](int len) { this->operator()(o, in + len, acc + len); }},
+  template <typename O>
+  void operator()(O o, const char *in, size_t acc = 0) const {
+    parser(::rays{[&](error_ray *, int) { o(acc); },
+                  [&](int len) { this->operator()(o, in + len, acc + len); }},
            in);
   }
 };
@@ -92,8 +93,9 @@ template <typename Parser> many0(Parser)->many0<Parser>;
 
 template <typename Parser> struct opt {
   Parser parser;
-  MOB()(const char *in) {
-    parser(_o_{[&](error_ray *, int) { o(0); }, [&](int len) { o(len); }}, in);
+  template <typename O> void operator()(O o, const char *in) const {
+    parser(::rays{[&](error_ray *, int) { o(0); }, [&](int len) { o(len); }},
+           in);
   }
 };
 template <typename Parser> opt(Parser)->opt<Parser>;
@@ -101,13 +103,13 @@ template <typename Parser> opt(Parser)->opt<Parser>;
 template <typename L, typename R> struct or_ {
   L l;
   R r;
-  MOB()(const char *in) {
-    l(_o_{[&](error_ray *, int) {
-            r(_o_{[&](error_ray *, int err) { o(error_ray_v, err); },
-                  [&](int len) { o(len); }},
-              in);
-          },
-          [&](int len) { o(len); }},
+  template <typename O> void operator()(O o, const char *in) const {
+    l(::rays{[&](error_ray *, int) {
+               r(::rays{[&](error_ray *, int err) { o(error_ray_v, err); },
+                        [&](int len) { o(len); }},
+                 in);
+             },
+             [&](int len) { o(len); }},
       in);
   }
 };
@@ -116,13 +118,13 @@ template <typename L, typename R> or_(L, R)->or_<L, R>;
 template <typename L, typename R> struct and_ {
   L l;
   R r;
-  MOB()(const char *in) {
-    l(_o_{[&](error_ray *, int err) { o(err); },
-          [&](int llen) {
-            r(_o_{[&](error_ray *, int err) { o(error_ray_v, err); },
-                  [&](int rlen) { o(llen + rlen); }},
-              in + llen);
-          }},
+  template <typename O> void operator()(O o, const char *in) const {
+    l(::rays{[&](error_ray *, int err) { o(err); },
+             [&](int llen) {
+               r(::rays{[&](error_ray *, int err) { o(error_ray_v, err); },
+                        [&](int rlen) { o(llen + rlen); }},
+                 in + llen);
+             }},
       in);
   }
 };

@@ -1,7 +1,3 @@
-//#include <png.h>
-//#include <GL/gl.h>
-//#include <X11/X.h>
-
 #include "draw.hpp"
 #include "loop.hpp"
 #include "window.hpp"
@@ -95,7 +91,7 @@ int main() {
   initFont();
   stbtt_fontinfo info;
   std::string a;
-  std::ifstream file("/home/antares/.local/share/fonts/Hack-Regular.ttf");
+  std::ifstream file("/usr/share/fonts/noto/NotoSerifGeorgian-Regular.ttf");
   std::string content((std::istreambuf_iterator<char>(file)),
                       std::istreambuf_iterator<char>());
 
@@ -112,15 +108,13 @@ int main() {
   size_t framecounter = 0;
 
   auto sample =
-      loopB &
-      (windowB ^ display ^ windowRoot ^ 0 ^ 0 ^ 128 ^ 128 ^
-       (pixelB & [&](auto o) {
+      loopB ^
+      (windowB, display, windowRoot, 0, 0, 128, 128, (drawB ^ [&](auto o) {
          o([&](auto o) {
            o(++framecounter < 200);
            for (int i = 0; i < 128; i++)
              for (int j = 0; j < 128; j++)
                o(i, j, pixel(rand() % 256, rand() % 256, rand() % 256).n);
-
            for (int i = 0; i < 128; i++)
              for (int j = 0; j < 48; j++) {
                o(i, j, pixel(0xFF000000 | fontSprite[i + j * 128]).n);

@@ -2,10 +2,9 @@
 
 #include <GL/glx.h>
 
-#include "pith.hpp"
+#include "purry.hpp"
 
-constexpr inline auto pixelB = [](auto o, auto pith, auto display,
-                                  auto window) {
+constexpr inline auto drawB = [](auto o, auto pith, auto display, auto window) {
   XWindowAttributes gwa;
   XGetWindowAttributes(display, window, &gwa);
   glViewport(0, 0, gwa.width, gwa.height);

@@ -4,51 +4,52 @@
 #include <string>
 
 constexpr inline auto out =
-    _o_{[](error_ray *, int err) { std::cerr << err << '\n'; },
-        [](const char *cstr) { std::cout << cstr << '\n'; },
-        [](const git_oid *oid) { std::cout << git_oid_tostr_s(oid) << '\n'; }};
+    rays{[](error_ray *, int err) { std::cerr << err << '\n'; },
+         [](const char *cstr) { std::cout << cstr << '\n'; },
+         [](const git_oid *oid) { std::cout << git_oid_tostr_s(oid) << '\n'; }};
 
-constexpr inline auto unzip_pith = OB()(auto repo, auto blob) {
-  o(OB(&)(auto name_, auto buffer, auto size) {
-    o(OB(&)(git_oid * id) {
+constexpr inline auto unzip_pith = [](auto o, auto repo, auto blob) {
+  ([&](auto o, auto name_, auto buffer, auto size) {
+    ([&](auto o, git_oid *id) {
       auto name = std::string(name_);
       for (size_t i = 0; i < name.size(); i++)
         if (name[i] == '/')
           name[i] = '_';
       o(name.c_str(), id, git::BLOB);
     } ^
-      (git::blob_create_frombuffer ^ repo ^ buffer ^ size));
+     (git::blob_create_frombuffer, repo, buffer, size))(o);
   } ^
-    (unzip ^ git_blob_rawcontent(blob) ^ git_blob_rawsize(blob)));
+   (unzip, git_blob_rawcontent(blob), git_blob_rawsize(blob)))(o);
 };
 
 template <size_t N = 3> struct mapPith {
-  MOB()(git_repository *r, const git_oid *id) { //
-    o(OB(&)(auto name, auto oid, auto mode) {
+  template <typename O>
+  void operator()(O o, git_repository *r, const git_oid *id) const { //
+    ([&](auto o, auto name, auto oid, auto mode) {
       if (mode == git::TREE) {
         if constexpr (N > 0)
-          o(OB(&)(auto oid) {
+          ([&](auto o, auto oid) {
             if (git_oid_streq(oid, "4b825dc642cb6eb9a060e54bf8d69288fbee4904"))
               o(name, oid, git::TREE);
           } ^
-            (git::tree_ring(mapPith<N - 1>{} ^ r ^ oid) ^ r));
+           (git::tree_ring((mapPith<N - 1>{}, r, oid)), r))(o);
       } else if (mode == git::BLOB && std::string_view(name).ends_with(".xlsx"))
-        o(OB(&)(auto oid) { o(name, oid, git::TREE); } ^
-          (git::tree_ring(unzip_pith ^ r ^ (git::blob_lookup ^ r ^ oid)) ^ r));
+        ([&](auto o, auto oid) { o(name, oid, git::TREE); } ^
+         (git::tree_ring(((unzip_pith, r) ^ (git::blob_lookup, r, oid))), r))(
+            o);
     } ^
-      (git::ls ^ (git::tree_lookup ^ r ^ id)));
+     (git::ls ^ (git::tree_lookup, r, id)))(o);
   }
 };
 
 int main() {
   git_libgit2_init();
 
-  auto pith = OB()(git_repository * r) {
+  auto pith = [&](auto o, git_repository *r) {
     o("ABO");
-    auto treeId = git::index_write_tree ^ (git::repository_index ^ r);
-    o(git::tree_ring(mapPith{} ^ r ^ treeId) ^ r);
-  }
-  ^(git::repository_open ^ "../Downloads/2020");
+    auto treeId = git::index_write_tree ^ (git::repository_index, r);
+    (git::tree_ring((mapPith{}, r) ^ treeId), r)(o);
+  } ^ (git::repository_open, "../Downloads/2020");
 
   pith(out);
   return 3;

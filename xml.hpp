@@ -11,26 +11,26 @@ namespace parsec::xml {
 // [#xFDF0-#xFFFD] | [#x10000-#xEFFFF]
 C NameStartChar =
     chr{[](auto c) {
-      return 'a' <= c && c <= 'z' || 'A' <= c && c <= 'Z' || c == ':' ||
+      return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || c == ':' ||
              c == '_';
     }} |
     u8cp{[](auto cp) {
-      return 0xC0 <= cp && cp <= 0xD6 || 0xD8 <= cp && cp <= 0xF6 ||
-             0xF8 <= cp && cp <= 0x2FF || 0x370 <= cp && cp <= 0x37D ||
-             0x37F <= cp && cp <= 0x1FFF || 0x200C <= cp && cp <= 0x200D ||
-             0x2070 <= cp && cp <= 0x218F || 0x2C00 <= cp && cp <= 0x2FEF ||
-             0x3001 <= cp && cp <= 0xD7FF || 0xF900 <= cp && cp <= 0xFDCF ||
-             0xFDF0 <= cp && cp <= 0xFFFD || 0x10000 <= cp && cp <= 0xEFFFF;
+      return (0xC0 <= cp && cp <= 0xD6) || (0xD8 <= cp && cp <= 0xF6) ||
+             (0xF8 <= cp && cp <= 0x2FF) || (0x370 <= cp && cp <= 0x37D) ||
+             (0x37F <= cp && cp <= 0x1FFF) || (0x200C <= cp && cp <= 0x200D) ||
+             (0x2070 <= cp && cp <= 0x218F) || (0x2C00 <= cp && cp <= 0x2FEF) ||
+             (0x3001 <= cp && cp <= 0xD7FF) || (0xF900 <= cp && cp <= 0xFDCF) ||
+             (0xFDF0 <= cp && cp <= 0xFFFD) || (0x10000 <= cp && cp <= 0xEFFFF);
     }};
 
 // NameChar	    ::= NameStartChar | "-" | "." | [0-9] | #xB7 |
 // [#x0300-#x036F] | [#x203F-#x2040]
 C NameChar =
     NameStartChar |
-    chr{[](auto c) { return c == '-' || c == '.' || '0' <= c && c <= '9'; }} |
+    chr{[](auto c) { return c == '-' || c == '.' || ('0' <= c && c <= '9'); }} |
     u8cp{[](auto cp) {
-      return cp == 0xB7 || 0x0300 <= cp && cp <= 0x036F ||
-             0x203F <= cp && cp <= 0x2040;
+      return cp == 0xB7 || (0x0300 <= cp && cp <= 0x036F) ||
+             (0x203F <= cp && cp <= 0x2040);
     }};
 
 // Name	        ::= NameStartChar (NameChar)*

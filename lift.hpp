@@ -1,11 +1,12 @@
 #pragma once
+
 #include "purry.hpp"
 
 template <typename... Args> struct lift;
 template <typename T, typename... Args> struct lift<T *, Args...> {
   int (*ctor)(T **, Args...);
   void (*dtor)(T *);
-  MOB()(Args... args) {
+  template <typename O> void operator()(O o, Args... args) const {
     T *pv = nullptr;
     if (int e = ctor(&pv, args...))
       o(error_ray_v, e);
@@ -17,7 +18,7 @@ template <typename T, typename... Args> struct lift<T *, Args...> {
 };
 template <typename T, typename... Args> struct lift<T, Args...> {
   int (*ctor)(T *, Args...);
-  MOB()(Args... args) {
+  template <typename O> void operator()(O o, Args... args) const {
     T v{};
     if (int e = ctor(&v, args...))
       o(error_ray_v, e);

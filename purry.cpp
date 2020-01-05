@@ -2,8 +2,8 @@
 #include <iostream>
 
 constexpr inline auto out =
-    _o_{[](error_ray *, auto...) { std::cerr << "error\n"; },
-        [](auto cstr) { std::cout << cstr << '\n'; }};
+    rays{[](error_ray *, auto...) { std::cerr << "error\n"; },
+         [](auto cstr) { std::cout << cstr << '\n'; }};
 struct A {};
 struct B {};
 struct C {};
@@ -19,22 +19,21 @@ void show0() {
 }
 
 void show1() {
-  auto f = OB()(A) { o(B{}); };
-  auto g = OB()(B) { o(C{}); };
+  auto f = [](auto o, A) { o(B{}); };
+  auto g = [](auto o, B) { o(C{}); };
   auto compose = [](auto f, auto g) {
-    return OB(=)(auto a) { o(g ^ (f ^ a)); };
+    return [=](auto o, auto a) { (g ^ (f, a))(o); };
   };
   auto gof = compose(f, g);
 
-  (gof ^ A{})(_o_{[](error_ray *) {}, [](C) {}});
+  (gof, A{})(rays{[](error_ray *) {}, [](C) {}});
 }
 
 int main() {
   show0();
   show1();
   int r = 0;
-  (
-      OB()(auto a, auto b) { o(a + b); } ^ OB()() { o(3); } ^
-      OB()() { o(6); })(out);
+  ([](auto o, auto a, auto b) { o(a + b); } ^ [](auto o) { o(3); } ^
+   [](auto o) { o(6); })(out);
   return r;
 }
