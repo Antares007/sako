@@ -2,6 +2,7 @@
 
 #include "purry.hpp"
 #include <cstdint>
+#include <string_view>
 
 constexpr inline auto draw_string = [](auto o, auto pith) {
   static const char *fontData =
@@ -22,21 +23,50 @@ constexpr inline auto draw_string = [](auto o, auto pith) {
       "O`000P08Od400g`<3V=P0G`673IP0`@3>1`00P@6O`P00g`<O`000GP800000000"
       "?P9PL020O`<`N3R0@E4HC7b0@ET<ATB0@@l6C4B0O`H3N7b0?P01L3R000000020";
   int px = 0, py = 0;
-  uint32_t fontSprite[128 * 48] = {};
+  uint8_t fontSprite[128 * 48] = {};
   for (int b = 0; b < 1024; b += 4) {
-    uint32_t sym1 = (uint32_t)fontData[b + 0] - 48;
-    uint32_t sym2 = (uint32_t)fontData[b + 1] - 48;
-    uint32_t sym3 = (uint32_t)fontData[b + 2] - 48;
-    uint32_t sym4 = (uint32_t)fontData[b + 3] - 48;
+    uint32_t sym1 = (uint8_t)fontData[b + 0] - 48;
+    uint32_t sym2 = (uint8_t)fontData[b + 1] - 48;
+    uint32_t sym3 = (uint8_t)fontData[b + 2] - 48;
+    uint32_t sym4 = (uint8_t)fontData[b + 3] - 48;
     uint32_t r = sym1 << 18 | sym2 << 12 | sym3 << 6 | sym4;
     for (int i = 0; i < 24; i++) {
-      int k = r & (1 << i) ? 255 : 0;
-      fontSprite[px + py * 128] = k << 24 | k << 16 | k << 8 | k;
+      fontSprite[px + py * 128] = r & (1 << i) ? 255 : 0;
       if (++py == 48) {
         px++;
         py = 0;
       }
     }
   }
-  o([&](auto o, auto pith) { o(pith); } ^ pith);
+  o([&](auto o) {
+    pith(rays{o, [&](int32_t x, int32_t y, const char *sText, uint32_t col = -1,
+                     uint32_t scale = 1) {
+                int32_t sx = 0;
+                int32_t sy = 0;
+                for (auto c : std::string_view(sText)) {
+                  if (c == '\n') {
+                    sx = 0;
+                    sy += 8 * scale;
+                  } else {
+                    int32_t ox = (c - 32) % 16;
+                    int32_t oy = (c - 32) / 16;
+                    if (scale > 1) {
+                      for (uint32_t i = 0; i < 8; i++)
+                        for (uint32_t j = 0; j < 8; j++)
+                          if (fontSprite[i + ox * 8 + (j + oy * 8) * 128])
+                            for (uint32_t is = 0; is < scale; is++)
+                              for (uint32_t js = 0; js < scale; js++)
+                                o(x + sx + (i * scale) + is,
+                                  y + sy + (j * scale) + js, col);
+                    } else {
+                      for (uint32_t i = 0; i < 8; i++)
+                        for (uint32_t j = 0; j < 8; j++)
+                          if (fontSprite[i + ox * 8 + (j + oy * 8) * 128])
+                            o(x + sx + i, y + sy + j, col);
+                    }
+                    sx += 8 * scale;
+                  }
+                }
+              }});
+  });
 };

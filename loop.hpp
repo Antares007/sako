@@ -3,11 +3,8 @@
 #include "purry.hpp"
 
 constexpr inline auto loopB = [](auto o, auto pith) {
-  ([](auto o, auto pith) {
-    bool active = true;
-    while (active) {
-      pith(rays{o, [&](bool b) { active = b; }});
-    }
-  } ^
-   pith)(o);
+  bool active = true;
+  while (active) {
+    pith(rays{o, [&](bool b) { active = b; }});
+  }
 };
