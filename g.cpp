@@ -32,11 +32,10 @@ template <size_t N = 3> struct mapPith {
             if (git_oid_streq(oid, "4b825dc642cb6eb9a060e54bf8d69288fbee4904"))
               o(name, oid, git::TREE);
           } ^
-           (git::tree_ring((mapPith<N - 1>{}, r, oid)), r))(o);
+           (git::tree_ring, r, (mapPith<N - 1>{}, r, oid)))(o);
       } else if (mode == git::BLOB && std::string_view(name).ends_with(".xlsx"))
         ([&](auto o, auto oid) { o(name, oid, git::TREE); } ^
-         (git::tree_ring(((unzip_pith, r) ^ (git::blob_lookup, r, oid))), r))(
-            o);
+         (git::tree_ring, r, (unzip_pith, r) ^ (git::blob_lookup, r, oid)))(o);
     } ^
      (git::ls ^ (git::tree_lookup, r, id)))(o);
   }
@@ -48,7 +47,7 @@ int main() {
   auto pith = [&](auto o, git_repository *r) {
     o("ABO");
     auto treeId = git::index_write_tree ^ (git::repository_index, r);
-    (git::tree_ring((mapPith{}, r) ^ treeId), r)(o);
+    (git::tree_ring, r, ((mapPith{}, r) ^ treeId))(o);
   } ^ (git::repository_open, "../Downloads/2020");
 
   pith(out);
