@@ -4,10 +4,19 @@
 
 #include "purry.hpp"
 
+typedef int(glSwapInterval_t)(Display *, GLXDrawable, int);
+
 constexpr inline auto drawB = [](auto o, auto pith, auto display, auto window) {
   XWindowAttributes gwa;
   XGetWindowAttributes(display, window, &gwa);
   glViewport(0, 0, gwa.width, gwa.height);
+
+  glSwapInterval_t *glSwapIntervalEXT = nullptr;
+  glSwapIntervalEXT = (glSwapInterval_t *)glXGetProcAddress(
+      (unsigned char *)"glXSwapIntervalEXT");
+  if (glSwapIntervalEXT != nullptr)
+    glSwapIntervalEXT(display, window, 0);
+
   GLuint glBuffer;
   glEnable(GL_TEXTURE_2D);
   glGenTextures(1, &glBuffer);
