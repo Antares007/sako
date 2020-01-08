@@ -45,7 +45,7 @@ static const pixel WHITE(255, 255, 255), GREY(192, 192, 192),
     DARK_BLUE(0, 0, 128), VERY_DARK_BLUE(0, 0, 64), MAGENTA(255, 0, 255),
     DARK_MAGENTA(128, 0, 128), VERY_DARK_MAGENTA(64, 0, 64), BLACK(0, 0, 0),
     BLANK(0, 0, 0, 0);
-
+#include <chrono>
 int main() {
   auto display = XOpenDisplay(NULL);
   auto windowRoot = DefaultRootWindow(display);
@@ -53,15 +53,38 @@ int main() {
   size_t framecounter = 0;
 
   auto sample =
-      (loopB ^ (windowB, display, windowRoot, 0, 0, 128, 128,
+      (loopB ^ (windowB, display, windowRoot, 0, 0, 256 * 2, 240 * 2,
                 (drawB ^ (draw_string ^ [&](auto o) {
+                   auto tp1 = std::chrono::system_clock::now();
+                   auto tp2 = std::chrono::system_clock::now();
+                   auto fFrameTimer = 0.f;
+                   auto nFrameCount = 0;
+                   auto nFps = 0;
+
                    o([&](auto o) {
-                     for (int i = 0; i < 128; i++)
-                       for (int j = 0; j < 128; j++)
+                     // Handle Timing
+                     tp2 = std::chrono::system_clock::now();
+                     std::chrono::duration<float> elapsedTime = tp2 - tp1;
+                     tp1 = tp2;
+                     // Our time per frame coefficient
+                     float fElapsedTime = elapsedTime.count();
+                     for (int i = 0; i < 256 * 2; i++)
+                       for (int j = 0; j < 240 * 2; j++)
                          o(i, j,
-                           pixel(rand() % 256, rand() % 128, rand() % 128).n);
-                     o(10, 10, "ABOA\nBOABO", 0xcc0000ff, 3);
-                     o(++framecounter < 200);
+                           pixel(rand() % 128, rand() % 128, rand() % 128).n);
+                     o(++framecounter < 20000);
+                     fFrameTimer += fElapsedTime;
+                     nFrameCount++;
+                     if (fFrameTimer >= 1.0f) {
+                       fFrameTimer -= 1.0f;
+                       nFps = nFrameCount;
+                       nFrameCount = 0;
+                     }
+                     if (nFps > 0) {
+                       char buf[16]; // need a buffer for that
+                       sprintf(buf, "%d", nFps);
+                       o(10, 10, buf, -1, 2);
+                     }
                      // for (int i = 0; i < 128; i++)
                      //  for (int j = 0; j < 48; j++) {
                      //    o(i, j, pixel(0xFF000000 | fontSprite[i + j
