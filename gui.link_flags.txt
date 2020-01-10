@@ -1,1 +1,1 @@
--lX11 -lGL -lpng stb_truetype.o
+-lX11 -lGL -lpng
