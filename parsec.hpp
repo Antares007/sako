@@ -128,11 +128,13 @@ template <typename L, typename R> struct or_ {
   L l;
   R r;
   template <typename O> void operator()(O o, const char *in) const {
-    auto fwderr = [&](error_ray *, int err) { o(error_ray_v, err); };
-    l(::rays{[&](error_ray *, int) {
-               r(::rays{fwderr, [&](int len) { o(len); }}, in);
-             },
-             [&](int len) { o(len); }},
+    auto fwdlen = [&](int len) { o(len); };
+    l(::rays{fwdlen,
+             [&](error_ray *, int) {
+               r(::rays{fwdlen,
+                        [&](error_ray *, int err) { o(error_ray_v, err); }},
+                 in);
+             }},
       in);
   }
 };
