@@ -2,8 +2,26 @@
 #include "parsec.hpp"
 
 #define C constexpr inline auto
-
+#include <iostream>
 namespace parsec::xml {
+
+template <typename P> struct log {
+  P p;
+  template <typename O> void operator()(O o, const char *in) const {
+    std::cout << "S:" << in[0] << std::endl;
+    p(::rays{[&](error_ray *, int err) {
+               std::cout << "E:" << err << std::endl;
+               o(error_ray_v, err);
+             },
+             [&](int len) {
+               std::cout << "L:" << len << std::endl;
+               std::cout << "SS:" << in[len] << std::endl;
+               o(len);
+             }},
+      in);
+  }
+};
+template <typename P> log(P)->log<P>;
 
 // NameStartChar::= ":" | [A-Z] | "_" | [a-z] | [#xC0-#xD6] |
 // [#xD8-#xF6] | [#xF8-#x2FF] | [#x370-#x37D] | [#x37F-#x1FFF] | [#x200C-#x200D]
@@ -45,19 +63,34 @@ C S = many{1, chr{[](char c) {
 C Comment =
     str{"<!--"} & (many{0, noneOf{"-"} | str{"-"} & noneOf{"-"}}) & str{"-->"};
 
+// Reference ::= EntityRef | CharRef
+C Reference = [](auto o, const char *) { o(0); };
+
 // content ::= CharData? ((element | Reference | CDSect | PI | Comment)
 // CharData?)*
 
 // AttValue ::= '"' ([^<&"] | Reference)* '"' | "'" ([^<&'] |
 // Reference)* "'"
+C AttValue = str{"\""} & many{0, noneOf{"<&\""}} & str{"\""} |
+             str{"'"} & many{0, noneOf{"<&'"}} & str{"'"};
+
+// Eq ::= S? '=' S?
+C Eq = opt{S} & str{"="} & opt{S};
 
 // Attribute ::= Name Eq AttValue
+C Attribute = Name & Eq & AttValue;
+
 // ETag ::= '</' Name S? '>'
-// STag ::= '<' Name (S Attribute)* S? '>'
+// STag         ::= '<' Name (S Attribute)* S? '>'
 // EmptyElemTag ::= '<' Name (S Attribute)* S? '/>'
 
 // element ::= EmptyElemTag | STag content ETag
-C element = [](auto o, const char *) { o(0); };
+struct element_ {
+  template <typename O> void operator()(O o, const char *in) const {
+    (str{"<"} & Name & many{0, S & Attribute} & opt{S} & str{">"})(o, in);
+  }
+};
+C element = element_{};
 
 // PI ::= '<?' PITarget (S (Char* - (Char* '?>' Char*)))? '?>'
 C PI = str{"<?"} & many{0, noneOf{"?"}} & str{"?>"};

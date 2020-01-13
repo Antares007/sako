@@ -92,6 +92,10 @@ struct anyOf {
   }
 };
 
+struct epsilon {
+  template <typename O> void operator()(O o, const char *) const { o(0); }
+};
+
 template <typename P> struct many {
   size_t n = 0;
   P parser;
@@ -110,12 +114,11 @@ template <typename P> struct many {
   }
 };
 template <typename P> many(size_t, P)->many<P>;
-constexpr inline auto a = many{0, [](auto...) {}};
 
 template <typename Parser> struct opt {
   Parser parser;
   template <typename O> void operator()(O o, const char *in) const {
-    parser(::rays{[&](error_ray *, int) { o(0); }, [&](int len) { o(len); }},
+    parser(::rays{[&o](error_ray *, int) { o(0); }, [&o](int len) { o(len); }},
            in);
   }
 };
@@ -125,10 +128,9 @@ template <typename L, typename R> struct or_ {
   L l;
   R r;
   template <typename O> void operator()(O o, const char *in) const {
+    auto fwderr = [&](error_ray *, int err) { o(error_ray_v, err); };
     l(::rays{[&](error_ray *, int) {
-               r(::rays{[&](error_ray *, int err) { o(error_ray_v, err); },
-                        [&](int len) { o(len); }},
-                 in);
+               r(::rays{fwderr, [&](int len) { o(len); }}, in);
              },
              [&](int len) { o(len); }},
       in);
@@ -140,11 +142,10 @@ template <typename L, typename R> struct and_ {
   L l;
   R r;
   template <typename O> void operator()(O o, const char *in) const {
-    l(::rays{[&](error_ray *, int err) { o(err); },
+    auto fwderr = [&](error_ray *, int err) { o(error_ray_v, err); };
+    l(::rays{fwderr,
              [&](int llen) {
-               r(::rays{[&](error_ray *, int err) { o(error_ray_v, err); },
-                        [&](int rlen) { o(llen + rlen); }},
-                 in + llen);
+               r(::rays{fwderr, [&](int rlen) { o(llen + rlen); }}, in + llen);
              }},
       in);
   }
