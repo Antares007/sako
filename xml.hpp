@@ -10,11 +10,11 @@ namespace parsec::xml {
 // | [#x2070-#x218F] | [#x2C00-#x2FEF] | [#x3001-#xD7FF] | [#xF900-#xFDCF] |
 // [#xFDF0-#xFFFD] | [#x10000-#xEFFFF]
 C NameStartChar =
-    chr{[](auto c) {
+    chr{[](char c) {
       return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || c == ':' ||
              c == '_';
     }} |
-    u8cp{[](auto cp) {
+    u8cp{[](uint32_t cp) {
       return (0xC0 <= cp && cp <= 0xD6) || (0xD8 <= cp && cp <= 0xF6) ||
              (0xF8 <= cp && cp <= 0x2FF) || (0x370 <= cp && cp <= 0x37D) ||
              (0x37F <= cp && cp <= 0x1FFF) || (0x200C <= cp && cp <= 0x200D) ||
@@ -27,16 +27,18 @@ C NameStartChar =
 // [#x0300-#x036F] | [#x203F-#x2040]
 C NameChar =
     NameStartChar |
-    chr{[](auto c) { return c == '-' || c == '.' || ('0' <= c && c <= '9'); }} |
-    u8cp{[](auto cp) {
+    chr{[](char c) { return c == '-' || c == '.' || ('0' <= c && c <= '9'); }} |
+    u8cp{[](uint32_t cp) {
       return cp == 0xB7 || (0x0300 <= cp && cp <= 0x036F) ||
              (0x203F <= cp && cp <= 0x2040);
     }};
 
 // Name	        ::= NameStartChar (NameChar)*
-C Name = NameStartChar & many0{NameChar};
+C Name = NameStartChar & many{0, NameChar};
 
 // Comment      ::= '<!--' ((Char - '-') | ('-' (Char - '-')))* '-->'
+C Comment =
+    str{"<!--"} & (many{0, noneOf{"-"} | str{"-"} & noneOf{"-"}}) & str{"-->"};
 
 // content      ::= CharData? ((element | Reference | CDSect | PI | Comment)
 // CharData?)*
