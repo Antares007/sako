@@ -1,27 +1,23 @@
 #pragma once
 #include "parsec.hpp"
+#include <iostream>
 
 #define C constexpr inline auto
-#include <iostream>
 namespace parsec::xml {
 
-template <typename P> struct log {
+template <typename P, typename F> struct tap {
   P p;
+  F f;
   template <typename O> void operator()(O o, const char *in) const {
-    std::cout << "S:" << in[0] << std::endl;
-    p(::rays{[&](error_ray *, int err) {
-               std::cout << "E:" << err << std::endl;
-               o(error_ray_v, err);
-             },
+    p(::rays{[&](error_ray *, int err) { o(error_ray_v, err); },
              [&](int len) {
-               std::cout << "L:" << len << std::endl;
-               std::cout << "SS:" << in[len] << std::endl;
+               f(in, len);
                o(len);
              }},
       in);
   }
 };
-template <typename P> log(P)->log<P>;
+template <typename P, typename F> tap(P, F) -> tap<P, F>;
 
 // NameStartChar::= ":" | [A-Z] | "_" | [a-z] | [#xC0-#xD6] |
 // [#xD8-#xF6] | [#xF8-#x2FF] | [#x370-#x37D] | [#x37F-#x1FFF] | [#x200C-#x200D]
@@ -77,9 +73,6 @@ C AttValue = str{"\""} & many{0, noneOf{"<&\""}} & str{"\""} |
 // Eq ::= S? '=' S?
 C Eq = opt{S} & str{"="} & opt{S};
 
-// Attribute ::= Name Eq AttValue
-C Attribute = Name & Eq & AttValue;
-
 // ETag ::= '</' Name S? '>'
 // STag         ::= '<' Name (S Attribute)* S? '>'
 // EmptyElemTag ::= '<' Name (S Attribute)* S? '/>'
@@ -87,7 +80,16 @@ C Attribute = Name & Eq & AttValue;
 // element ::= EmptyElemTag | STag content ETag
 struct element_ {
   template <typename O> void operator()(O o, const char *in) const {
-    (str{"<"} & Name & many{0, S & Attribute} & opt{S} & str{">"})(o, in);
+    auto t = [](auto p) {
+      return tap{p, [](auto in, auto len) {
+                   std::cout << std::string_view(in, len) << std::endl;
+                 }};
+    };
+    // Attribute ::= Name Eq AttValue
+    auto Attribute = t(Name) & Eq & t(AttValue);
+
+    (str{"<"} & [](auto o, auto in) { Name(o, in); } & many{0, S & Attribute} &
+     opt{S} & str{">"})(o, in);
   }
 };
 C element = element_{};
