@@ -4,7 +4,7 @@
 
 namespace parsec {
 
-constexpr inline auto rays = ::rays{[](error_ray *, int) {}, [](int) {}};
+constexpr inline auto rays = ::rays{[](error_ray *, int) {}, [](size_t) {}};
 
 template <typename T>
 using if_bark_t = std::enable_if_t<
@@ -62,7 +62,7 @@ struct u8cp {
 struct str {
   const char *match;
   template <typename O> void operator()(O o, const char *in) const {
-    int i = 0;
+    size_t i = 0;
     while (char c = match[i])
       if (in[i++] != c)
         return o(error_ray_v, -1);
@@ -73,7 +73,7 @@ struct str {
 struct noneOf {
   const char *chars;
   template <typename O> void operator()(O o, const char *in) const {
-    int i = 0;
+    size_t i = 0;
     while (char c = chars[i++])
       if (in[0] == c)
         return o(error_ray_v, -1);
@@ -84,13 +84,33 @@ struct noneOf {
 struct anyOf {
   const char *chars;
   template <typename O> void operator()(O o, const char *in) const {
-    int i = 0;
+    size_t i = 0;
     while (char c = chars[i++])
       if (in[0] == c)
         return o(1);
     o(error_ray_v, -1);
   }
 };
+// struct until {
+//  const char *match;
+//  template <typename O> void operator()(O o, const char *in) const {
+//    int i = 0;
+//    int j = 0;
+//    while (char c = match[i++])
+//      if (in[0] == c)
+//        return o(1);
+//    o(error_ray_v, -1);
+//  }
+//};
+template <typename P> struct not_ {
+  P p;
+  template <typename O> void operator()(O o, const char *in) const {
+    p(::rays{[&](error_ray *, int) { o(0); },
+             [&](size_t len) { o(error_ray_v, -len); }},
+      in);
+  }
+};
+template <typename P> not_(size_t, P) -> not_<P>;
 
 struct epsilon {
   template <typename O> void operator()(O o, const char *) const { o(0); }
@@ -107,28 +127,29 @@ template <typename P> struct many {
                     else
                       o(acc);
                   },
-                  [&](int len) {
+                  [&](size_t len) {
                     this->operator()(o, in + len, acc + len, count + 1);
                   }},
            in);
   }
 };
-template <typename P> many(size_t, P)->many<P>;
+template <typename P> many(size_t, P) -> many<P>;
 
 template <typename Parser> struct opt {
   Parser parser;
   template <typename O> void operator()(O o, const char *in) const {
-    parser(::rays{[&o](error_ray *, int) { o(0); }, [&o](int len) { o(len); }},
-           in);
+    parser(
+        ::rays{[&o](error_ray *, int) { o(0); }, [&o](size_t len) { o(len); }},
+        in);
   }
 };
-template <typename Parser> opt(Parser)->opt<Parser>;
+template <typename Parser> opt(Parser) -> opt<Parser>;
 
 template <typename L, typename R> struct or_ {
   L l;
   R r;
   template <typename O> void operator()(O o, const char *in) const {
-    auto fwdlen = [&](int len) { o(len); };
+    auto fwdlen = [&](size_t len) { o(len); };
     l(::rays{fwdlen,
              [&](error_ray *, int) {
                r(::rays{fwdlen,
@@ -138,7 +159,7 @@ template <typename L, typename R> struct or_ {
       in);
   }
 };
-template <typename L, typename R> or_(L, R)->or_<L, R>;
+template <typename L, typename R> or_(L, R) -> or_<L, R>;
 
 template <typename L, typename R> struct and_ {
   L l;
@@ -146,13 +167,14 @@ template <typename L, typename R> struct and_ {
   template <typename O> void operator()(O o, const char *in) const {
     auto fwderr = [&](error_ray *, int err) { o(error_ray_v, err); };
     l(::rays{fwderr,
-             [&](int llen) {
-               r(::rays{fwderr, [&](int rlen) { o(llen + rlen); }}, in + llen);
+             [&](size_t llen) {
+               r(::rays{fwderr, [&](size_t rlen) { o(llen + rlen); }},
+                 in + llen);
              }},
       in);
   }
 };
-template <typename L, typename R> and_(L, R)->and_<L, R>;
+template <typename L, typename R> and_(L, R) -> and_<L, R>;
 
 template <typename L, typename R, typename = if_bark_t<L>,
           typename = if_bark_t<R>>

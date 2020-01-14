@@ -10,7 +10,7 @@ template <typename P, typename F> struct tap {
   F f;
   template <typename O> void operator()(O o, const char *in) const {
     p(::rays{[&](error_ray *, int err) { o(error_ray_v, err); },
-             [&](int len) {
+             [&](size_t len) {
                f(in, len);
                o(len);
              }},
@@ -62,9 +62,6 @@ C Comment =
 // Reference ::= EntityRef | CharRef
 C Reference = [](auto o, const char *) { o(0); };
 
-// content ::= CharData? ((element | Reference | CDSect | PI | Comment)
-// CharData?)*
-
 // AttValue ::= '"' ([^<&"] | Reference)* '"' | "'" ([^<&'] |
 // Reference)* "'"
 C AttValue = str{"\""} & many{0, noneOf{"<&\""}} & str{"\""} |
@@ -73,10 +70,22 @@ C AttValue = str{"\""} & many{0, noneOf{"<&\""}} & str{"\""} |
 // Eq ::= S? '=' S?
 C Eq = opt{S} & str{"="} & opt{S};
 
-// ETag ::= '</' Name S? '>'
-// STag         ::= '<' Name (S Attribute)* S? '>'
-// EmptyElemTag ::= '<' Name (S Attribute)* S? '/>'
+// Char ::= #x9 | #xA | #xD | [#x20-#xD7FF] | [#xE000-#xFFFD] |
+// [#x10000-#x10FFFF]
 
+// CDSect ::= CDStart CData CDEnd
+// CDStart ::= '<![CDATA['
+// CData ::= (Char* - (Char* ']]>' Char*))
+// CDEnd ::= ']]>'
+
+// CharData ::= [^<&]* - ([^<&]* ']]>' [^<&]*)
+
+// content ::= CharData? ((element | Reference | CDSect | PI | Comment)
+// CharData?)*
+
+// STag ::= '<' Name (S Attribute)* S? '>'
+// EmptyElemTag ::= '<' Name (S Attribute)* S? '/>'
+// ETag ::= '</' Name S? '>'
 // element ::= EmptyElemTag | STag content ETag
 struct element_ {
   template <typename O> void operator()(O o, const char *in) const {
@@ -88,8 +97,7 @@ struct element_ {
     // Attribute ::= Name Eq AttValue
     auto Attribute = t(Name) & Eq & t(AttValue);
 
-    (str{"<"} & [](auto o, auto in) { Name(o, in); } & many{0, S & Attribute} &
-     opt{S} & str{">"})(o, in);
+    (str{"<"} & t(Name) & many{0, S & Attribute} & opt{S} & str{">"})(o, in);
   }
 };
 C element = element_{};

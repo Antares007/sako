@@ -13,7 +13,7 @@ int main() {
 
   (document, xmltext)(::rays{
       [](error_ray *, int err) { std::cout << "error: " << err << '\n'; },
-      [&](int len) {
+      [&](size_t len) {
         std::cout << "len: " << len << '|' << xmltext[len] << '|'
                   << xmltext + len;
       }});
