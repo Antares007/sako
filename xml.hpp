@@ -56,8 +56,7 @@ C S = many{1, chr{[](char c) {
            }}};
 
 // Comment ::= '<!--' ((Char - '-') | ('-' (Char - '-')))* '-->'
-C Comment =
-    str{"<!--"} & (many{0, noneOf{"-"} | str{"-"} & noneOf{"-"}}) & str{"-->"};
+C Comment = str{"<!--"} & till{"-->"};
 
 // Reference ::= EntityRef | CharRef
 C Reference = [](auto o, const char *) { o(0); };
@@ -103,17 +102,17 @@ struct element_ {
 C element = element_{};
 
 // PI ::= '<?' PITarget (S (Char* - (Char* '?>' Char*)))? '?>'
-C PI = str{"<?"} & many{0, noneOf{"?"}} & str{"?>"};
+C PI = str{"<?"} & till{"?>"};
 
 // Misc ::= Comment | PI | S
 C Misc = Comment | PI | S;
 
 // XMLDecl ::= '<?xml' VersionInfo EncodingDecl? SDDecl? S? '?>'
-C XMLDecl = str{"<?xml"} & many{0, noneOf{"?"}} & str{"?>"};
+C XMLDecl = str{"<?xml"} & till{"?>"};
 
 // doctypedecl ::='<!DOCTYPE' S Name (S ExternalID)? S? ('[' intSubset ']' S?)?
 // '>'
-C doctypedecl = str{"<!DOCTYPE"} & many{0, noneOf{">"}} & str{">"};
+C doctypedecl = str{"<!DOCTYPE"} & till{">"};
 
 // prolog ::= XMLDecl? Misc* (doctypedecl Misc*)?
 C prolog = opt{XMLDecl} & many{0, Misc} & opt{doctypedecl & many{0, Misc}};

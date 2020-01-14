@@ -91,29 +91,24 @@ struct anyOf {
     o(error_ray_v, -1);
   }
 };
-// struct until {
-//  const char *match;
-//  template <typename O> void operator()(O o, const char *in) const {
-//    int i = 0;
-//    int j = 0;
-//    while (char c = match[i++])
-//      if (in[0] == c)
-//        return o(1);
-//    o(error_ray_v, -1);
-//  }
-//};
-template <typename P> struct not_ {
-  P p;
-  template <typename O> void operator()(O o, const char *in) const {
-    p(::rays{[&](error_ray *, int) { o(0); },
-             [&](size_t len) { o(error_ray_v, -len); }},
-      in);
-  }
-};
-template <typename P> not_(size_t, P) -> not_<P>;
 
-struct epsilon {
-  template <typename O> void operator()(O o, const char *) const { o(0); }
+struct till {
+  const char *match;
+  template <typename O> void operator()(O o, const char *in) const {
+    size_t i = 0, j = 0;
+    for (;;) {
+      char c = match[i], l = in[j];
+      if (c == '\0')
+        return o(j);
+      if (l == '\0')
+        return o(error_ray_v, -1);
+      if (c == l)
+        i++;
+      else
+        i = match[0] == l ? 1 : 0;
+      j++;
+    }
+  }
 };
 
 template <typename P> struct many {
