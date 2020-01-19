@@ -1,87 +1,94 @@
 #include "../parsec.hpp"
 template <typename T> struct print;
 #define Derives template <typename O> void operator()(O o) const
+constexpr inline auto PLUS = parsec::str{"+"};
+constexpr inline auto MUL = parsec::str{"*"};
+constexpr inline auto LPAREN = parsec::str{"("};
+constexpr inline auto RPAREN = parsec::str{")"};
+constexpr inline auto ID =
+    parsec::chr{[](auto c) { return c <= 'a' && c <= 'z'; }};
+constexpr inline auto Є = parsec::str{""};
 
 struct E {
   Derives {
-    o(".E->", [](auto o) {
-      o("T", T{});
-      o("R", R{});
+    o("E->TE'", [](auto o) {
+      o(T{});
+      o(E_{});
     });
   }
-  struct R {
+  struct E_ {
     Derives {
-      o(".R->", [](auto o) {
-        o("+", parsec::str{"+"});
-        o("T", T{});
-        o("R", R{});
+      o("E'->+TE'", [](auto o) {
+        o(PLUS);
+        o(T{});
+        o(E_{});
       });
-      o(".R->", [](auto o) { o("Є", parsec::str{""}); });
+      o("E'->Є", [](auto o) { o(Є); });
     }
   };
   struct T {
     Derives {
-      o(".T->", [](auto o) {
-        o("F", F{});
-        o("U", U{});
+      o("T->FU", [](auto o) {
+        o(F{});
+        o(T_{});
       });
     }
-    struct U {
+    struct T_ {
       Derives {
-        o(".U->", [](auto o) {
-          o("*", parsec::str{"*"});
-          o("F", F{});
-          o("U", U{});
+        o("T'->*FT'", [](auto o) {
+          o(MUL);
+          o(F{});
+          o(T_{});
         });
-        o(".U->", [](auto o) { o("Є", parsec::str{""}); });
+        o("T'->Є", [](auto o) { o(Є); });
       }
     };
     struct F {
       Derives {
-        o(".F->", [](auto o) {
-          o("(", parsec::str{"("});
-          o("E", E{});
-          o(")", parsec::str{")"});
+        o("F->(E)", [](auto o) {
+          o(LPAREN);
+          o(E{});
+          o(RPAREN);
         });
-        o(".F->", [](auto o) {
-          o("id", parsec::chr{[](auto c) { return c <= 'a' && c <= 'z'; }});
-        });
+        o("F->id", [](auto o) { o(ID); });
       }
     };
   };
 };
-
 #include <iostream>
+constexpr inline auto log = [](size_t ident, auto... args) {
+  while (ident--)
+    std::cout << ' ';
+  ((std::cout << args), ...);
+  std::cout << std::endl;
+};
 template <size_t D = 0> struct compile {
   template <typename O, typename V>
-  void operator()(O o, V v, const char *b) const {
+  void operator()(O o, V v, const char *b, size_t ident) const {
     bool done = false;
-    std::cout << std::endl;
     (v)([&](auto name, auto production) {
+      log(ident, name, " done: ", done);
       if (done)
         return;
-      std::cout << name;
       size_t length = 0;
       bool error = false;
-      production([&](auto name, auto symbol) {
+      production([&](auto symbol) {
+        log(ident, error ? 'x' : '.');
         if (error)
           return;
         auto rays = ::rays{[&](error_ray *, int) { error = true; },
-                           [&](size_t len) {
-                             std::cout << name;
-                             length += len;
-                           }};
-
+                           [&](size_t len) { length += len; }};
         if constexpr (std::is_invocable_r_v<void, decltype(symbol),
                                             decltype(parsec::rays),
                                             const char *>) {
           symbol(rays, b + length);
         } else {
-          compile<D + 1>{}(rays, symbol, b + length);
+          compile<D + 1>{}(rays, symbol, b + length, ident + 4);
         }
       });
       if (!error) {
         done = true;
+        o(length);
       }
     });
     if (!done)
@@ -91,8 +98,8 @@ template <size_t D = 0> struct compile {
 
 template <> struct compile<7> {
   template <typename O, typename V>
-  void operator()(O o, V, const char *) const {
-    std::cout << " 1024 ";
+  void operator()(O o, V, const char *, size_t ident) const {
+    log(ident, "1024");
     o(error_ray_v, -1024);
   }
 };
@@ -103,18 +110,6 @@ int main() {
   auto log = ::rays{[](error_ray *, int err) { std::cerr << err << std::endl; },
                     [](auto x) { std::cout << x << std::endl; }};
 
-  compile{}(log, E{}, input);
+  compile{}(log, E{}, input, 0);
   return 8;
 }
-
-/*
-FIRST(X) for a grammar symbol X is the set of terminals that begin the
-strings derivable from X.
-Rules to compute FIRST set:
-1. If x is a terminal, then FIRST(x) = { ‘x’ }
-2. If x-> Є, is a production rule, then add Є to FIRST(x).
-3. If X->Y1 Y2 Y3….Yn is a production,
-  a. FIRST(X) = FIRST(Y1)
-  b. If FIRST(Y1) contains Є then FIRST(X) = { FIRST(Y1) – Є } U { FIRST(Y2) }
-  c. If FIRST (Yi) contains Є for all i = 1 to n, then add Є to FIRST(X).
-*/
