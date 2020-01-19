@@ -28,7 +28,7 @@ struct E {
   };
   struct T {
     Derives {
-      o("T->FU", [](auto o) {
+      o("T->FT'", [](auto o) {
         o(F{});
         o(T_{});
       });
@@ -64,33 +64,39 @@ constexpr inline auto log = [](size_t ident, auto... args) {
 };
 template <size_t D = 0> struct compile {
   template <typename O, typename V>
-  void operator()(O o, V v, const char *b, size_t ident) const {
+  void operator()(O o, V v, const char *b) const {
+    size_t ident = D * 2;
     bool done = false;
     (v)([&](auto name, auto production) {
-      log(ident, name, " done: ", done);
+      log(ident, name, ' ', done);
       if (done)
         return;
+      else
+        done = true;
       size_t length = 0;
       bool error = false;
       production([&](auto symbol) {
-        log(ident, error ? 'x' : '.');
         if (error)
           return;
-        auto rays = ::rays{[&](error_ray *, int) { error = true; },
+        auto rays = ::rays{[&](error_ray *, int) {
+                             error = true;
+                             done = false;
+                           },
                            [&](size_t len) { length += len; }};
         if constexpr (std::is_invocable_r_v<void, decltype(symbol),
                                             decltype(parsec::rays),
                                             const char *>) {
           symbol(rays, b + length);
         } else {
-          compile<D + 1>{}(rays, symbol, b + length, ident + 4);
+          compile<D + 1>{}(rays, symbol, b + length);
         }
       });
       if (!error) {
-        done = true;
+        log(ident, error ? "Err" : "Ok");
         o(length);
       }
     });
+    log(ident, "send error?", !done);
     if (!done)
       o(error_ray_v, -99);
   }
@@ -98,8 +104,8 @@ template <size_t D = 0> struct compile {
 
 template <> struct compile<7> {
   template <typename O, typename V>
-  void operator()(O o, V, const char *, size_t ident) const {
-    log(ident, "1024");
+  void operator()(O o, V, const char *) const {
+    log(7 * 2, "1024");
     o(error_ray_v, -1024);
   }
 };
@@ -110,6 +116,6 @@ int main() {
   auto log = ::rays{[](error_ray *, int err) { std::cerr << err << std::endl; },
                     [](auto x) { std::cout << x << std::endl; }};
 
-  compile{}(log, E{}, input, 0);
+  compile{}(log, E{}, input);
   return 8;
 }
