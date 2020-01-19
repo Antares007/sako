@@ -4,85 +4,106 @@ template <typename T> struct print;
 
 struct E {
   Derives {
-    o([](auto o) {
-      o(T{});
-      o(R{});
+    o(".E->", [](auto o) {
+      o("T", T{});
+      o("R", R{});
     });
   }
   struct R {
     Derives {
-      o([](auto o) {
-        o(parsec::str{"+"});
-        o(T{});
-        o(R{});
+      o(".R->", [](auto o) {
+        o("+", parsec::str{"+"});
+        o("T", T{});
+        o("R", R{});
       });
-      o([](auto o) { o(parsec::str{""}); });
+      o(".R->", [](auto o) { o("Є", parsec::str{""}); });
     }
   };
   struct T {
     Derives {
-      o([](auto o) {
-        o(F{});
-        o(U{});
+      o(".T->", [](auto o) {
+        o("F", F{});
+        o("U", U{});
       });
     }
     struct U {
       Derives {
-        o([](auto o) {
-          o(parsec::str{"*"});
-          o(F{});
-          o(U{});
+        o(".U->", [](auto o) {
+          o("*", parsec::str{"*"});
+          o("F", F{});
+          o("U", U{});
         });
-        o([](auto o) { o(parsec::str{""}); });
+        o(".U->", [](auto o) { o("Є", parsec::str{""}); });
       }
     };
     struct F {
       Derives {
-        o([](auto o) {
-          o(parsec::str{"("});
-          o(E{});
-          o(parsec::str{")"});
+        o(".F->", [](auto o) {
+          o("(", parsec::str{"("});
+          o("E", E{});
+          o(")", parsec::str{")"});
         });
-        o([](auto o) {
-          o(parsec::chr{[](auto c) { return c <= 'a' && c <= 'z'; }});
+        o(".F->", [](auto o) {
+          o("id", parsec::chr{[](auto c) { return c <= 'a' && c <= 'z'; }});
         });
       }
     };
   };
 };
 
-struct compile {
+#include <iostream>
+template <size_t D = 0> struct compile {
   template <typename O, typename V>
   void operator()(O o, V v, const char *b) const {
-    bool skip = false;
-
-    (v)([&](auto production) { // print<decltype(production)> p;
-      if (skip)
+    bool done = false;
+    std::cout << std::endl;
+    (v)([&](auto name, auto production) {
+      if (done)
         return;
-      production([&](auto symbol) {
+      std::cout << name;
+      size_t length = 0;
+      bool error = false;
+      production([&](auto name, auto symbol) {
+        if (error)
+          return;
+        auto rays = ::rays{[&](error_ray *, int) { error = true; },
+                           [&](size_t len) {
+                             std::cout << name;
+                             length += len;
+                           }};
+
         if constexpr (std::is_invocable_r_v<void, decltype(symbol),
                                             decltype(parsec::rays),
                                             const char *>) {
-
-          // symbol(::rays{[](error_ray *, int) {}, [](size_t) {}}, b);
-          print<decltype(symbol)> p;
+          symbol(rays, b + length);
         } else {
-          this->operator()(o, symbol, b);
+          compile<D + 1>{}(rays, symbol, b + length);
         }
       });
+      if (!error) {
+        done = true;
+      }
     });
-    //
+    if (!done)
+      o(error_ray_v, -99);
   }
 };
 
-#include <iostream>
+template <> struct compile<7> {
+  template <typename O, typename V>
+  void operator()(O o, V, const char *) const {
+    std::cout << " 1024 ";
+    o(error_ray_v, -1024);
+  }
+};
 
 int main() {
   // Є
   const char *input = "a+b*o";
-  compile{}(::rays{[](error_ray *, int err) { std::cerr << err << std::endl; },
-                   [](auto x) { std::cout << x << std::endl; }},
-            E{}, input);
+  auto log = ::rays{[](error_ray *, int err) { std::cerr << err << std::endl; },
+                    [](auto x) { std::cout << x << std::endl; }};
+
+  compile{}(log, E{}, input);
   return 8;
 }
 
