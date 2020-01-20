@@ -91,8 +91,8 @@ template <size_t D = 0> struct compile {
           compile<D + 1>{}(rays, symbol, b + length);
         }
       });
+      log(ident, error ? "Err" : "Ok");
       if (!error) {
-        log(ident, error ? "Err" : "Ok");
         o(length);
       }
     });
@@ -110,12 +110,91 @@ template <> struct compile<7> {
   }
 };
 
+// this is pith!
+struct spith {
+  const char *b = "";
+  size_t pos = 0;
+  bool error = false;
+  bool done = false;
+  template <typename S> void operator()(S symbol) {
+    if (error)
+      return;
+    if constexpr (parsec::is_parser_bark_v<decltype(symbol)>) {
+      symbol(::rays{[&](error_ray *, int) { error = true; },
+                    [&](size_t len) { pos += len; }},
+             b + pos);
+    } else {
+      auto pith = spith{b + pos, 0, false};
+      symbol(pith);
+      error = pith.error;
+      pos += pith.pos;
+    }
+  }
+  template <typename P> void operator()(const char *n, P production) {
+    if (done)
+      return;
+    std::cout << n << ':' << b + pos << "\n";
+    auto pith = spith{b + pos, 0, false};
+    production(pith);
+    pos += pith.pos;
+    done = (pith.b[pos] == '\0');
+  }
+};
+#include <algorithm>
+#include <set>
+/*
+E->TE'{
+  T->FT'{
+    F->(E){
+    }
+      F->id{
+      }
+        T'->*FT'{
+          T'->Є{
+          }
+        }
+  }
+            E'->+TE'{
+              E'->Є{
+              }
+            }
+}
+ */
+#include <typeindex>
+#include <typeinfo>
+struct epith {
+  std::set<std::type_index> &set;
+  int &i;
+  template <typename S> void operator()(S symbol) const {
+    if constexpr (!parsec::is_parser_bark_v<decltype(symbol)>) {
+      symbol(*this);
+    }
+  }
+  template <typename P> void operator()(const char *n, P production) const {
+    auto t = std::type_index(typeid(P));
+    auto search = set.find(t);
+    if (search != set.end())
+      return;
+    set.insert(t);
+    int idn = i++;
+    log(idn * 2, n, "{");
+    production(*this);
+    log(idn * 2, "}");
+  }
+};
 int main() {
+  // spith{"a+b*o"}
+  auto set = std::set<std::type_index>();
+  int i = 0;
+  auto info = std::type_index(typeid(E));
+  E{}(epith{set, i});
   // Є
-  const char *input = "a+b*o";
-  auto log = ::rays{[](error_ray *, int err) { std::cerr << err << std::endl; },
-                    [](auto x) { std::cout << x << std::endl; }};
 
-  compile{}(log, E{}, input);
+  // const char *input = "a+b*o";
+  // auto log = ::rays{[](error_ray *, int err) { std::cerr << err << std::endl;
+  // },
+  //                  [](auto x) { std::cout << x << std::endl; }};
+
+  // compile{}(log, E{}, input);
   return 8;
 }

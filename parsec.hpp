@@ -10,6 +10,10 @@ template <typename T>
 using if_bark_t = std::enable_if_t<
     std::is_invocable_r_v<void, T, decltype(rays), const char *>>;
 
+template <typename P>
+constexpr inline bool is_parser_bark_v =
+    std::is_invocable_r_v<void, P, decltype(rays), const char *>;
+
 struct chr {
   bool (*f)(char);
   template <typename O> void operator()(O o, const char *in) const {
