@@ -1,7 +1,7 @@
 #include "../parsec.hpp"
 template <typename T> struct print;
 #include <iostream>
-
+#include <typeinfo>
 constexpr inline auto log = [](size_t ident, auto... args) {
   while (ident--)
     std::cout << ' ';
@@ -48,10 +48,10 @@ struct spith {
   }
 };
 
-#include "g41.hpp"
+#include "g42.hpp"
 int main() {
   auto s = spith_state{"a+b*o"};
-  S{}(spith{s});
+  E{}(spith{s});
   std::cout << "Pos:" << s.pos << ", E:" << s.error << '\n';
   // Є
   // auto log = ::rays{[](error_ray *, int err) { std::cerr << err <<

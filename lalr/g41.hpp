@@ -1,5 +1,6 @@
 #pragma once
 #include "terminals.hpp"
+
 struct S {
   Derives {
     o("S->E", [](auto o) { o(E{}); });
