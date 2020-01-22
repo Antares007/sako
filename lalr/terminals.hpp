@@ -1,6 +1,6 @@
 #pragma once
 #include "../parsec.hpp"
-#define Derives template <typename O> void operator()(O o) const
+#define Derives MBark()()
 
 constexpr inline auto PLUS = parsec::str{"+"};
 constexpr inline auto MUL = parsec::str{"*"};

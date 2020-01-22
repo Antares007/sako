@@ -2,47 +2,55 @@
 #include "terminals.hpp"
 
 struct E {
-  Derives {
-    o("E->TE'", [](auto o) {
-      o(T{});
-      o(E_{});
-    });
+  MBark()() {
+    o(
+        "E->TE'", Bark()() {
+          o(T{});
+          o(E_{});
+        });
   }
   struct E_ {
-    Derives {
-      o("E'->+TE'", [](auto o) {
-        o(PLUS);
-        o(T{});
-        o(E_{});
-      });
-      o("E'->Є", [](auto o) { o([](auto o, auto) { o(0); }); });
+    MBark()() {
+      o(
+          "E'->+TE'", Bark()() {
+            o(PLUS);
+            o(T{});
+            o(E_{});
+          });
+      o(
+          "E'->Є", Bark()() { o(Bark()(auto) { o(0); }); });
     }
   };
   struct T {
-    Derives {
-      o("T->FT'", [](auto o) {
-        o(F{});
-        o(T_{});
-      });
+    MBark()() {
+      o(
+          "T->FT'", Bark()() {
+            o(F{});
+            o(T_{});
+          });
     }
     struct T_ {
-      Derives {
-        o("T'->*FT'", [](auto o) {
-          o(MUL);
-          o(F{});
-          o(T_{});
-        });
-        o("T'->Є", [](auto o) { o([](auto o, auto) { o(0); }); });
+      MBark()() {
+        o(
+            "T'->*FT'", Bark()() {
+              o(MUL);
+              o(F{});
+              o(T_{});
+            });
+        o(
+            "T'->Є", Bark()() { o(Bark()(auto) { o(0); }); });
       }
     };
     struct F {
-      Derives {
-        o("F->(E)", [](auto o) {
-          o(LPAREN);
-          o(E{});
-          o(RPAREN);
-        });
-        o("F->id", [](auto o) { o(ID); });
+      MBark()() {
+        o(
+            "F->(E)", Bark()() {
+              o(LPAREN);
+              o(E{});
+              o(RPAREN);
+            });
+        o(
+            "F->id", Bark()() { o(ID); });
       }
     };
   };

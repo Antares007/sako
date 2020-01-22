@@ -1,7 +1,14 @@
 #pragma once
+#define Bark(...) [__VA_ARGS__](const auto &o Bark_NEXT_
+#define Bark_NEXT_(...) __VA_OPT__(,) __VA_ARGS__)
+
+#define MBark(...)                                                             \
+  template <typename O __VA_OPT__(,) __VA_ARGS__>                              \
+  void operator()(const O &o MBark_NEXT_
+#define MBark_NEXT_(...) __VA_OPT__(,) __VA_ARGS__) const noexcept
 
 template <class... Ts> struct rays : Ts... { using Ts::operator()...; };
-template <class... Ts> rays(Ts...)->rays<Ts...>;
+template <class... Ts> rays(Ts...) -> rays<Ts...>;
 
 struct error_ray;
 constexpr inline error_ray *error_ray_v = nullptr;
