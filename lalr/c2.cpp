@@ -5,7 +5,7 @@
   void operator()(const char *n, Production production) const
 #define NOP(x) (void(x))
 
-#include "g42.hpp"
+#include "g43.hpp"
 #include <iostream>
 #include <typeindex>
 
@@ -17,13 +17,22 @@
 
 struct E2 {
   Derives {
-    o("1", [](auto o) { o(E3{}); });
+    o("1", [](auto o) {
+      o(EP{});
+      o(EM{});
+    });
     o("2", [](auto) {});
   };
-  struct E3 {
+  struct EP {
     Derives {
-      o("3", [](auto o) { o("A"); });
+      o("3", [](auto o) { o(PLUS); });
       o("4", [](auto) {});
+    };
+  };
+  struct EM {
+    Derives {
+      o("5", [](auto o) { o(MUL); });
+      // o("6", [](auto) {});
     };
   };
 };
@@ -50,45 +59,45 @@ constexpr inline auto hasEpsilonProduction = [](auto variable) {
 // c. If FIRST(Yi) contains Є for all i = 1 to n, then add Є to FIRST(X).
 template <typename T> struct print;
 struct first {
-  // std::cout << std::type_index(typeid(a)).hash_code();
   template <typename O> struct pith {
     const O &o;
+    const std::type_index &ti;
     bool &hasEpsilonProduction;
-    bool &done;
     RayProduction {
       NOP(n);
-      size_t index = 0;
-      production([&](auto symbol) { //
+      bool done = false;
+      production([&](auto symbol) {
         if (done)
           return;
-        if constexpr (std::is_same_v<const char *,
-                                     std::decay_t<decltype(symbol)>>) {
+        if constexpr (parsec::is_parser_bark_v<decltype(symbol)>) {
           done = true;
           o(symbol);
         } else {
+          auto ti = std::type_index(typeid(symbol));
+          done = this->ti == ti;
+          if (this->ti == ti)
+            return;
           auto hasEpsilonProduction = false;
-          auto done = false;
-          auto p = pith<O>{this->o, hasEpsilonProduction, done};
+          auto p = pith<O>{this->o, ti, hasEpsilonProduction};
           symbol(p);
-          this->done |= hasEpsilonProduction;
+          done |= !hasEpsilonProduction;
         };
-        index++;
       });
-      hasEpsilonProduction |= index == 0;
+      this->hasEpsilonProduction |= !done;
     }
   };
   template <typename O, typename V> void operator()(O o, V variable) const {
     bool hasEpsilonProduction = false;
-    bool done = false;
-    auto p = pith<O>{o, hasEpsilonProduction, done};
+    auto p =
+        pith<O>{o, std::type_index(typeid(variable)), hasEpsilonProduction};
     variable(p);
     if (hasEpsilonProduction)
-      o("epsilon");
+      o(parsec::str{"#"});
   }
 };
 
 int main() { //
-  first{}([](auto x) { std::cout << x << ", "; }, E2{});
+  first{}([](auto x) { std::cout << x.match << ", "; }, S{});
   return 9;
 }
 

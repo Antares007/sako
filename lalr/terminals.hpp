@@ -6,6 +6,7 @@ constexpr inline auto PLUS = parsec::str{"+"};
 constexpr inline auto MUL = parsec::str{"*"};
 constexpr inline auto LPAREN = parsec::str{"("};
 constexpr inline auto RPAREN = parsec::str{")"};
-constexpr inline auto ID =
-    parsec::chr{[](auto c) { return 'a' <= c && c <= 'z'; }};
-constexpr inline auto Є = [](auto o, const char *) { o(0); };
+constexpr inline auto ID = parsec::str{"a"};
+constexpr inline auto Є = parsec::str{""};
+// constexpr inline auto ID =
+//    parsec::chr{[](auto c) { return 'a' <= c && c <= 'z'; }};
