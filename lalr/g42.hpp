@@ -15,7 +15,7 @@ struct E {
         o(T{});
         o(E_{});
       });
-      o("E'->Є", [](auto) {});
+      o("E'->Є", [](auto o) { o([](auto o, auto) { o(0); }); });
     }
   };
   struct T {
@@ -32,7 +32,7 @@ struct E {
           o(F{});
           o(T_{});
         });
-        o("T'->Є", [](auto) {});
+        o("T'->Є", [](auto o) { o([](auto o, auto) { o(0); }); });
       }
     };
     struct F {

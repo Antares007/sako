@@ -75,10 +75,10 @@ struct str {
 };
 
 struct noneOf {
-  const char *chars;
+  const char *match;
   template <typename O> void operator()(O o, const char *in) const {
     size_t i = 0;
-    while (char c = chars[i++])
+    while (char c = match[i++])
       if (in[0] == c)
         return o(error_ray_v, -1);
     o(1);
@@ -86,10 +86,10 @@ struct noneOf {
 };
 
 struct anyOf {
-  const char *chars;
+  const char *match;
   template <typename O> void operator()(O o, const char *in) const {
     size_t i = 0;
-    while (char c = chars[i++])
+    while (char c = match[i++])
       if (in[0] == c)
         return o(1);
     o(error_ray_v, -1);
