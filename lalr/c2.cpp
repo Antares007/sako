@@ -1,8 +1,8 @@
 #define RaySymbol                                                              \
-  template <typename Symbol> void operator()(Symbol symbol) const
+  template <typename Symbol> void operator()(const Symbol &symbol) const
 #define RayProduction                                                          \
   template <typename Production>                                               \
-  void operator()(const char *n, Production production) const
+  void operator()(const char *n, const Production &production) const
 #define NOP(x) (void(x))
 
 #include "g43.hpp"
@@ -37,27 +37,12 @@ struct E2 {
   };
 };
 
-constexpr inline auto countProductionSymbols = [](auto production) {
-  size_t count = 0;
-  production([&](auto) { count++; });
-  return count;
-};
-constexpr inline auto hasEpsilonProduction = [](auto variable) {
-  bool value = false;
-  variable([&](const char *, auto production) {
-    if (!value)
-      value = countProductionSymbols(production) == 0;
-  });
-  return value;
-};
-
 // 1. If X is a terminal, then FIRST(X) = {'x'}
 // 2. If X->Є, is a production rule, then add Є to FIRST(X).
 // 3. If X->Y1 Y2 Y3 ..., Yn is a production,
 // a. FIRST(X) = FIRST(Y1)
 // b. If FIRST(Y1) contains Є then FIRST(X) = { FIRST(Y1) – Є } U { FIRST(Y2) }
 // c. If FIRST(Yi) contains Є for all i = 1 to n, then add Є to FIRST(X).
-template <typename T> struct print;
 struct first {
   template <typename O> struct pith {
     const O &o;
@@ -66,7 +51,7 @@ struct first {
     RayProduction {
       NOP(n);
       bool done = false;
-      production([&](auto symbol) {
+      production([&](const auto &symbol) {
         if (done)
           return;
         if constexpr (parsec::is_parser_bark_v<decltype(symbol)>) {
@@ -75,7 +60,7 @@ struct first {
         } else {
           auto ti = std::type_index(typeid(symbol));
           done = this->ti == ti;
-          if (this->ti == ti)
+          if (done)
             return;
           auto hasEpsilonProduction = false;
           auto p = pith<O>{this->o, ti, hasEpsilonProduction};
@@ -86,7 +71,8 @@ struct first {
       this->hasEpsilonProduction |= !done;
     }
   };
-  template <typename O, typename V> void operator()(O o, V variable) const {
+  template <typename O, typename V>
+  void operator()(const O &o, const V &variable) const {
     bool hasEpsilonProduction = false;
     auto p =
         pith<O>{o, std::type_index(typeid(variable)), hasEpsilonProduction};
@@ -97,7 +83,7 @@ struct first {
 };
 
 int main() { //
-  first{}([](auto x) { std::cout << x.match << ", "; }, S{});
+  first{}([](const auto &x) { std::cout << x.match << ", "; }, S{});
   return 9;
 }
 
