@@ -1,4 +1,4 @@
-#include "../parsec.hpp"
+#include "g41.hpp"
 template <typename T> struct print;
 #include <iostream>
 #include <typeinfo>
@@ -48,16 +48,20 @@ struct spith {
   }
 };
 
-#include "g42.hpp"
+struct olrParser {
+  MBark(typename V)(const V &variable, const char *in) {
+    auto s = spith_state{in};
+    variable(spith{s});
+    if (s.error)
+      return o(error_ray_v, s.error);
+    o(s.pos);
+  }
+};
+
 int main() {
-  auto s = spith_state{"a+b*o"};
-  E{}(spith{s});
-  std::cout << "Pos:" << s.pos << ", E:" << s.error << '\n';
-  // Є
-  // auto log = ::rays{[](error_ray *, int err) { std::cerr << err <<
-  // std::endl;
-  // },
-  //                  [](auto x) { std::cout << x << std::endl; }};
-  // compile{}(log, E{}, input);
-  return 8;
+  auto pith = ::rays{
+      [](error_ray *, int err) { std::cerr << "Error: " << err << '\n'; },
+      [](size_t pos) { std::cout << "Pos: " << pos << '\n'; }};
+  olrParser{}(pith, S{}, "a+b*o");
+  return 9;
 }

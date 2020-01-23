@@ -1,38 +1,35 @@
 #pragma once
 #include "terminals.hpp"
+#define Derives MBark()()
+#define Production Bark()()
 
-struct S {
+struct E {
   Derives {
-    o("S->E", [](auto o) { o(E{}); });
+    o(Production {
+      o(E{});
+      o(PLUS);
+      o(T{});
+    });
+    o(Production { o(T{}); });
   }
-  struct E {
+  struct T {
     Derives {
-      o("E->E+T", [](auto o) {
-        o(E{});
-        o(PLUS);
+      o(Production {
         o(T{});
+        o(MUL);
+        o(F{});
       });
-      o("E->T", [](auto o) { o(T{}); });
+      o(Production { o(F{}); });
     }
-    struct T {
+    struct F {
       Derives {
-        o("T->T*F", [](auto o) {
-          o(T{});
-          o(MUL);
-          o(F{});
+        o(Production {
+          o(LPAREN);
+          o(E{});
+          o(RPAREN);
         });
-        o("T->F", [](auto o) { o(F{}); });
+        o(Production { o(ID); });
       }
-      struct F {
-        Derives {
-          o("F->(E)", [](auto o) {
-            o(LPAREN);
-            o(E{});
-            o(RPAREN);
-          });
-          o("F->id", [](auto o) { o(ID); });
-        }
-      };
     };
   };
 };

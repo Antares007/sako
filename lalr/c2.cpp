@@ -5,7 +5,7 @@
   void operator()(const char *n, const Production &production) const
 #define NOP(x) (void(x))
 
-#include "g43.hpp"
+#include "g41.hpp"
 #include <iostream>
 #include <typeindex>
 
@@ -83,7 +83,7 @@ struct first {
 };
 
 int main() { //
-  first{}([](const auto &x) { std::cout << x.match << ", "; }, S{});
+  first{}([](const auto &x) { std::cout << x.match << ", "; }, S::E{});
   return 9;
 }
 
