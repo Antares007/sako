@@ -72,7 +72,8 @@ struct printgrammar {
             while (ident--)
               std::cout << "  ";
             std::cout << typeid(v).name() << " ->";
-            prod([](auto sym) { std::cout << ' ' << typeid(sym).name(); });
+            prod(
+                [](auto symbol) { std::cout << ' ' << typeid(symbol).name(); });
             std::cout << '\n';
           });
         },
@@ -82,20 +83,20 @@ struct printgrammar {
 
 constexpr inline auto takefirst = [](const auto &o, const auto &production) {
   auto first = true;
-  production([&](const auto &sym) {
+  production([&](const auto &symbol) {
     if (first) {
       first = false;
-      o(sym);
+      o(symbol);
     }
   });
 };
 constexpr inline auto skipfirst = [](const auto &o, const auto &production) {
   auto first = true;
-  production([&](const auto &sym) {
+  production([&](const auto &symbol) {
     if (first)
       first = false;
     else
-      o(sym);
+      o(symbol);
   });
 };
 
@@ -106,9 +107,9 @@ constexpr inline auto goto_ = [](const auto &o, const auto &variable,
         variable([&](const auto &production) {
           auto found = false;
           takefirst(
-              [&](const auto &sym) { //
+              [&](const auto &symbol) { //
                 found = std::type_index(typeid(tosym)) ==
-                        std::type_index(typeid(sym));
+                        std::type_index(typeid(symbol));
               },
               production);
           if (found)
@@ -121,7 +122,7 @@ int main() { //
   constexpr auto ag = [](const auto &o) {
     o([](const auto &o) { o(expr{}); });
   };
-  auto s = (goto_, ag, ID{});
+  auto s = (goto_, (goto_, (goto_, ag, expr{}), PLUS{}), expr::factor{});
   printgrammar{}(s);
   std::cout << "first set:\n";
   first{}(

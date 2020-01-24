@@ -1,5 +1,5 @@
 #pragma once
-#include "../parsec.hpp"
+#include "terminals.hpp"
 #include <typeindex>
 
 // 1. If X is a terminal, then FIRST(X) = {'x'}
@@ -43,6 +43,6 @@ struct first {
     auto p = pith<O, V>{o, variable, hasEpsilonProduction};
     variable(p);
     if (hasEpsilonProduction && includeEpsilon)
-      o(variable, parsec::str{"#"});
+      o(variable, EPSILON{});
   }
 };
