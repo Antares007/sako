@@ -31,7 +31,7 @@ struct spith {
       symbol(*this);
     }
   }
-  template <typename P> void operator()(const char *n, P production) const {
+  template <typename P> void operator()(P production) const {
     if (s.done || ident > 4)
       return;
     auto sd = spith_state{s.b + s.pos};
@@ -62,6 +62,7 @@ int main() {
   auto pith = ::rays{
       [](error_ray *, int err) { std::cerr << "Error: " << err << '\n'; },
       [](size_t pos) { std::cout << "Pos: " << pos << '\n'; }};
-  olrParser{}(pith, S{}, "a+b*o");
+  olrParser{}(
+      pith, [](const auto &o) { o([](const auto &o) { o(E{}); }); }, "a+b*o");
   return 9;
 }
