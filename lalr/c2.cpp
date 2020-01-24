@@ -100,16 +100,16 @@ constexpr inline auto skipfirst = [](const auto &o, const auto &production) {
   });
 };
 
-constexpr inline auto goto_ = [](const auto &o, const auto &variable,
-                                 const auto &tosym) {
+constexpr inline auto go = [](const auto &o, const auto &variable,
+                              const auto &to) {
+  const auto toty = std::type_index(typeid(to));
   virables{}(
       [&](const auto &variable, auto) {
         variable([&](const auto &production) {
           auto found = false;
           takefirst(
               [&](const auto &symbol) { //
-                found = std::type_index(typeid(tosym)) ==
-                        std::type_index(typeid(symbol));
+                found = toty == std::type_index(typeid(symbol));
               },
               production);
           if (found)
@@ -118,11 +118,10 @@ constexpr inline auto goto_ = [](const auto &o, const auto &variable,
       },
       variable);
 };
+
 int main() { //
-  constexpr auto ag = [](const auto &o) {
-    o([](const auto &o) { o(expr{}); });
-  };
-  auto s = (goto_, (goto_, (goto_, ag, expr{}), PLUS{}), expr::factor{});
+  constexpr auto ag = [](const auto &o) { o([](const auto &o) { o(_E_{}); }); };
+  auto s = (go, (go, ag, LPAREN{}), ID{});
   printgrammar{}(s);
   std::cout << "first set:\n";
   first{}(
