@@ -1,31 +1,31 @@
 #pragma once
 #include "terminals.hpp"
 #define Derives MBark()()
-#define Production Bark()()
+#define Production [](const auto &o)
 
-struct E {
+struct expr {
   Derives {
     o(Production {
-      o(E{});
+      o(expr{});
       o(PLUS);
-      o(T{});
+      o(term{});
     });
-    o(Production { o(T{}); });
+    o(Production { o(term{}); });
   }
-  struct T {
+  struct term {
     Derives {
       o(Production {
-        o(T{});
+        o(term{});
         o(MUL);
-        o(F{});
+        o(factor{});
       });
-      o(Production { o(F{}); });
+      o(Production { o(factor{}); });
     }
-    struct F {
+    struct factor {
       Derives {
         o(Production {
           o(LPAREN);
-          o(E{});
+          o(expr{});
           o(RPAREN);
         });
         o(Production { o(ID); });
