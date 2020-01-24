@@ -12,13 +12,13 @@ struct exprsample {
   };
   struct term {
     Derives {
-      o(Bark()() { o(PLUS); });
+      o(Bark()() { o(PLUS{}); });
       o([](const auto &) {});
     };
   };
   struct factor {
     Derives {
-      o([](const auto &o) { o(PLUS); });
+      o([](const auto &o) { o(PLUS{}); });
       // o("6", [](const auto &) {});
     };
   };
@@ -72,13 +72,7 @@ struct printgrammar {
             while (ident--)
               std::cout << "  ";
             std::cout << typeid(v).name() << " ->";
-            prod([](auto sym) {
-              std::cout << ' ';
-              if constexpr (parsec::is_parser_bark_v<decltype(sym)>)
-                std::cout << sym.match;
-              else
-                std::cout << typeid(sym).name();
-            });
+            prod([](auto sym) { std::cout << ' ' << typeid(sym).name(); });
             std::cout << '\n';
           });
         },
@@ -86,13 +80,54 @@ struct printgrammar {
   }
 };
 
+constexpr inline auto takefirst = [](const auto &o, const auto &production) {
+  auto first = true;
+  production([&](const auto &sym) {
+    if (first) {
+      first = false;
+      o(sym);
+    }
+  });
+};
+constexpr inline auto skipfirst = [](const auto &o, const auto &production) {
+  auto first = true;
+  production([&](const auto &sym) {
+    if (first)
+      first = false;
+    else
+      o(sym);
+  });
+};
+
+constexpr inline auto goto_ = [](const auto &o, const auto &variable,
+                                 const auto &tosym) {
+  virables{}(
+      [&](const auto &variable, auto) {
+        variable([&](const auto &production) {
+          auto found = false;
+          takefirst(
+              [&](const auto &sym) { //
+                found = std::type_index(typeid(tosym)) ==
+                        std::type_index(typeid(sym));
+              },
+              production);
+          if (found)
+            o([production](const auto &o) { skipfirst(o, production); });
+        });
+      },
+      variable);
+};
 int main() { //
-  printgrammar{}(exprsample{});
-  printgrammar{}(expr{});
-  // first{}(
-  //    [](const auto &v, const auto &x) {
-  //      std::cout << typeid(v).name() << " " << x.match << ", ";
-  //    },
-  //    expr{});
+  constexpr auto ag = [](const auto &o) {
+    o([](const auto &o) { o(expr{}); });
+  };
+  auto s = (goto_, ag, ID{});
+  printgrammar{}(s);
+  std::cout << "first set:\n";
+  first{}(
+      [](const auto &v, const auto &x) {
+        std::cout << typeid(v).name() << " " << typeid(x).name() << '\n';
+      },
+      s);
   return 9;
 }

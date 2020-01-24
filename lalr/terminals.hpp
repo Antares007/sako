@@ -1,12 +1,43 @@
 #pragma once
 #include "../parsec.hpp"
-#define Derives MBark()()
 
-constexpr inline auto PLUS = parsec::str{"+"};
-constexpr inline auto MUL = parsec::str{"*"};
-constexpr inline auto LPAREN = parsec::str{"("};
-constexpr inline auto RPAREN = parsec::str{")"};
-constexpr inline auto ID = parsec::anyOf{"abo"};
-constexpr inline auto Є = parsec::str{""};
-// constexpr inline auto ID =
-//    parsec::chr{[](auto c) { return 'a' <= c && c <= 'z'; }};
+struct PLUS {
+  template <typename O> void operator()(const O &o, const char *b) const {
+    if (b[0] == '+' && b[1] != '=' && b[1] != '+')
+      o(1);
+    else
+      o(error_ray_v, -1);
+  }
+};
+struct MUL {
+  template <typename O> void operator()(const O &o, const char *b) const {
+    if (b[0] == '*' && b[1] != '=')
+      o(1);
+    else
+      o(error_ray_v, -1);
+  }
+};
+struct LPAREN {
+  template <typename O> void operator()(const O &o, const char *b) const {
+    if (b[0] == '(')
+      o(1);
+    else
+      o(error_ray_v, -1);
+  }
+};
+struct RPAREN {
+  template <typename O> void operator()(const O &o, const char *b) const {
+    if (b[0] == ')')
+      o(1);
+    else
+      o(error_ray_v, -1);
+  }
+};
+struct ID {
+  template <typename O> void operator()(const O &o, const char *b) const {
+    if ('a' <= b[0] && b[0] <= 'z')
+      o(1);
+    else
+      o(error_ray_v, -1);
+  }
+};
