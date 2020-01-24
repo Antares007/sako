@@ -12,13 +12,13 @@ struct exprsample {
   };
   struct term {
     Derives {
-      o(Bark()() { o(PLUS{}); });
+      o(Bark()() { o(_PLUS_{}); });
       o([](const auto &) {});
     };
   };
   struct factor {
     Derives {
-      o([](const auto &o) { o(PLUS{}); });
+      o([](const auto &o) { o(_PLUS_{}); });
       // o("6", [](const auto &) {});
     };
   };
@@ -100,34 +100,58 @@ constexpr inline auto skipfirst = [](const auto &o, const auto &production) {
   });
 };
 
-constexpr inline auto go = [](const auto &o, const auto &variable,
-                              const auto &to) {
-  const auto toty = std::type_index(typeid(to));
-  virables{}(
-      [&](const auto &variable, auto) {
-        variable([&](const auto &production) {
-          auto found = false;
-          takefirst(
-              [&](const auto &symbol) { //
-                found = toty == std::type_index(typeid(symbol));
-              },
-              production);
-          if (found)
-            o([production](const auto &o) { skipfirst(o, production); });
-        });
-      },
-      variable);
+template <typename V, typename S> struct go {
+  V variable;
+  S to;
+  template <typename O> void operator()(const O &o) const {
+    const auto toty = std::type_index(typeid(to));
+    virables{}(
+        [&](const auto &variable, auto) {
+          variable([&](const auto &production) {
+            auto found = false;
+            takefirst(
+                [&](const auto &symbol) { //
+                  found = toty == std::type_index(typeid(symbol));
+                },
+                production);
+            if (found)
+              o([production](const auto &o) { skipfirst(o, production); });
+          });
+        },
+        variable);
+  }
 };
+template <typename... Args> go(Args...) -> go<Args...>;
+
+template <typename V> struct _argumented_ {
+  V v;
+  Derives {
+    o([&](const auto &o) { o(v); });
+  }
+};
+template <typename... Args> _argumented_(Args...) -> _argumented_<Args...>;
 
 int main() { //
-  constexpr auto ag = [](const auto &o) { o([](const auto &o) { o(_E_{}); }); };
-  auto s = (go, (go, ag, LPAREN{}), ID{});
-  printgrammar{}(s);
-  std::cout << "first set:\n";
-  first{}(
-      [](const auto &v, const auto &x) {
-        std::cout << typeid(v).name() << " " << typeid(x).name() << '\n';
-      },
-      s);
+  std::cout << "\n";
+  auto ag = _argumented_{_expr_{}};
+  auto print = [](const auto &variable) {
+    std::cout << "\n";
+    printgrammar{}(variable);
+    std::cout << "first set:\n";
+    first{}(
+        [](const auto &v, const auto &x) {
+          std::cout << (typeid(v).name()) << " " << typeid(x).name() << '\n';
+        },
+        variable);
+  };
+  auto s0 = ag;
+  //  print(s0);
+  //
+  //  auto s1 = go{s0, _ID_{}};
+  //  print(s1);
+
+  auto s2 = go{s0, _expr_::_term_{}};
+  print(s2);
+
   return 9;
 }

@@ -1,28 +1,29 @@
 #pragma once
 #include "terminals.hpp"
+#define Derives MBark()()
 
 struct S {
   Derives {
-    o("S->E", [](auto o) { o(E{}); });
+    o([](auto o) { o(E{}); });
   }
   struct E {
     Derives {
-      o("E->E+E", [](auto o) {
+      o([](auto o) {
         o(E{});
-        o(PLUS);
-        o(E{});
-      });
-      o("E->E*E", [](auto o) {
-        o(E{});
-        o(MUL);
+        o(_PLUS_{});
         o(E{});
       });
-      o("E->(E)", [](auto o) {
-        o(LPAREN);
+      o([](auto o) {
         o(E{});
-        o(RPAREN);
+        o(_MUL_{});
+        o(E{});
       });
-      o("E->id", [](auto o) { o(ID); });
+      o([](auto o) {
+        o(_LPAREN_{});
+        o(E{});
+        o(_RPAREN_{});
+      });
+      o([](auto o) { o(_ID_{}); });
     }
   };
 };
