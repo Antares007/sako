@@ -2,7 +2,7 @@
 #include "../parsec.hpp"
 #define Regular                                                                \
   template <typename O> void operator()(const O &o, const char *b) const
-struct _PLUS_ {
+struct PLUS {
   Regular {
     if (b[0] == '+' && b[1] != '=' && b[1] != '+')
       o(1);
@@ -10,7 +10,7 @@ struct _PLUS_ {
       o(error_ray_v, -1);
   }
 };
-struct _MUL_ {
+struct MUL {
   Regular {
     if (b[0] == '*' && b[1] != '=')
       o(1);
@@ -18,7 +18,7 @@ struct _MUL_ {
       o(error_ray_v, -1);
   }
 };
-struct _LPAREN_ {
+struct LPAREN {
   Regular {
     if (b[0] == '(')
       o(1);
@@ -26,7 +26,7 @@ struct _LPAREN_ {
       o(error_ray_v, -1);
   }
 };
-struct _RPAREN_ {
+struct RPAREN {
   Regular {
     if (b[0] == ')')
       o(1);
@@ -34,7 +34,7 @@ struct _RPAREN_ {
       o(error_ray_v, -1);
   }
 };
-struct _ID_ {
+struct ID {
   Regular {
     if ('a' <= b[0] && b[0] <= 'z')
       o(1);
@@ -42,7 +42,7 @@ struct _ID_ {
       o(error_ray_v, -1);
   }
 };
-struct _EPSILON_ {
+struct EPSILON {
   Regular {
     o(0);
     (void(b));

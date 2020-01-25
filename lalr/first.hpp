@@ -43,6 +43,6 @@ struct first {
     auto p = pith<O, V>{o, variable, hasEpsilonProduction};
     variable(p);
     if (hasEpsilonProduction && includeEpsilon)
-      o(variable, _EPSILON_{});
+      o(variable, EPSILON{});
   }
 };

@@ -2,33 +2,34 @@
 #include "terminals.hpp"
 #define Derives MBark()()
 #define Production [](const auto &o)
-struct _expr_ {
+
+struct expr {
   Derives {
     o(Production {
-      o(_expr_{});
-      o(_PLUS_{});
-      o(_term_{});
+      o(expr{});
+      o(PLUS{});
+      o(term{});
     });
-    o(Production { o(_term_{}); });
+    o(Production { o(term{}); });
   }
-  struct _term_ {
+  struct term {
     Derives {
       o(Production {
-        o(_term_{});
-        o(_MUL_{});
-        o(_factor_{});
+        o(term{});
+        o(MUL{});
+        o(factor{});
       });
-      o(Production { o(_factor_{}); });
+      o(Production { o(factor{}); });
     }
   };
-  struct _factor_ {
+  struct factor {
     Derives {
       o(Production {
-        o(_LPAREN_{});
-        o(_expr_{});
-        o(_RPAREN_{});
+        o(LPAREN{});
+        o(expr{});
+        o(RPAREN{});
       });
-      o(Production { o(_ID_{}); });
+      o(Production { o(ID{}); });
     }
   };
 };

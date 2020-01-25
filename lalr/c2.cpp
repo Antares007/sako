@@ -1,6 +1,8 @@
 #include "first.hpp"
 #include "g41.hpp"
+#include <cxxabi.h>
 #include <iostream>
+const char *demangle(const char *name);
 
 struct exprsample {
   Derives {
@@ -12,13 +14,13 @@ struct exprsample {
   };
   struct term {
     Derives {
-      o(Bark()() { o(_PLUS_{}); });
+      o(Bark()() { o(PLUS{}); });
       o([](const auto &) {});
     };
   };
   struct factor {
     Derives {
-      o([](const auto &o) { o(_PLUS_{}); });
+      o([](const auto &o) { o(PLUS{}); });
       // o("6", [](const auto &) {});
     };
   };
@@ -71,9 +73,10 @@ struct printgrammar {
             size_t ident = i;
             while (ident--)
               std::cout << "  ";
-            std::cout << typeid(v).name() << " ->";
-            prod(
-                [](auto symbol) { std::cout << ' ' << typeid(symbol).name(); });
+            std::cout << demangle(typeid(v).name()) << " ->";
+            prod([](auto symbol) {
+              std::cout << ' ' << demangle(typeid(symbol).name());
+            });
             std::cout << '\n';
           });
         },
@@ -123,35 +126,53 @@ template <typename V, typename S> struct go {
 };
 template <typename... Args> go(Args...) -> go<Args...>;
 
-template <typename V> struct _argumented_ {
+template <typename V> struct argumented {
   V v;
   Derives {
     o([&](const auto &o) { o(v); });
   }
 };
-template <typename... Args> _argumented_(Args...) -> _argumented_<Args...>;
+template <typename... Args> argumented(Args...) -> argumented<Args...>;
+
+struct olr {
+  template <typename O> void operator()(const O &o, const char *b) {
+    struct pith {
+      const O &o;
+      const char *b;
+      void operator()() const { o(b); }
+    };
+    auto pp = pith{o, b};
+    pp();
+  };
+};
 
 int main() { //
   std::cout << "\n";
-  auto ag = _argumented_{_expr_{}};
+  auto ag = argumented{expr{}};
   auto print = [](const auto &variable) {
     std::cout << "\n";
     printgrammar{}(variable);
     std::cout << "first set:\n";
     first{}(
         [](const auto &v, const auto &x) {
-          std::cout << (typeid(v).name()) << " " << typeid(x).name() << '\n';
+          std::cout << demangle(typeid(v).name()) << " "
+                    << demangle(typeid(x).name()) << '\n';
         },
         variable);
+    return variable;
   };
-  auto s0 = ag;
-  //  print(s0);
-  //
-  //  auto s1 = go{s0, _ID_{}};
-  //  print(s1);
+  olr{}([](auto x) { std::cout << x << "\n"; }, "hey");
 
-  auto s2 = go{s0, _expr_::_term_{}};
-  print(s2);
+  auto g0t0 = [&](auto v, auto s) { return go{v, s}; };
+  print(g0t0(print(ag), ID{}));
 
   return 9;
+}
+
+const char *demangle(const char *name) {
+  char buf[10240];
+  size_t size = 10240;
+  int status;
+  char *res = abi::__cxa_demangle(name, buf, &size, &status);
+  return res;
 }
