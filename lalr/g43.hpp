@@ -2,28 +2,23 @@
 #include "terminals.hpp"
 #define Derives MBark()()
 
-struct S {
+struct E {
   Derives {
-    o([](auto o) { o(E{}); });
+    o([](auto o) {
+      o(E{});
+      o(PLUS{});
+      o(E{});
+    });
+    o([](auto o) {
+      o(E{});
+      o(MUL{});
+      o(E{});
+    });
+    o([](auto o) {
+      o(LPAREN{});
+      o(E{});
+      o(RPAREN{});
+    });
+    o([](auto o) { o(ID{}); });
   }
-  struct E {
-    Derives {
-      o([](auto o) {
-        o(E{});
-        o(_PLUS_{});
-        o(E{});
-      });
-      o([](auto o) {
-        o(E{});
-        o(_MUL_{});
-        o(E{});
-      });
-      o([](auto o) {
-        o(_LPAREN_{});
-        o(E{});
-        o(_RPAREN_{});
-      });
-      o([](auto o) { o(_ID_{}); });
-    }
-  };
 };

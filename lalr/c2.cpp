@@ -2,38 +2,38 @@
 #include "g41.hpp"
 #include <cxxabi.h>
 #include <iostream>
-const char *demangle(const char *name);
+#include <string>
 
-struct exprsample {
-  Derives {
-    o([](const auto &o) {
-      o(term{});
-      o(factor{});
+constexpr inline auto demangle = [](const char *name) {
+  int stat = 0;
+  auto buff = abi::__cxa_demangle(name, nullptr, nullptr, &stat);
+  auto rez = std::string(stat ? name : buff);
+  free(buff);
+  return rez;
+};
+
+template <typename V> struct index_ring {
+  V v;
+  template <typename O> void operator()(const O &o) const {
+    size_t index = 0;
+    v([&]<typename P>(P &&production) {
+      o(
+          [&, production = static_cast<P &&>(production)](const auto &o) {
+            size_t index = 0;
+            production([&]<typename S>(S &&symbol) {
+              if constexpr (parsec::is_parser_bark_v<S>)
+                o(static_cast<S &&>(symbol), v, index++);
+              else
+                o(index_ring<S>{static_cast<S &&>(symbol)}, v, index++);
+            });
+          },
+          v, index++);
     });
-    o([](const auto &) {});
-  };
-  struct term {
-    Derives {
-      o(Bark()() { o(PLUS{}); });
-      o([](const auto &) {});
-    };
-  };
-  struct factor {
-    Derives {
-      o([](const auto &o) { o(PLUS{}); });
-      // o("6", [](const auto &) {});
-    };
-  };
-};
-
-constexpr inline auto log = [](size_t ident, auto... args) {
-  while (ident) {
-    std::cout << ' ';
-    ident--;
   }
-  ((std::cout << args), ...);
-  std::cout << std::endl;
 };
+template <typename... Args> index_ring(Args...) -> index_ring<Args...>;
+
+template <typename T> struct print;
 
 #include <set>
 struct virables {
@@ -134,19 +134,30 @@ template <typename V> struct argumented {
 };
 template <typename... Args> argumented(Args...) -> argumented<Args...>;
 
-struct olr {
+template <typename V> struct olr {
+  V v;
+
   template <typename O> void operator()(const O &o, const char *b) {
     struct pith {
       const O &o;
       const char *b;
       void operator()() const { o(b); }
     };
+
     auto pp = pith{o, b};
     pp();
-  };
+  }
 };
+template <typename... Args> olr(Args...) -> olr<Args...>;
 
 int main() { //
+  index_ring{expr{}}([](auto p, auto v, auto i) {
+    p([&](auto, auto s, auto j) {
+      std::cout << i << ' ' << j << ' ' << demangle(typeid(v).name()) << ' '
+                << demangle(typeid(s).name()) << '\n';
+    });
+  });
+
   std::cout << "\n";
   auto ag = argumented{expr{}};
   auto print = [](const auto &variable) {
@@ -161,18 +172,10 @@ int main() { //
         variable);
     return variable;
   };
-  olr{}([](auto x) { std::cout << x << "\n"; }, "hey");
+  olr{expr{}}([](auto x) { std::cout << x << "\n"; }, "hey");
 
   auto g0t0 = [&](auto v, auto s) { return go{v, s}; };
   print(g0t0(print(ag), ID{}));
 
   return 9;
-}
-
-const char *demangle(const char *name) {
-  char buf[10240];
-  size_t size = 10240;
-  int status;
-  char *res = abi::__cxa_demangle(name, buf, &size, &status);
-  return res;
 }

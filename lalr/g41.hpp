@@ -4,32 +4,32 @@
 #define Production [](const auto &o)
 
 struct expr {
-  Derives {
-    o(Production {
+  template <typename O> void operator()(const O &o) const {
+    o([](const auto &o) {
       o(expr{});
       o(PLUS{});
       o(term{});
     });
-    o(Production { o(term{}); });
+    o([](const auto &o) { o(term{}); });
   }
   struct term {
-    Derives {
-      o(Production {
+    template <typename O> void operator()(const O &o) const {
+      o([](const auto &o) {
         o(term{});
         o(MUL{});
         o(factor{});
       });
-      o(Production { o(factor{}); });
+      o([](const auto &o) { o(factor{}); });
     }
   };
   struct factor {
-    Derives {
-      o(Production {
+    template <typename O> void operator()(const O &o) const {
+      o([](const auto &o) {
         o(LPAREN{});
         o(expr{});
         o(RPAREN{});
       });
-      o(Production { o(ID{}); });
+      o([](const auto &o) { o(ID{}); });
     }
   };
 };
