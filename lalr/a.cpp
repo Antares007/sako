@@ -14,21 +14,6 @@ constexpr inline auto demangle = [](const char *name) {
 
 template <typename T> struct print;
 
-constexpr inline auto invocable = [](auto &&...) {};
-
-template <typename L, typename R>
-constexpr std::enable_if_t<
-    std::disjunction_v<
-        std::conjunction<std::is_invocable_r<void, L, decltype(invocable)>,
-                         std::is_invocable_r<void, R, decltype(invocable)>>,
-        std::conjunction<
-            std::is_invocable_r<void, L, decltype(invocable), const char *>,
-            std::is_invocable_r<void, R, decltype(invocable), const char *>>>,
-    bool>
-operator==(const L &l, const R &r) {
-  return std::type_index(typeid(l)) == std::type_index(typeid(r));
-}
-
 template <typename V> struct index_ring {
   V v;
   template <typename O> void operator()(const O &o) const {
@@ -112,7 +97,5 @@ int main() { //
   //    p([&](auto s) { std::cout << demangle(typeid(s).name()) << '\n'; });
   //  });
 
-  auto aaa = expr{} == expr{};
-
-  return aaa ? 9 : 3;
+  return 9;
 }

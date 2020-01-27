@@ -1,11 +1,4 @@
 #pragma once
-#define Bark(...) [__VA_ARGS__](const auto &o Bark_NEXT_
-#define Bark_NEXT_(...) __VA_OPT__(,) __VA_ARGS__)
-
-#define MBark(...)                                                             \
-  template <typename O __VA_OPT__(,) __VA_ARGS__>                              \
-  void operator()(const O &o MBark_NEXT_
-#define MBark_NEXT_(...) __VA_OPT__(,) __VA_ARGS__) const noexcept
 
 template <class... Ts> struct rays : Ts... { using Ts::operator()...; };
 template <class... Ts> rays(Ts...) -> rays<Ts...>;
@@ -35,6 +28,29 @@ template <typename Pith, typename A> struct purry {
            }});
   }
 };
+
+struct next_ray;
+template <typename L, typename R> struct cont {
+  L l;
+  R r;
+  template <typename O, typename... Args>
+  void operator()(const O &o, Args &&... args) const { //
+    bool error = false;
+    l(::rays{[&](error_ray *tag, int err) {
+               error = true;
+               o(tag, err);
+             },
+             [&]<typename V>(V &&v) { o(static_cast<V &&>(v)); }},
+      static_cast<Args &&>(args)...);
+    if (!error)
+      o(static_cast<next_ray *>(nullptr), r);
+  }
+};
+template <typename... Args> cont(Args...) -> cont<Args...>;
+
+template <typename L, typename R> constexpr auto operator>>=(L &&l, R &&r) {
+  return cont<L, R>{static_cast<L &&>(l), static_cast<R &&>(r)};
+}
 
 template <typename Pith, typename A>
 constexpr auto operator,(Pith &&pith, A &&a) {
