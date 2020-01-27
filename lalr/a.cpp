@@ -104,13 +104,13 @@ int main() { //
       [](auto o) { o(2); };
   t(cpith{});
   std::cout << "done!\n\n";
-  auto var = goto_ring{expr{}, expr{}};
-
-  //  var(pith{});
-
-  var([](auto p) {
-    p([&](auto s) { std::cout << demangle(typeid(s).name()) << '\n'; });
-  });
+  //  auto var = goto_ring{expr{}, expr{}};
+  //
+  //  //  var(pith{});
+  //
+  //  var([](auto p) {
+  //    p([&](auto s) { std::cout << demangle(typeid(s).name()) << '\n'; });
+  //  });
 
   auto aaa = expr{} == expr{};
 
