@@ -39,63 +39,72 @@ template <typename V, typename G> struct goto_ring {
     auto gtype_index = std::type_index(typeid(g));
     v([&]<typename P>(P &&production) {
       o([&, production = static_cast<P &&>(production)](const auto &o) {
-        bool first = true;
-        bool skip = false;
-        production([&]<typename S>(S &&symbol) {
-          if (skip)
-            return;
-          if (first) {
-            first = false;
-            skip = gtype_index != std::type_index(typeid(symbol));
-          } else {
-            if constexpr (parsec::is_parser_bark_v<S>)
-              o(static_cast<S &&>(symbol));
-            else
-              o(goto_ring<S, G>{static_cast<S &&>(symbol), g});
-          }
-        });
-      });
+        production(::rays{[&]<typename...Args>(Args&&...args) {o(static_cast<Args&&>(args)...);},
+                          [&]<typename S>(S &&symbol) {
+        //         gtype_index !=
+        //          std::type_index(typeid(symbol));
+        //        print<decltype(symbol)> pp;
+        // if (skip)
+        //  return;
+        // if (first) {
+        //  first = false;
+        //} else {
+        //  if constexpr (parsec::is_parser_bark_v<S>)
+        //    o(static_cast<S &&>(symbol));
+        //  else
+        //    o(goto_ring<S, G>{static_cast<S &&>(symbol),
+        //    g});
+        //}
+  }
     });
-  }
-};
-template <typename... Args> goto_ring(Args...) -> goto_ring<Args...>;
+  });
+    });
+    }
+    }
+    ;
+    template <typename... Args> goto_ring(Args...) -> goto_ring<Args...>;
 
-// innerhart
-struct pith {
-  template <typename S, typename V>
-  void operator()(const S &&symbol, const V &variable, size_t index) const {
-    (void(symbol));
-    (void(variable));
-    (void(index));
-  }
-  template <typename P> void operator()(const P &&production) const {
-    production(*this);
-  }
-};
-struct cpith {
-  void operator()(error_ray *, int err) const {
-    std::cerr << "Error: " << err << '\n';
-  }
-  template <typename N> void operator()(next_ray *, const N &n) const {
-    std::cout << "Next!\n";
-    n(*this);
-  }
-  template <typename V> void operator()(const V &v) const {
-    std::cout << "V: " << v << '\n';
-  }
-};
-int main() { //
-  auto t = [](auto o) { o(0); } >>= [](auto o) { o(1); } >>=
-      [](auto o) { o(2); };
-  t(cpith{});
-  std::cout << "done!\n\n";
-  //  auto var = goto_ring{expr{}, expr{}};
-  //
-  //  //  var(pith{});
-  //
-  //  var([](auto p) {
-  //    p([&](auto s) { std::cout << demangle(typeid(s).name()) << '\n'; });
-  //  });
+    // innerhart
+    struct pith {
+      template <typename S, typename V>
+      void operator()(const S &&symbol, const V &variable, size_t index) const {
+        (void(symbol));
+        (void(variable));
+        (void(index));
+      }
+      template <typename P> void operator()(const P &&production) const {
+        production(*this);
+      }
+    };
+    struct cpith {
+      void operator()(error_ray *, int err) const {
+        std::cerr << "Error: " << err << '\n';
+      }
+      template <typename N> void operator()(next_ray *, const N &n) const {
+        std::cout << "Next!\n";
+        n(*this);
+      }
+      template <typename V> void operator()(const V &v) const {
+        std::cout << "V: " << v << '\n';
+      }
+    };
 
-  return 9;
-}
+    int main() { //
+      auto t = [](auto o) { o(0); } >>= [](auto o) {
+        // o(error_ray_v, -9);
+        o(1);
+      } >>= [](auto o) { o(2); };
+      t(cpith{});
+      std::cout << "done!\n\n";
+      auto var = goto_ring{expr{}, expr{}};
+
+      //  var(pith{});
+
+      var([](auto p) {
+        p(::rays{
+            [](auto...) {},
+            [&](auto s) { std::cout << demangle(typeid(s).name()) << '\n'; }});
+      });
+
+      return 9;
+    }

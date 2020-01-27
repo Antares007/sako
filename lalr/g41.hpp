@@ -1,20 +1,26 @@
 #pragma once
 #include "terminals.hpp"
-#define Production [](const auto &o)
+#define Derives template <typename O> void operator()(const O &o) const
 
 struct expr {
-  template <typename O> void operator()(const O &o) const {
+  Derives {
+    o([](auto o) {
+      o(expr{});
+      o([](auto o) { //
+        o(PLUS{});
+      });
+    });
     o(expr{} >>= PLUS{} >>= term{});
     o(term{});
   }
   struct term {
-    template <typename O> void operator()(const O &o) const {
+    Derives {
       o(term{} >>= MUL{} >>= factor{});
       o(factor{});
     }
   };
   struct factor {
-    template <typename O> void operator()(const O &o) const {
+    Derives {
       o(LPAREN{} >>= expr{} >>= RPAREN{});
       o(ID{});
     }
