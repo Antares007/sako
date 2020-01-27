@@ -87,9 +87,23 @@ struct pith {
     production(*this);
   }
 };
-
+struct cpith {
+  void operator()(error_ray *, int err) const {
+    std::cerr << "Error: " << err << '\n';
+  }
+  template <typename N> void operator()(next_ray *, const N &n) const {
+    std::cout << "Next!\n";
+    n(*this);
+  }
+  template <typename V> void operator()(const V &v) const {
+    std::cout << "V: " << v << '\n';
+  }
+};
 int main() { //
-
+  auto t = [](auto o) { o(0); } >>= [](auto o) { o(1); } >>=
+      [](auto o) { o(2); };
+  t(cpith{});
+  std::cout << "done!\n\n";
   auto var = goto_ring{expr{}, expr{}};
 
   //  var(pith{});
