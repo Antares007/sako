@@ -1,63 +1,46 @@
 #pragma once
-
+#define FWD(x) static_cast<decltype(x) &&>(x)
 template <class... Ts> struct rays : Ts... { using Ts::operator()...; };
 template <class... Ts> rays(Ts...) -> rays<Ts...>;
 
 struct error_ray;
 constexpr inline error_ray *error_ray_v = nullptr;
 
-template <typename Pith, typename A> struct curry {
-  Pith pith;
+template <typename...> struct curry;
+template <typename... Args> curry(Args...) -> curry<Args...>;
+template <typename B, typename A> struct curry<B, A> {
+  B b;
   A a;
-  template <typename O, typename... Rest>
-  void operator()(O o, Rest &&... rest) const {
-    pith(o, a, static_cast<Rest &&>(rest)...);
+  constexpr curry(auto &&b, auto &&a) : b(FWD(b)), a(FWD(a)) {}
+  void operator()(const auto &o, auto &&... rest) const {
+    b(o, a, FWD(rest)...);
+  }
+};
+template <typename B, typename A, typename... Tail>
+struct curry<B, A, Tail...> : curry<curry<B, A>, Tail...> {
+  using curry<curry<B, A>, Tail...>::operator();
+  constexpr curry(auto &&b, auto &&a, auto &&... tail)
+      : curry<curry<B, A>, Tail...>(curry<B, A>(FWD(b), FWD(a)), FWD(tail)...) {
   }
 };
 
-template <typename Pith, typename A> struct purry {
-  Pith pith;
+template <typename...> struct purry;
+template <typename... Args> purry(Args...) -> purry<Args...>;
+template <typename B, typename A> struct purry<B, A> {
+  B b;
   A a;
-  template <typename O, typename... Rest>
-  void operator()(O o, Rest &&... rest) const {
-    a(rays{[&o](error_ray *l, auto &&... rest) {
-             o(l, static_cast<decltype(rest) &&>(rest)...);
-           },
-           [&o, this, ... rest = static_cast<Rest &&>(rest)](auto &&... a) {
-             this->pith(o, static_cast<decltype(a) &&>(a)..., rest...);
+  constexpr purry(auto &&b, auto &&a) : b(FWD(b)), a(FWD(a)) {}
+  void operator()(const auto &o, auto &&... rest) const {
+    a(rays{[&o](error_ray *l, auto &&... rest) { o(l, FWD(rest)...); },
+           [&o, this, ... rest = FWD(rest)](auto &&... a) {
+             this->b(o, FWD(a)..., rest...);
            }});
   }
 };
-
-struct next_ray;
-template <typename L, typename R> struct cont {
-  L l;
-  R r;
-  template <typename O, typename... Args>
-  void operator()(const O &o, Args &&... args) const { //
-    bool error = false;
-    l(::rays{[&](error_ray *tag, int err) {
-               error = true;
-               o(tag, err);
-             },
-             [&]<typename V>(V &&v) { o(static_cast<V &&>(v)); }},
-      static_cast<Args &&>(args)...);
-    if (!error)
-      o(static_cast<next_ray *>(nullptr), r);
+template <typename B, typename A, typename... Tail>
+struct purry<B, A, Tail...> : purry<purry<B, A>, Tail...> {
+  using purry<purry<B, A>, Tail...>::operator();
+  constexpr purry(auto &&b, auto &&a, auto &&... tail)
+      : purry<purry<B, A>, Tail...>(purry<B, A>(FWD(b), FWD(a)), FWD(tail)...) {
   }
 };
-template <typename... Args> cont(Args...) -> cont<Args...>;
-
-template <typename L, typename R> constexpr auto operator>>=(L &&l, R &&r) {
-  return cont<L, R>{static_cast<L &&>(l), static_cast<R &&>(r)};
-}
-
-template <typename Pith, typename A>
-constexpr auto operator,(Pith &&pith, A &&a) {
-  return curry<Pith, A>{static_cast<Pith &&>(pith), static_cast<A &&>(a)};
-}
-
-template <typename Pith, typename A>
-constexpr auto operator^(Pith &&pith, A &&a) {
-  return purry<Pith, A>{static_cast<Pith &&>(pith), static_cast<A &&>(a)};
-}

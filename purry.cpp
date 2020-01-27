@@ -22,18 +22,16 @@ void show1() {
   auto f = [](auto o, A) { o(B{}); };
   auto g = [](auto o, B) { o(C{}); };
   auto compose = [](auto f, auto g) {
-    return [=](auto o, auto a) { (g ^ (f, a))(o); };
+    return [=](auto o, auto a) { purry{g, curry{f, a}}(o); };
   };
   auto gof = compose(f, g);
-
-  (gof, A{})(rays{[](error_ray *) {}, [](C) {}});
+  curry{gof, A{}}(rays{[](error_ray *) {}, [](C) {}});
 }
 
 int main() {
   show0();
   show1();
   int r = 0;
-  ([](auto o, auto a, auto b) { o(a + b); } ^ [](auto o) { o(3); } ^
-   [](auto o) { o(6); })(out);
+  purry{[](auto o, auto a, auto b) { o(a + b); }, [](auto o) { o(3, 6); }}(out);
   return r;
 }
