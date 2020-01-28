@@ -1,28 +1,24 @@
 #pragma once
 #include "terminals.hpp"
-#define Derives template <typename O> void operator()(const O &o) const
-constexpr inline auto nil = [](const auto &) {};
-constexpr inline auto cons = [](auto...) { return 1; };
-struct head;
-struct tail;
-#define P(...)
+#define H head_ray_v
+#define T tail_ray_v
+#define L [](const auto &o)
+#define D void operator()(const auto &o) const
+#define S(name) o(H, name);
 struct expr {
-  Derives {
-    cons(                                              //
-        cons(expr{}, cons(PLUS{}, cons(term{}, nil))), //
-        cons(cons(term{}, nil), nil)                   //
-        )(o);
+  D {
+    o(
+        H, L { o(H, expr{}); });
+    o(
+        T, L {
+          o(
+              H, L { o(H, ID{}); });
+        });
   }
   struct term {
-    Derives {
-      o(term{} >>= MUL{} >>= factor{});
-      o(factor{});
-    }
+    D {}
   };
   struct factor {
-    Derives {
-      o(LPAREN{} >>= expr{} >>= RPAREN{});
-      o(ID{});
-    }
+    D {}
   };
 };

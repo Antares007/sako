@@ -1,5 +1,5 @@
 #include "first.hpp"
-#include "g41.hpp"
+#include "g42.hpp"
 #include <cxxabi.h>
 #include <iostream>
 #include <string>
@@ -128,7 +128,7 @@ template <typename... Args> go(Args...) -> go<Args...>;
 
 template <typename V> struct argumented {
   V v;
-  Derives {
+  void operator()(const auto &o) const {
     o([&](const auto &o) { o(v); });
   }
 };
