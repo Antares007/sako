@@ -2,14 +2,6 @@
 #include "../parsec.hpp"
 #define Regular                                                                \
   template <typename O> void operator()(const O &o, const char *b) const
-struct PLUS {
-  Regular {
-    if (b[0] == '+' && b[1] != '=' && b[1] != '+')
-      o(1);
-    else
-      o(error_ray_v, -1);
-  }
-};
 struct MUL {
   Regular {
     if (b[0] == '*' && b[1] != '=')

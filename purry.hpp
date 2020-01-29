@@ -40,6 +40,7 @@ struct purry<B, A, Tail...> : purry<purry<B, A>, Tail...> {
   constexpr purry(auto &&b, auto &&a, auto &&... tail)
       : purry<purry<B, A>, Tail...>(purry<B, A>(F(b), F(a)), F(tail)...) {}
 };
+#undef F
 
 struct head_ray;
 struct tail_ray;
@@ -51,25 +52,3 @@ template <typename T> concept List = requires(T l) { l(list_pith{}); };
 
 constexpr inline auto head_ray_v = static_cast<head_ray *>(nullptr);
 constexpr inline auto tail_ray_v = static_cast<tail_ray *>(nullptr);
-template <typename...> struct list;
-template <typename... Args> list(Args...) -> list<Args...>;
-template <> struct list<> {
-  void operator()(const auto &) const {}
-};
-
-template <typename H> struct list<H> {
-  H h;
-  constexpr list(auto &&h) : h(F(h)) {}
-  void operator()(const auto &o) const { o(head_ray_v, h); }
-};
-template <typename H, typename... Tail>
-struct list<H, Tail...> : list<Tail...> {
-  H h;
-  constexpr list(auto &&h, auto &&... tail)
-      : list<Tail...>(F(tail)...), h(F(h)) {}
-  void operator()(const auto &o) const {
-    o(head_ray_v, h);
-    o(tail_ray_v, [&](const auto &o) { list<Tail...>::operator()(o); });
-  }
-};
-#undef F

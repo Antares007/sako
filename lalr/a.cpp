@@ -13,57 +13,51 @@ constexpr inline auto demangle = [](const char *name) {
 };
 template <typename T> struct print;
 
+template <typename F> struct pith {
+  F f;
+  void operator()(head_ray *, const auto &x, size_t, size_t) const {
+    if constexpr (std::is_invocable_r_v<void, F, decltype(x), decltype(*this)>)
+      f(x, *this);
+    else
+      f(x);
+  }
+  void operator()(tail_ray *, const auto &tail) const {
+    std::cout << "N\n";
+    tail(*this);
+  }
+};
+template <typename F> pith(F) -> pith<F>;
+
 #include <set>
 struct variables {
-  template <typename O> struct pith {
-    const O &o;
-    size_t &ident;
-    std::set<std::type_index> &set;
-    const bool invar;
-
-    void operator()(head_ray *, const auto &x) const {
-      if constexpr (std::is_invocable_r_v<void, decltype(x), list_pith>) {
-        if (invar) { // x is production
-          x(pith{o, ident, set, false});
-        } else { // x is variable
-          auto ti = std::type_index(typeid(x));
-          if (!set.contains(ti)) {
-            set.insert(ti);
-            o(x, ++ident);
-            x(pith{o, ident, set, true});
-          }
-        }
-      } else // x is terminal
-        ;
-    }
-    void operator()(tail_ray *, const auto &tail) const { tail(*this); }
-  };
   template <typename O, typename V>
-  void operator()(const O &o, const V &variable) const { //
+  void operator()(const O &o, const V &variable) const {
     size_t ident = 0;
-    o(variable, ident);
     auto set = std::set<std::type_index>{};
-    set.insert(std::type_index(typeid(variable)));
-    variable(pith<O>{o, ident, set, true});
+    LA(LA(variable))
+    (pith{[&](const auto &prod, const auto &rec) {
+      prod(pith{[&](const auto &x) {
+        if constexpr (!parsec::is_parser_bark_v<decltype(x)>) {
+          auto ti = std::type_index(typeid(x));
+          if (set.contains(ti))
+            return;
+          set.insert(ti);
+          o(x, ident++);
+          x(rec);
+        }
+      }});
+    }});
   }
 };
 struct printgrammar {
-  template <typename F> struct pith {
-    F f;
-    void operator()(head_ray *, const auto &x) const { f(x); }
-    void operator()(tail_ray *, const auto &tail) const { tail(*this); }
-  };
-  template <typename F> pith(F) -> pith<F>;
-
   template <typename V> void operator()(const V &variable) const { //
     variables{}(
         [](auto v, auto i) {
-          v(pith{[&](auto prod) {
+          v(pith{[&](const auto &prod) {
             size_t ident = i;
             while (ident--)
               std::cout << "  ";
             std::cout << demangle(typeid(v).name()) << " ->";
-            // std::cout << ' ' << demangle(typeid(prod).name());
             prod(pith{[](auto &symbol) {
               std::cout << ' ' << demangle(typeid(symbol).name());
             }});
@@ -73,13 +67,14 @@ struct printgrammar {
         variable);
   }
 };
-int main() { //
+constexpr inline auto aaa = [](auto o) {
+  o(head_ray_v, [](auto o) { o(head_ray_v, 2); });
+};
+
+int main() {
   printgrammar{}(expr{});
-  // expr::term{}(printgrammar::pith{[](auto a) { //
-  //  std::cout << 'a' << demangle(typeid(a).name()) << '\n';
-  //  a(printgrammar::pith{[](auto b) { //
-  //    std::cout << 'b' << demangle(typeid(b).name());
-  //  }});
+  // expr::factor{}(pith{[](auto a, const auto &) {
+  //  a(pith{[](auto b) { std::cout << demangle(typeid(b).name()) << ' '; }});
   //  std::cout << '\n';
   //}});
   return 9;
