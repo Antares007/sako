@@ -6,19 +6,12 @@ struct tail_ray;
 constexpr inline auto lhead = static_cast<head_ray *>(nullptr);
 constexpr inline auto ltail = static_cast<tail_ray *>(nullptr);
 
-#define LA(a)                                                                  \
-  [&](const auto &o) {                                                         \
-    o(lhead, a, 0, 1);                                                         \
-    (void(true));                                                              \
-  }
+#define LA(a) [&](const auto &o) { o(lhead, a, 0, 1); }
 
 #define LAB(a, b)                                                              \
   [&](const auto &o) {                                                         \
     o(lhead, a, 0, 1);                                                         \
-    o(ltail, [&](const auto &o) {                                              \
-      o(lhead, b, 1, 2);                                                       \
-      (void(true));                                                            \
-    });                                                                        \
+    o(ltail, [&](const auto &o) { o(lhead, b, 1, 2); });                       \
   }
 
 #define LABC(a, b, c)                                                          \
@@ -26,10 +19,7 @@ constexpr inline auto ltail = static_cast<tail_ray *>(nullptr);
     o(lhead, a, 0, 3);                                                         \
     o(ltail, [&](const auto &o) {                                              \
       o(lhead, b, 1, 3);                                                       \
-      o(ltail, [&](const auto &o) {                                            \
-        o(lhead, c, 2, 3);                                                     \
-        (void(true));                                                          \
-      });                                                                      \
+      o(ltail, [&](const auto &o) { o(lhead, c, 2, 3); });                     \
     });                                                                        \
   }
 #define Regular                                                                \
