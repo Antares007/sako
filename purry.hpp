@@ -1,5 +1,5 @@
 #pragma once
-#define F(x) static_cast<decltype(x) &&>(x)
+#define Forward(x) static_cast<decltype(x) &&>(x)
 template <class... Ts> struct rays : Ts... { using Ts::operator()...; };
 template <class... Ts> rays(Ts...) -> rays<Ts...>;
 
@@ -11,14 +11,17 @@ template <typename... Args> curry(Args...) -> curry<Args...>;
 template <typename B, typename A> struct curry<B, A> {
   B b;
   A a;
-  constexpr curry(auto &&b, auto &&a) : b(F(b)), a(F(a)) {}
-  void operator()(const auto &o, auto &&... rest) const { b(o, a, F(rest)...); }
+  constexpr curry(auto &&b, auto &&a) : b(Forward(b)), a(Forward(a)) {}
+  void operator()(const auto &o, auto &&... rest) const {
+    b(o, a, Forward(rest)...);
+  }
 };
 template <typename B, typename A, typename... Tail>
 struct curry<B, A, Tail...> : curry<curry<B, A>, Tail...> {
   using curry<curry<B, A>, Tail...>::operator();
   constexpr curry(auto &&b, auto &&a, auto &&... tail)
-      : curry<curry<B, A>, Tail...>(curry<B, A>(F(b), F(a)), F(tail)...) {}
+      : curry<curry<B, A>, Tail...>(curry<B, A>(Forward(b), Forward(a)),
+                                    Forward(tail)...) {}
 };
 
 template <typename...> struct purry;
@@ -26,11 +29,11 @@ template <typename... Args> purry(Args...) -> purry<Args...>;
 template <typename B, typename A> struct purry<B, A> {
   B b;
   A a;
-  constexpr purry(auto &&b, auto &&a) : b(F(b)), a(F(a)) {}
+  constexpr purry(auto &&b, auto &&a) : b(Forward(b)), a(Forward(a)) {}
   void operator()(const auto &o, auto &&... rest) const {
-    a(rays{[&o](error_ray *l, auto &&... rest) { o(l, F(rest)...); },
-           [&o, this, ... rest = F(rest)](auto &&... a) {
-             this->b(o, F(a)..., rest...);
+    a(rays{[&o](error_ray *l, auto &&... rest) { o(l, Forward(rest)...); },
+           [&o, this, ... rest = Forward(rest)](auto &&... a) {
+             this->b(o, Forward(a)..., rest...);
            }});
   }
 };
@@ -38,17 +41,6 @@ template <typename B, typename A, typename... Tail>
 struct purry<B, A, Tail...> : purry<purry<B, A>, Tail...> {
   using purry<purry<B, A>, Tail...>::operator();
   constexpr purry(auto &&b, auto &&a, auto &&... tail)
-      : purry<purry<B, A>, Tail...>(purry<B, A>(F(b), F(a)), F(tail)...) {}
+      : purry<purry<B, A>, Tail...>(purry<B, A>(Forward(b), Forward(a)),
+                                    Forward(tail)...) {}
 };
-#undef F
-
-struct head_ray;
-struct tail_ray;
-struct list_pith {
-  void operator()(head_ray *, const auto &) const {}
-  void operator()(tail_ray *, const auto &tail) const { tail(*this); }
-};
-template <typename T> concept List = requires(T l) { l(list_pith{}); };
-
-constexpr inline auto head_ray_v = static_cast<head_ray *>(nullptr);
-constexpr inline auto tail_ray_v = static_cast<tail_ray *>(nullptr);
