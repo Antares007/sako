@@ -34,10 +34,17 @@ template <typename V> struct argumented_variable {
 
 #include <set>
 constexpr inline auto prn = [](const auto &o, auto &&svar) {
+  auto dname = [](auto s) {
+    auto name = demangle(typeid(s).name());
+    int pos = name.find_last_of(":");
+    if (pos > 0)
+      name = name.substr(pos + 1, name.size() - pos - 1);
+    return name;
+  };
   auto set = std::set<std::type_index>{};
   argumented_variable<decltype(svar)>{
       static_cast<decltype(svar) &&>(svar)}(pith{
-      [&](auto &&argumented_production, const auto &rec, size_t, size_t) {
+      [&](auto &&argumented_production, const auto &rec, auto...) {
         argumented_production(pith{
             [&](auto &&variable, auto, size_t, size_t) {
               auto var_type = std::type_index(typeid(variable));
@@ -45,11 +52,12 @@ constexpr inline auto prn = [](const auto &o, auto &&svar) {
                 return;
               set.insert(var_type);
               variable(pith{
-                  [&](auto &&production, auto, size_t, size_t) {
-                    auto s = demangle(typeid(variable).name()) + " ->";
+                  [&](auto &&production, auto...) {
+                    auto name = dname(variable);
+                    auto s = name + " ->";
                     production(pith{
-                        [&](auto &&symbol, auto, size_t, size_t) {
-                          s = s + " " + demangle(typeid(symbol).name());
+                        [&](auto &&symbol, auto...) {
+                          s = s + " " + dname(symbol);
                           if constexpr (!std::is_invocable_r_v<
                                             void, decltype(symbol),
                                             void (*)(int), const char *>) {
