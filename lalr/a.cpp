@@ -1,4 +1,3 @@
-#include "../parsec.hpp"
 #include "g41.hpp"
 #include <cxxabi.h>
 #include <iostream>
@@ -13,7 +12,6 @@ constexpr inline auto demangle = [](const char *name) {
   return rez;
 };
 template <typename... Ts> struct print;
-
 template <typename F, typename G> struct pith {
   F f;
   G g;
@@ -29,50 +27,52 @@ constexpr inline auto lrec = [](auto t, auto &&p) {
   t(static_cast<decltype(p) &&>(p));
 };
 
+template <typename V> struct argumented_variable {
+  V v;
+  void operator()(const auto &o) const { L1(L1(v))(o); }
+};
+
 #include <set>
-struct variables {
-  template <typename O, typename V>
-  void operator()(const O &o, const V &variable) const {
-    size_t ident = 0;
-    auto set = std::set<std::type_index>{};
-    L1(L1(variable))
-    (pith{[&](auto prod, const auto &rec, auto...) {
-            prod(pith{[&](auto x, auto...) {
-                        if constexpr (!parsec::is_parser_bark_v<decltype(x)>) {
-                          auto ti = std::type_index(typeid(x));
-                          if (set.contains(ti))
-                            return;
-                          set.insert(ti);
-                          o(x, ident++);
-                          x(rec);
-                        }
-                      },
-                      lrec});
-          },
-          lrec});
-  }
+constexpr inline auto prn = [](const auto &o, auto &&svar) {
+  auto set = std::set<std::type_index>{};
+  argumented_variable<decltype(svar)>{
+      static_cast<decltype(svar) &&>(svar)}(pith{
+      [&](auto &&argumented_production, const auto &rec, size_t, size_t) {
+        argumented_production(pith{
+            [&](auto &&variable, auto, size_t, size_t) {
+              auto var_type = std::type_index(typeid(variable));
+              if (set.contains(var_type))
+                return;
+              set.insert(var_type);
+              variable(pith{
+                  [&](auto &&production, auto, size_t, size_t) {
+                    auto s = demangle(typeid(variable).name()) + " ->";
+                    production(pith{
+                        [&](auto &&symbol, auto, size_t, size_t) {
+                          s = s + " " + demangle(typeid(symbol).name());
+                          if constexpr (!std::is_invocable_r_v<
+                                            void, decltype(symbol),
+                                            void (*)(int), const char *>) {
+                            argumented_variable<decltype(symbol)>{
+                                static_cast<decltype(symbol) &&>(symbol)}(rec);
+                          }
+                        },
+                        [](auto t, auto &&p) {
+                          t(static_cast<decltype(p) &&>(p));
+                        }});
+                    o(s);
+                  },
+                  [](auto t, auto &&p) { t(static_cast<decltype(p) &&>(p)); }});
+            },
+            [](auto t, auto &&p) { t(static_cast<decltype(p) &&>(p)); }});
+      },
+      [](auto t, auto &&p) { t(static_cast<decltype(p) &&>(p)); }});
 };
-struct printgrammar {
-  template <typename V> void operator()(const V &variable) const { //
-    variables{}(
-        [](auto v, auto i) {
-          v(pith{[&](auto prod, auto...) {
-                   size_t ident = i;
-                   while (ident--)
-                     std::cout << "  ";
-                   std::cout << demangle(typeid(v).name()) << " ->";
-                   prod(pith{[](auto symbol, auto...) {
-                               std::cout << ' '
-                                         << demangle(typeid(symbol).name());
-                             },
-                             lrec});
-                   std::cout << '\n';
-                 },
-                 lrec});
-        },
-        variable);
-  }
-};
+
+int main() {
+  prn([](auto v) { std::cout << v << '\n'; }, E{});
+  return 9;
+}
 
 constexpr inline auto olr = [](const auto &o, auto &&svar, const char *b) {
   L1(L1(static_cast<decltype(svar) &&>(svar)))
@@ -103,56 +103,3 @@ constexpr inline auto olr = [](const auto &o, auto &&svar, const char *b) {
       [](auto t, auto &&p) { t(static_cast<decltype(p) &&>(p)); }});
   //
 };
-template <typename O, size_t D = 2> struct prn_pith {
-  const O &o;
-  std::set<std::type_index> &set;
-  void operator()(tail_ray *, auto &&t) const { t(*this); }
-  void operator()(head_ray *, auto &&argumented_production, size_t,
-                  size_t) const {
-    argumented_production(pith{
-        [&](auto &&variable, auto, size_t, size_t) {
-          auto var_type = std::type_index(typeid(variable));
-          if (set.contains(var_type))
-            return;
-          // set.insert(var_type);
-          variable(pith{
-              [&](auto &&production, auto, size_t, size_t) {
-                auto name = demangle(typeid(variable).name());
-                // name = name.substr(name.size() - 1, 1);
-                auto s = name + " ->";
-                production(
-                    pith{[&](auto &&symbol, auto, size_t, size_t) {
-                           auto name = demangle(typeid(symbol).name());
-                           if constexpr (std::is_invocable_r_v<
-                                             void, decltype(symbol),
-                                             void (*)(int), const char *>)
-                             ; // terminal
-                           else if constexpr (D == 0)
-                             ; //     name = name.substr(name.size() - 1, 1);
-                           else {
-                             //    name = name.substr(name.size() - 1, 1);
-                             L1(L1(symbol))(prn_pith<O, D - 1>{o, set});
-                           }
-                           s = s + " " + name;
-                         },
-                         [](auto t, auto &&p) {
-                           t(static_cast<decltype(p) &&>(p));
-                         }});
-                o(s);
-              },
-              [](auto t, auto &&p) { t(static_cast<decltype(p) &&>(p)); }});
-        },
-        [](auto t, auto &&p) { t(static_cast<decltype(p) &&>(p)); }});
-  }
-};
-constexpr inline auto prn = [](const auto &o, auto &&svar) {
-  auto set = std::set<std::type_index>{};
-  L1(L1(static_cast<decltype(svar) &&>(svar)))
-  (prn_pith<decltype(o)>{o, set});
-};
-
-int main() {
-  //  printgrammar{}(E{});
-  prn([](auto v) { std::cout << v << '\n'; }, E{});
-  return 9;
-}
