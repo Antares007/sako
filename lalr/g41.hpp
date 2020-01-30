@@ -3,41 +3,50 @@
 struct head_ray;
 struct tail_ray;
 
-#define LHead static_cast<head_ray *>(nullptr)
-#define LTail static_cast<tail_ray *>(nullptr)
+constexpr inline auto lhead = static_cast<head_ray *>(nullptr);
+constexpr inline auto ltail = static_cast<tail_ray *>(nullptr);
 
 #define LA(a)                                                                  \
   [&](const auto &o) {                                                         \
-    o(LHead, a, 0, 1);                                                         \
+    o(lhead, a, 0, 1);                                                         \
     (void(true));                                                              \
   }
 
 #define LAB(a, b)                                                              \
   [&](const auto &o) {                                                         \
-    o(LHead, a, 0, 1);                                                         \
-    o(LTail, [&](const auto &o) {                                              \
-      o(LHead, b, 1, 2);                                                       \
+    o(lhead, a, 0, 1);                                                         \
+    o(ltail, [&](const auto &o) {                                              \
+      o(lhead, b, 1, 2);                                                       \
       (void(true));                                                            \
     });                                                                        \
   }
 
-#include "terminals.hpp"
 #define LABC(a, b, c)                                                          \
   [&](const auto &o) {                                                         \
-    o(LHead, a, 0, 3);                                                         \
-    o(LTail, [&](const auto &o) {                                              \
-      o(LHead, b, 1, 3);                                                       \
-      o(LTail, [&](const auto &o) {                                            \
-        o(LHead, c, 2, 3);                                                     \
+    o(lhead, a, 0, 3);                                                         \
+    o(ltail, [&](const auto &o) {                                              \
+      o(lhead, b, 1, 3);                                                       \
+      o(ltail, [&](const auto &o) {                                            \
+        o(lhead, c, 2, 3);                                                     \
         (void(true));                                                          \
       });                                                                      \
     });                                                                        \
   }
-struct PLUS {
-  void operator()(const auto &o, const char *b) const {
-    o(b[0] == '+' && b[1] != '=' && b[1] != '+' ? 1 : -1);
+#define Regular                                                                \
+  template <typename O> void operator()(const O &o, const char *b) const
+#define RG(name)                                                               \
+  struct name {                                                                \
+    void operator()(const auto &o, const char *b) const { o(RG_
+#define RG_(expr) expr);                                                       \
+  }                                                                            \
   }
-};
+
+RG(PLUS)(b[0] == '+' && b[1] != '=' && b[1] != '+' ? 1 : -1);
+RG(MUL)(b[0] == '*' && b[1] != '=' ? 1 : -1);
+RG(LPAREN)(b[0] == '(' ? 1 : -1);
+RG(RPAREN)(b[0] == ')' ? 1 : -1);
+RG(ID)('a' <= b[0] && b[0] <= 'z' ? 1 : -1);
+
 struct expr {
   void operator()(const auto &o) const {
     LAB(                              //
