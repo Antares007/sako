@@ -1,11 +1,20 @@
 #pragma once
-#define Forward(x) static_cast<decltype(x) &&>(x)
+namespace o {
 template <class... Ts> struct rays : Ts... { using Ts::operator()...; };
 template <class... Ts> rays(Ts...) -> rays<Ts...>;
+template <typename O> struct rec {
+  O o;
+  void operator()(auto &&... args) const {
+    o(*this, static_cast<decltype(args) &&>(args)...);
+  }
+};
+template <typename O> rec(O) -> rec<O>;
+} // namespace o
 
 struct error_ray;
 constexpr inline error_ray *error_ray_v = nullptr;
 
+#define Forward(v) static_cast<decltype(v) &&>(v)
 template <typename...> struct curry;
 template <typename... Args> curry(Args...) -> curry<Args...>;
 template <typename B, typename A> struct curry<B, A> {
@@ -31,10 +40,10 @@ template <typename B, typename A> struct purry<B, A> {
   A a;
   constexpr purry(auto &&b, auto &&a) : b(Forward(b)), a(Forward(a)) {}
   void operator()(const auto &o, auto &&... rest) const {
-    a(rays{[&o](error_ray *l, auto &&... rest) { o(l, Forward(rest)...); },
-           [&o, this, ... rest = Forward(rest)](auto &&... a) {
-             this->b(o, Forward(a)..., rest...);
-           }});
+    a(o::rays{[&o](error_ray *l, auto &&... rest) { o(l, Forward(rest)...); },
+              [&o, this, ... rest = Forward(rest)](auto &&... a) {
+                this->b(o, Forward(a)..., rest...);
+              }});
   }
 };
 template <typename B, typename A, typename... Tail>
