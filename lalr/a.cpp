@@ -11,6 +11,9 @@ constexpr inline auto demangle = [](const char *name) {
   free(buff);
   return rez;
 };
+constexpr inline auto type_name = [](auto s) {
+  return demangle(typeid(s).name());
+};
 template <typename... Ts> struct print;
 template <typename F, typename G> struct pith {
   F f;
@@ -34,13 +37,6 @@ template <typename V> struct argumented_variable {
 
 #include <set>
 constexpr inline auto prn = [](const auto &o, auto &&svar) {
-  auto dname = [](auto s) {
-    auto name = demangle(typeid(s).name());
-    int pos = name.find_last_of(":");
-    if (pos > 0)
-      name = name.substr(pos + 1, name.size() - pos - 1);
-    return name;
-  };
   auto set = std::set<std::type_index>{};
   argumented_variable<decltype(svar)>{
       static_cast<decltype(svar) &&>(svar)}(pith{
@@ -53,11 +49,11 @@ constexpr inline auto prn = [](const auto &o, auto &&svar) {
               set.insert(var_type);
               variable(pith{
                   [&](auto &&production, auto...) {
-                    auto name = dname(variable);
+                    auto name = type_name(variable);
                     auto s = name + " ->";
                     production(pith{
                         [&](auto &&symbol, auto...) {
-                          s = s + " " + dname(symbol);
+                          s = s + " " + type_name(symbol);
                           if constexpr (!std::is_invocable_r_v<
                                             void, decltype(symbol),
                                             void (*)(int), const char *>) {
@@ -76,7 +72,6 @@ constexpr inline auto prn = [](const auto &o, auto &&svar) {
       },
       [](auto t, auto &&p) { t(static_cast<decltype(p) &&>(p)); }});
 };
-
 int main() {
   prn([](auto v) { std::cout << v << '\n'; }, E{});
   return 9;
