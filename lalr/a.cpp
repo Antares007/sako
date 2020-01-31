@@ -65,7 +65,52 @@ constexpr inline auto prn = [](const auto &o, auto &&svar) {
       },
       rec_tail}});
 };
+
+constexpr inline auto olr = [](const auto &o, auto &&svar) {
+  size_t ident = 0;
+  o("MB", ident++);
+  argumented_variable{Forward(svar)}(o::rec{o::rays{
+      [&](const auto &, head_ray *, auto &&argumented_production, auto...) {
+        o("BAP", ident++);
+        argumented_production(o::rec{o::rays{
+            [&](auto, head_ray *, auto &&variable, size_t, size_t) {
+              o("BV", ident++);
+              variable(o::rec{o::rays{
+                  [&](auto, head_ray *, auto &&production, auto...) {
+                    o("BP", ident++);
+                    production(o::rec{o::rays{
+                        [&](auto, head_ray *, auto &&symbol, auto...) {
+                          o("BS", ident++);
+                          if constexpr (!std::is_invocable_r_v<
+                                            void, decltype(symbol),
+                                            void (*)(int), const char *>) {
+                            // argumented_variable{Forward(symbol)}(rec);
+                          } else {
+                            //
+                          }
+                          o("ES", --ident);
+                        },
+                        rec_tail}});
+                    o("EP", --ident);
+                  },
+                  rec_tail}});
+              o("EV", --ident);
+            },
+            rec_tail}});
+        o("EAP", --ident);
+      },
+      rec_tail}});
+  o("ME", --ident);
+};
+
 int main() {
   prn([](auto v) { std::cout << v << '\n'; }, E{});
+  olr(
+      [](auto v, size_t ident) {
+        while (ident--)
+          std::cout << "..";
+        std::cout << v << '\n';
+      },
+      E{});
   return 9;
 }
