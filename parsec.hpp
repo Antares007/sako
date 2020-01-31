@@ -4,7 +4,7 @@
 
 namespace parsec {
 
-constexpr inline auto rays = ::rays{[](error_ray *, int) {}, [](size_t) {}};
+constexpr inline auto rays = o::rays{[](error_ray *, int) {}, [](size_t) {}};
 
 template <typename T>
 using if_bark_t = std::enable_if_t<
@@ -120,15 +120,15 @@ template <typename P> struct many {
   P parser;
   template <typename O>
   void operator()(O o, const char *in, size_t acc = 0, size_t count = 0) const {
-    parser(::rays{[&](error_ray *, int err) {
-                    if (count < n)
-                      o(error_ray_v, err);
-                    else
-                      o(acc);
-                  },
-                  [&](size_t len) {
-                    this->operator()(o, in + len, acc + len, count + 1);
-                  }},
+    parser(o::rays{[&](error_ray *, int err) {
+                     if (count < n)
+                       o(error_ray_v, err);
+                     else
+                       o(acc);
+                   },
+                   [&](size_t len) {
+                     this->operator()(o, in + len, acc + len, count + 1);
+                   }},
            in);
   }
 };
@@ -138,7 +138,7 @@ template <typename Parser> struct opt {
   Parser parser;
   template <typename O> void operator()(O o, const char *in) const {
     parser(
-        ::rays{[&o](error_ray *, int) { o(0); }, [&o](size_t len) { o(len); }},
+        o::rays{[&o](error_ray *, int) { o(0); }, [&o](size_t len) { o(len); }},
         in);
   }
 };
@@ -149,12 +149,12 @@ template <typename L, typename R> struct or_ {
   R r;
   template <typename O> void operator()(O o, const char *in) const {
     auto fwdlen = [&](size_t len) { o(len); };
-    l(::rays{fwdlen,
-             [&](error_ray *, int) {
-               r(::rays{fwdlen,
-                        [&](error_ray *, int err) { o(error_ray_v, err); }},
-                 in);
-             }},
+    l(o::rays{fwdlen,
+              [&](error_ray *, int) {
+                r(o::rays{fwdlen,
+                          [&](error_ray *, int err) { o(error_ray_v, err); }},
+                  in);
+              }},
       in);
   }
 };
@@ -165,11 +165,11 @@ template <typename L, typename R> struct and_ {
   R r;
   template <typename O> void operator()(O o, const char *in) const {
     auto fwderr = [&](error_ray *, int err) { o(error_ray_v, err); };
-    l(::rays{fwderr,
-             [&](size_t llen) {
-               r(::rays{fwderr, [&](size_t rlen) { o(llen + rlen); }},
-                 in + llen);
-             }},
+    l(o::rays{fwderr,
+              [&](size_t llen) {
+                r(o::rays{fwderr, [&](size_t rlen) { o(llen + rlen); }},
+                  in + llen);
+              }},
       in);
   }
 };

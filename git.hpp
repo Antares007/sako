@@ -74,12 +74,12 @@ C diff = [](auto o, git_tree *lhs, git_tree *rhs) { //
 
 C tree_ring = [](auto o, git_repository *r, auto pith) {
   (purry{[&](auto o, git_treebuilder *bld) {
-           pith(rays{[&o](error_ray *, int err) { o(error_ray_v, err); },
-                     [&bld](const char *filename, const git_oid *id,
-                            git_filemode_t filemode) {
-                       git_treebuilder_insert(nullptr, bld, filename, id,
-                                              filemode);
-                     }});
+           pith(o::rays{[&o](error_ray *, int err) { o(error_ray_v, err); },
+                        [&bld](const char *filename, const git_oid *id,
+                               git_filemode_t filemode) {
+                          git_treebuilder_insert(nullptr, bld, filename, id,
+                                                 filemode);
+                        }});
            git::treebuilder_write(o, bld);
          },
          curry{treebuilder_new, r, nullptr}})(o);

@@ -2,8 +2,8 @@
 #include <iostream>
 
 constexpr inline auto out =
-    rays{[](error_ray *, auto...) { std::cerr << "error\n"; },
-         [](auto cstr) { std::cout << cstr << '\n'; }};
+    o::rays{[](error_ray *, auto...) { std::cerr << "error\n"; },
+            [](auto cstr) { std::cout << cstr << '\n'; }};
 struct A {};
 struct B {};
 struct C {};
@@ -25,7 +25,7 @@ void show1() {
     return [=](auto o, auto a) { purry{g, curry{f, a}}(o); };
   };
   auto gof = compose(f, g);
-  curry{gof, A{}}(rays{[](error_ray *) {}, [](C) {}});
+  curry{gof, A{}}(o::rays{[](error_ray *) {}, [](C) {}});
 }
 
 int main() {

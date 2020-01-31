@@ -9,11 +9,11 @@ template <typename P, typename F> struct tap {
   P p;
   F f;
   template <typename O> void operator()(O o, const char *in) const {
-    p(::rays{[&](error_ray *, int err) { o(error_ray_v, err); },
-             [&](size_t len) {
-               f(in, len);
-               o(len);
-             }},
+    p(o::rays{[&](error_ray *, int err) { o(error_ray_v, err); },
+              [&](size_t len) {
+                f(in, len);
+                o(len);
+              }},
       in);
   }
 };

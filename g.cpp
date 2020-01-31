@@ -3,10 +3,10 @@
 #include <iostream>
 #include <string>
 
-constexpr inline auto out =
-    rays{[](error_ray *, int err) { std::cerr << err << '\n'; },
-         [](const char *cstr) { std::cout << cstr << '\n'; },
-         [](const git_oid *oid) { std::cout << git_oid_tostr_s(oid) << '\n'; }};
+constexpr inline auto out = o::rays{
+    [](error_ray *, int err) { std::cerr << err << '\n'; },
+    [](const char *cstr) { std::cout << cstr << '\n'; },
+    [](const git_oid *oid) { std::cout << git_oid_tostr_s(oid) << '\n'; }};
 
 constexpr inline auto unzip_pith = [](auto o, auto repo, auto blob) {
   (purry{[&](auto o, auto name_, auto buffer, auto size) {
