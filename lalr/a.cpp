@@ -12,7 +12,11 @@ constexpr inline auto demangle = [](const char *name) {
   return rez;
 };
 constexpr inline auto type_name = [](auto s) {
-  return demangle(typeid(s).name());
+  auto name = demangle(typeid(s).name());
+  int pos = name.find_last_of(":");
+  if (pos > 0)
+    name = name.substr(pos + 1, name.size() - pos - 1);
+  return name;
 };
 template <typename... Ts> struct print;
 
