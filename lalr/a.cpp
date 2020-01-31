@@ -16,22 +16,22 @@ constexpr inline auto type_name = [](auto s) {
 };
 template <typename... Ts> struct print;
 
-constexpr inline auto rec_tail = [](const auto &o, tail_ray *, auto tail) {
-  tail(static_cast<decltype(o) &&>(o));
+#include "../purry.hpp"
+constexpr inline auto rec_tail = [](auto &&o, tail_ray *, auto &&tail) {
+  tail(Forward(o));
 };
 
 template <typename V> struct argumented_variable {
   V v;
   void operator()(const auto &o) const { L1(L1(v))(o); }
 };
+template <typename V> argumented_variable(V) -> argumented_variable<V>;
 
-#include "../purry.hpp"
 #include <set>
-
+//
 constexpr inline auto prn = [](const auto &o, auto &&svar) {
   auto set = std::set<std::type_index>{};
-  argumented_variable<decltype(svar)>{
-      static_cast<decltype(svar) &&>(svar)}(o::rec{o::rays{
+  argumented_variable{Forward(svar)}(o::rec{o::rays{
       [&](const auto &rec, head_ray *, auto &&argumented_production, auto...) {
         argumented_production(o::rec{o::rays{
             [&](auto, head_ray *, auto &&variable, size_t, size_t) {
@@ -49,8 +49,7 @@ constexpr inline auto prn = [](const auto &o, auto &&svar) {
                           if constexpr (!std::is_invocable_r_v<
                                             void, decltype(symbol),
                                             void (*)(int), const char *>) {
-                            argumented_variable<decltype(symbol)>{
-                                static_cast<decltype(symbol) &&>(symbol)}(rec);
+                            argumented_variable{Forward(symbol)}(rec);
                           }
                         },
                         rec_tail}});

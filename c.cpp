@@ -42,13 +42,19 @@ struct E {
             o(lhead, E{}, 0, 3);
             o(ltail, [&](const auto &o) {
               o(lhead, plus{}, 1, 3);
-              o(ltail, [&](const auto &o) { o(lhead, T{}, 2, 3); });
+              o(ltail, [&](const auto &o) {
+                o(lhead, T{}, 2, 3); //
+              });
             });
           },
           0, 1);
       o(ltail, [&](const auto &o) {
         o(
-            lhead, [&](const auto &o) { o(lhead, T{}, 0, 1); }, 1, 2);
+            lhead,
+            [&](const auto &o) {
+              o(lhead, T{}, 0, 1); //
+            },
+            1, 2);
       });
     })(o);
   };
