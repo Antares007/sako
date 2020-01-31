@@ -69,18 +69,25 @@ constexpr inline auto prn = [](const auto &o, auto &&svar) {
 constexpr inline auto olr = [](const auto &o, auto &&svar) {
   size_t ident = 0;
   o("MB", ident++);
+  o(type_name(svar), ident);
   argumented_variable{Forward(svar)}(o::rec{o::rays{
       [&](const auto &, head_ray *, auto &&argumented_production, auto...) {
         o("BAP", ident++);
+
         argumented_production(o::rec{o::rays{
             [&](auto, head_ray *, auto &&variable, size_t, size_t) {
               o("BV", ident++);
+
+              o(type_name(variable), ident);
               variable(o::rec{o::rays{
                   [&](auto, head_ray *, auto &&production, auto...) {
                     o("BP", ident++);
+
                     production(o::rec{o::rays{
                         [&](auto, head_ray *, auto &&symbol, auto...) {
                           o("BS", ident++);
+
+                          o(type_name(symbol), ident);
                           if constexpr (!std::is_invocable_r_v<
                                             void, decltype(symbol),
                                             void (*)(int), const char *>) {
@@ -88,6 +95,7 @@ constexpr inline auto olr = [](const auto &o, auto &&svar) {
                           } else {
                             //
                           }
+
                           o("ES", --ident);
                         },
                         rec_tail}});

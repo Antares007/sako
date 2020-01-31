@@ -11,4 +11,10 @@ RGB(id)
 v_(E)(L2(L3(E{}, plus{}, T{}), L1(T{})));
 v_(T)(L2(L3(T{}, mul{}, F{}), L1(F{})));
 v_(F)(L2(L3(lparen{}, E{}, rparen{}), L1(id{})));
-_v _v _v
+_v _v _v;
+
+RG(a)(b[0] == 'a');
+RG(b)(b[0] == 'b');
+v_(S)(L1(L2(A{}, A{})));
+v_(A)(L2(L2(a{}, A{}), L1(b{})));
+_v _v

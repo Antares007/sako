@@ -42,19 +42,13 @@ struct E {
             o(lhead, E{}, 0, 3);
             o(ltail, [&](const auto &o) {
               o(lhead, plus{}, 1, 3);
-              o(ltail, [&](const auto &o) {
-                o(lhead, T{}, 2, 3); //
-              });
+              o(ltail, [&](const auto &o) { o(lhead, T{}, 2, 3); });
             });
           },
           0, 1);
       o(ltail, [&](const auto &o) {
         o(
-            lhead,
-            [&](const auto &o) {
-              o(lhead, T{}, 0, 1); //
-            },
-            1, 2);
+            lhead, [&](const auto &o) { o(lhead, T{}, 0, 1); }, 1, 2);
       });
     })(o);
   };
@@ -96,6 +90,44 @@ struct E {
           });
         })(o);
       };
+    };
+  };
+};
+;
+
+struct a {
+  void operator()(const auto &o, const char *b) const { o(b[0] == 'a'); }
+};
+struct b {
+  void operator()(const auto &o, const char *b) const { o(b[0] == 'b'); }
+};
+struct S {
+  void operator()(const auto &o) const {
+    ([&](const auto &o) {
+      o(
+          lhead,
+          [&](const auto &o) {
+            o(lhead, A{}, 0, 1);
+            o(ltail, [&](const auto &o) { o(lhead, A{}, 1, 2); });
+          },
+          0, 1);
+    })(o);
+  };
+  struct A {
+    void operator()(const auto &o) const {
+      ([&](const auto &o) {
+        o(
+            lhead,
+            [&](const auto &o) {
+              o(lhead, a{}, 0, 1);
+              o(ltail, [&](const auto &o) { o(lhead, A{}, 1, 2); });
+            },
+            0, 1);
+        o(ltail, [&](const auto &o) {
+          o(
+              lhead, [&](const auto &o) { o(lhead, b{}, 0, 1); }, 1, 2);
+        });
+      })(o);
     };
   };
 };
