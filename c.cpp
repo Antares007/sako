@@ -26,7 +26,10 @@ struct rparen {
 };
 struct id {
   void operator()(const auto &o, const char *b) const {
-    o('a' <= b[0] && b[0] <= 'z' ? 1 : -1);
+    int i = 0;
+    while ('a' <= b[i] && b[i] <= 'z')
+      i++;
+    o(i > 0 ? i : -1);
   }
 };
 
@@ -49,7 +52,6 @@ struct E {
       });
     })(o);
   };
-
   struct T {
     void operator()(const auto &o) const {
       ([&](const auto &o) {
@@ -69,7 +71,6 @@ struct E {
         });
       })(o);
     };
-
     struct F {
       void operator()(const auto &o) const {
         ([&](const auto &o) {

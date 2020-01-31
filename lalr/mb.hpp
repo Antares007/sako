@@ -28,6 +28,14 @@ constexpr inline auto ltail = static_cast<tail_ray *>(nullptr);
 #define RG_(expr) expr);                                                       \
   }                                                                            \
   }
+#define RGB(name)                                                              \
+  struct name {                                                                \
+    void operator()(const auto &o, const char *b) const {                      \
+      RGB_
+#define RGB_(body)                                                             \
+  body                                                                         \
+  }                                                                            \
+  }
 #define v_(name)                                                               \
   struct name {                                                                \
     v_next
