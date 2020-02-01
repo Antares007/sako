@@ -21,9 +21,6 @@ constexpr inline auto type_name = [](auto s) {
 template <typename... Ts> struct print;
 
 #include "../purry.hpp"
-constexpr inline auto rec_tail = [](auto &&o, tail_ray *, auto &&tail) {
-  tail(Forward(o));
-};
 
 template <typename V> struct argumented_variable {
   V v;
@@ -56,69 +53,71 @@ constexpr inline auto prn = [](const auto &o, auto &&svar) {
                             argumented_variable{Forward(symbol)}(rec);
                           }
                         },
-                        rec_tail}});
+                        LRec(true)}});
                     o(s);
                   },
-                  rec_tail}});
+                  LRec(true)}});
             },
-            rec_tail}});
+            LRec(true)}});
       },
-      rec_tail}});
+      LRec(true)}});
 };
 
-constexpr inline auto olr = [](const auto &o, auto &&svar) {
+constexpr inline auto olr = [](const auto &o, auto &&svar, const char *b) {
+  auto dollar = '\0';
+  auto eq = [](const auto &a, const auto &b) {
+    return std::type_index(typeid(a)) == std::type_index(typeid(b));
+  };
   size_t ident = 0;
-  o("MB", ident++);
-  o(type_name(svar), ident);
+  size_t pos = 0;
   argumented_variable{Forward(svar)}(o::rec{o::rays{
       [&](const auto &, head_ray *, auto &&argumented_production, auto...) {
-        o("BAP", ident++);
-
         argumented_production(o::rec{o::rays{
             [&](auto, head_ray *, auto &&variable, size_t, size_t) {
-              o("BV", ident++);
-
+              if (eq(svar, variable) && b[pos] == dollar)
+                return o("accept!", ident);
               o(type_name(variable), ident);
+              ++ident;
               variable(o::rec{o::rays{
-                  [&](auto, head_ray *, auto &&production, auto...) {
-                    o("BP", ident++);
-
+                  [&](auto, head_ray *, auto &&production, size_t, size_t) {
+                    //
+                    //++ident;
+                    auto skip = false;
                     production(o::rec{o::rays{
-                        [&](auto, head_ray *, auto &&symbol, auto...) {
-                          o("BS", ident++);
-
+                        [&](auto, head_ray *, auto &&symbol, size_t, size_t) {
+                          //
                           o(type_name(symbol), ident);
                           if constexpr (!std::is_invocable_r_v<
                                             void, decltype(symbol),
                                             void (*)(int), const char *>) {
+                            if (eq(symbol, variable))
+                              skip = true;
+                            return;
                             // argumented_variable{Forward(symbol)}(rec);
                           } else {
                             //
                           }
-
-                          o("ES", --ident);
+                          //
                         },
-                        rec_tail}});
-                    o("EP", --ident);
+                        LRec(!skip)}});
+                    //--ident;
                   },
-                  rec_tail}});
-              o("EV", --ident);
+                  LRec(true)}});
+              --ident;
             },
-            rec_tail}});
-        o("EAP", --ident);
+            LRec(true)}});
       },
-      rec_tail}});
-  o("ME", --ident);
+      LRec(true)}});
 };
 
 int main() {
-  prn([](auto v) { std::cout << v << '\n'; }, E{});
+  // prn([](auto v) { std::cout << v << '\n'; }, E{});
   olr(
       [](auto v, size_t ident) {
         while (ident--)
           std::cout << "..";
         std::cout << v << '\n';
       },
-      E{});
+      S{}, "aaa");
   return 9;
 }

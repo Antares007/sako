@@ -98,8 +98,11 @@ struct E {
 struct a {
   void operator()(const auto &o, const char *b) const { o(b[0] == 'a'); }
 };
-struct b {
-  void operator()(const auto &o, const char *b) const { o(b[0] == 'b'); }
+struct Є {
+  void operator()(const auto &o, const char *b) const {
+    o(0);
+    (void(b));
+  }
 };
 struct S {
   void operator()(const auto &o) const {
@@ -107,27 +110,22 @@ struct S {
       o(
           lhead,
           [&](const auto &o) {
-            o(lhead, A{}, 0, 1);
+            o(lhead, S{}, 0, 1);
             o(ltail, [&](const auto &o) { o(lhead, A{}, 1, 2); });
           },
           0, 1);
+      o(ltail, [&](const auto &o) {
+        o(
+            lhead, [&](const auto &o) { o(lhead, Є{}, 0, 1); }, 1, 2);
+      });
     })(o);
-  };
+  }
   struct A {
     void operator()(const auto &o) const {
       ([&](const auto &o) {
         o(
-            lhead,
-            [&](const auto &o) {
-              o(lhead, a{}, 0, 1);
-              o(ltail, [&](const auto &o) { o(lhead, A{}, 1, 2); });
-            },
-            0, 1);
-        o(ltail, [&](const auto &o) {
-          o(
-              lhead, [&](const auto &o) { o(lhead, b{}, 0, 1); }, 1, 2);
-        });
+            lhead, [&](const auto &o) { o(lhead, a{}, 0, 1); }, 0, 1);
       })(o);
-    };
+    }
   };
 };

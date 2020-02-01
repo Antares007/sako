@@ -22,6 +22,11 @@ constexpr inline auto ltail = static_cast<tail_ray *>(nullptr);
       o(ltail, [&](const auto &o) { o(lhead, c, 2, 3); });                     \
     });                                                                        \
   }
+#define LRec(b)                                                                \
+  [&](const auto &o, tail_ray *, const auto &t) {                              \
+    if (b)                                                                     \
+      t(o);                                                                    \
+  }
 #define RG(name)                                                               \
   struct name {                                                                \
     void operator()(const auto &o, const char *b) const { o(RG_
