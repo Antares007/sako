@@ -52,6 +52,7 @@ struct E {
       });
     })(o);
   };
+
   struct T {
     void operator()(const auto &o) const {
       ([&](const auto &o) {
@@ -71,6 +72,7 @@ struct E {
         });
       })(o);
     };
+
     struct F {
       void operator()(const auto &o) const {
         ([&](const auto &o) {
@@ -95,14 +97,12 @@ struct E {
 };
 ;
 
+namespace grammar {
 struct a {
   void operator()(const auto &o, const char *b) const { o(b[0] == 'a'); }
 };
 struct Є {
-  void operator()(const auto &o, const char *b) const {
-    o(0);
-    (void(b));
-  }
+  void operator()(const auto &o, const char *b) const { (void(b), o(0)); }
 };
 struct S {
   void operator()(const auto &o) const {
@@ -119,13 +119,57 @@ struct S {
             lhead, [&](const auto &o) { o(lhead, Є{}, 0, 1); }, 1, 2);
       });
     })(o);
-  }
+  };
+
   struct A {
     void operator()(const auto &o) const {
       ([&](const auto &o) {
         o(
             lhead, [&](const auto &o) { o(lhead, a{}, 0, 1); }, 0, 1);
       })(o);
-    }
+    };
   };
 };
+} // namespace grammar
+namespace grammar_aabb {
+struct a {
+  void operator()(const auto &o, const char *b) const {
+    o(b[0] == 'a' ? 1 : -1);
+  }
+};
+struct b {
+  void operator()(const auto &o, const char *b) const {
+    o(b[0] == 'b' ? 1 : -1);
+  }
+};
+struct S {
+  void operator()(const auto &o) const {
+    ([&](const auto &o) {
+      o(
+          lhead,
+          [&](const auto &o) {
+            o(lhead, A{}, 0, 1);
+            o(ltail, [&](const auto &o) { o(lhead, A{}, 1, 2); });
+          },
+          0, 1);
+    })(o);
+  };
+  struct A {
+    void operator()(const auto &o) const {
+      ([&](const auto &o) {
+        o(
+            lhead,
+            [&](const auto &o) {
+              o(lhead, a{}, 0, 1);
+              o(ltail, [&](const auto &o) { o(lhead, A{}, 1, 2); });
+            },
+            0, 1);
+        o(ltail, [&](const auto &o) {
+          o(
+              lhead, [&](const auto &o) { o(lhead, b{}, 0, 1); }, 1, 2);
+        });
+      })(o);
+    };
+  };
+};
+} // namespace grammar_aabb

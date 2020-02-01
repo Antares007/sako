@@ -63,6 +63,10 @@ constexpr inline auto prn = [](const auto &o, auto &&svar) {
       LRec(true)}});
 };
 
+template <typename S>
+constexpr inline bool is_terminal_v =
+    std::is_invocable_r_v<void, S, void (*)(int), const char *>;
+
 constexpr inline auto olr = [](const auto &o, auto &&svar, const char *b) {
   auto dollar = '\0';
   auto eq = [](const auto &a, const auto &b) {
@@ -70,42 +74,58 @@ constexpr inline auto olr = [](const auto &o, auto &&svar, const char *b) {
   };
   size_t ident = 0;
   size_t pos = 0;
+  auto ok = false;
+  //
   argumented_variable{Forward(svar)}(o::rec{o::rays{
-      [&](const auto &, head_ray *, auto &&argumented_production, auto...) {
+      [&](const auto &rec, head_ray *, auto &&argumented_production, auto...) {
+        //
+        auto v_skip = false;
         argumented_production(o::rec{o::rays{
             [&](auto, head_ray *, auto &&variable, size_t, size_t) {
               if (eq(svar, variable) && b[pos] == dollar)
                 return o("accept!", ident);
-              o(type_name(variable), ident);
               ++ident;
+              auto v_start_pos = pos;
               variable(o::rec{o::rays{
-                  [&](auto, head_ray *, auto &&production, size_t, size_t) {
-                    //
-                    //++ident;
-                    auto skip = false;
+                  [&](auto, head_ray *, auto &&production, size_t pi,
+                      size_t ps) {
+                    auto p_skip = false;
                     production(o::rec{o::rays{
                         [&](auto, head_ray *, auto &&symbol, size_t, size_t) {
-                          //
-                          o(type_name(symbol), ident);
-                          if constexpr (!std::is_invocable_r_v<
-                                            void, decltype(symbol),
-                                            void (*)(int), const char *>) {
-                            if (eq(symbol, variable))
-                              skip = true;
-                            return;
-                            // argumented_variable{Forward(symbol)}(rec);
-                          } else {
-                            //
+                          if constexpr (is_terminal_v<decltype(symbol)>) {
+                            symbol(
+                                [&](int len) {
+                                  if (len < 0)
+                                    p_skip = true;
+                                  else
+                                    pos += len;
+                                },
+                                b + pos);
                           }
-                          //
+                          // else if (si == 0 && eq(variable, symbol))
+                          //  p_skip = true;
+                          else {
+                            argumented_variable{Forward(symbol)}(rec);
+                            if (!ok)
+                              p_skip = true;
+                          }
                         },
-                        LRec(!skip)}});
-                    //--ident;
+                        LRec(!p_skip)}});
+                    if (p_skip) {
+                      pos = v_start_pos;
+                      if (pi == ps - 1)
+                        v_skip = true;
+                    } else
+                      ; // o("r", ident);
                   },
-                  LRec(true)}});
+                  LRec(!v_skip)}});
+              ok = v_skip;
+              if (ok)
+                o(type_name(variable), ident);
+
               --ident;
             },
-            LRec(true)}});
+            LRec(!v_skip)}});
       },
       LRec(true)}});
 };
@@ -115,9 +135,9 @@ int main() {
   olr(
       [](auto v, size_t ident) {
         while (ident--)
-          std::cout << "..";
+          std::cout << "  ";
         std::cout << v << '\n';
       },
-      S{}, "aaa");
+      grammar_aabb::S{}, "aabb");
   return 9;
 }
