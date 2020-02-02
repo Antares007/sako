@@ -29,38 +29,43 @@ template <typename V> struct argumented_variable {
 template <typename V> argumented_variable(V) -> argumented_variable<V>;
 
 #include <set>
-//
+
+template <typename> struct is_tail : std::false_type {};
+template <> struct is_tail<ltail> : std::true_type {};
+template <typename T>
+constexpr inline bool is_tail_v = is_tail<std::decay_t<T>>::value;
+
 constexpr inline auto prn = [](const auto &o, auto &&svar) {
   auto set = std::set<std::type_index>{};
-  argumented_variable{Forward(svar)}(o::rec{o::rays{
-      [&](const auto &rec, head_ray *, auto &&argumented_production, auto...) {
-        argumented_production(o::rec{o::rays{
-            [&](auto, head_ray *, auto &&variable, size_t, size_t) {
-              auto var_type = std::type_index(typeid(variable));
-              if (set.contains(var_type))
-                return;
-              set.insert(var_type);
-              variable(o::rec{o::rays{
-                  [&](auto, head_ray *, auto &&production, auto...) {
-                    auto name = type_name(variable);
-                    auto s = name + " ->";
-                    production(o::rec{o::rays{
-                        [&](auto, head_ray *, auto &&symbol, auto...) {
-                          s = s + " " + type_name(symbol);
-                          if constexpr (!std::is_invocable_r_v<
-                                            void, decltype(symbol),
-                                            void (*)(int), const char *>) {
-                            argumented_variable{Forward(symbol)}(rec);
-                          }
-                        },
-                        LRec(true)}});
-                    o(s);
-                  },
-                  LRec(true)}});
-            },
-            LRec(true)}});
-      },
-      LRec(true)}});
+  argumented_variable{Forward(svar)}(o::rec{[&](const auto &arec, head_ray *,
+                                                auto &&argumented_production,
+                                                const auto a_tail) {
+    argumented_production(o::rec{[&](auto vrec, head_ray *, auto &&variable,
+                                     auto v_tail) {
+      auto var_type = std::type_index(typeid(variable));
+      if (set.contains(var_type))
+        return;
+      set.insert(var_type);
+      variable(o::rec{[&](auto prec, head_ray *, auto &&production,
+                          auto p_tail) {
+        auto name = type_name(variable);
+        auto s = name + " ->";
+        production(o::rec{[&](auto srec, head_ray *, auto &&symbol,
+                              auto s_tail) {
+          s = s + " " + type_name(symbol);
+          if constexpr (!std::is_invocable_r_v<void, decltype(symbol),
+                                               void (*)(int), const char *>) {
+            argumented_variable{Forward(symbol)}(arec);
+          }
+          return s_tail(srec);
+        }});
+        o(s);
+        return p_tail(prec);
+      }});
+      return v_tail(vrec);
+    }});
+    return a_tail(arec);
+  }});
 };
 
 template <typename S>
@@ -74,64 +79,36 @@ constexpr inline auto olr = [](const auto &o, auto &&svar, const char *b) {
   };
   size_t ident = 0;
   size_t pos = 0;
-  auto ok = false;
-  //
-  argumented_variable{Forward(svar)}(o::rec{o::rays{
-      [&](const auto &rec, head_ray *, auto &&argumented_production, auto...) {
-        //
-        auto v_skip = false;
-        argumented_production(o::rec{o::rays{
-            [&](auto, head_ray *, auto &&variable, size_t, size_t) {
+  argumented_variable{Forward(svar)}(o::rec{
+      [&](const auto &a_rec, head_ray *, auto &&argumented_production, auto) {
+        argumented_production(
+            o::rec{[&](auto, head_ray *, auto &&variable, auto) {
               if (eq(svar, variable) && b[pos] == dollar)
                 return o("accept!", ident);
               ++ident;
-              auto v_start_pos = pos;
-              variable(o::rec{o::rays{
-                  [&](auto, head_ray *, auto &&production, size_t pi,
-                      size_t ps) {
-                    auto p_skip = false;
-                    production(o::rec{o::rays{
-                        [&](auto, head_ray *, auto &&symbol, size_t, size_t) {
-                          if constexpr (is_terminal_v<decltype(symbol)>) {
-                            symbol(
-                                [&](int len) {
-                                  if (len < 0)
-                                    p_skip = true;
-                                  else
-                                    pos += len;
-                                },
-                                b + pos);
-                          }
-                          // else if (si == 0 && eq(variable, symbol))
-                          //  p_skip = true;
-                          else {
-                            argumented_variable{Forward(symbol)}(rec);
-                            if (!ok)
-                              p_skip = true;
-                          }
+              variable(o::rec{[&](auto, head_ray *, auto &&production, auto) {
+                production(o::rec{[&](auto, head_ray *, auto &&symbol, auto) {
+                  if constexpr (is_terminal_v<decltype(symbol)>) {
+                    symbol(
+                        [&](int len) {
+                          if (len < 0)
+                            ;
+                          else
+                            pos += len;
                         },
-                        LRec(!p_skip)}});
-                    if (p_skip) {
-                      pos = v_start_pos;
-                      if (pi == ps - 1)
-                        v_skip = true;
-                    } else
-                      ; // o("r", ident);
-                  },
-                  LRec(!v_skip)}});
-              ok = v_skip;
-              if (ok)
-                o(type_name(variable), ident);
-
+                        b + pos);
+                  } else {
+                    argumented_variable{Forward(symbol)}(a_rec);
+                  }
+                }});
+              }});
               --ident;
-            },
-            LRec(!v_skip)}});
-      },
-      LRec(true)}});
+            }});
+      }});
 };
 
 int main() {
-  // prn([](auto v) { std::cout << v << '\n'; }, E{});
+  prn([](auto v) { std::cout << v << '\n'; }, E{});
   olr(
       [](auto v, size_t ident) {
         while (ident--)

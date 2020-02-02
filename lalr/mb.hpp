@@ -3,23 +3,20 @@
 // keep it simple
 
 struct head_ray;
-struct tail_ray;
-
 constexpr inline auto lhead = static_cast<head_ray *>(nullptr);
-constexpr inline auto ltail = static_cast<tail_ray *>(nullptr);
+struct ltail {
+  void operator()(const auto &) const {}
+};
 
-#define L1(a) [&](const auto &o) { o(lhead, a, 0, 1); }
+#define L1(a) [&](const auto &o) { o(lhead, a, ltail{}); }
 #define L2(a, b)                                                               \
   [&](const auto &o) {                                                         \
-    o(lhead, a, 0, 1);                                                         \
-    o(ltail, [&](const auto &o) { o(lhead, b, 1, 2); });                       \
+    o(lhead, a, [&](const auto &o) { o(lhead, b, ltail{}); });                 \
   }
 #define L3(a, b, c)                                                            \
   [&](const auto &o) {                                                         \
-    o(lhead, a, 0, 3);                                                         \
-    o(ltail, [&](const auto &o) {                                              \
-      o(lhead, b, 1, 3);                                                       \
-      o(ltail, [&](const auto &o) { o(lhead, c, 2, 3); });                     \
+    o(lhead, a, [&](const auto &o) {                                           \
+      o(lhead, b, [&](const auto &o) { o(lhead, c, ltail{}); });               \
     });                                                                        \
   }
 #define LRec(b)                                                                \

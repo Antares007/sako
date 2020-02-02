@@ -39,17 +39,16 @@ struct E {
       o(
           lhead,
           [&](const auto &o) {
-            o(lhead, E{}, 0, 3);
-            o(ltail, [&](const auto &o) {
-              o(lhead, plus{}, 1, 3);
-              o(ltail, [&](const auto &o) { o(lhead, T{}, 2, 3); });
+            o(lhead, E{}, [&](const auto &o) {
+              o(lhead, plus{},
+                [&](const auto &o) { o(lhead, T{}, [](auto) {}); });
             });
           },
-          0, 1);
-      o(ltail, [&](const auto &o) {
-        o(
-            lhead, [&](const auto &o) { o(lhead, T{}, 0, 1); }, 1, 2);
-      });
+          [&](const auto &o) {
+            o(
+                lhead, [&](const auto &o) { o(lhead, T{}, [](auto) {}); },
+                [](auto) {});
+          });
     })(o);
   };
 
@@ -59,17 +58,16 @@ struct E {
         o(
             lhead,
             [&](const auto &o) {
-              o(lhead, T{}, 0, 3);
-              o(ltail, [&](const auto &o) {
-                o(lhead, mul{}, 1, 3);
-                o(ltail, [&](const auto &o) { o(lhead, F{}, 2, 3); });
+              o(lhead, T{}, [&](const auto &o) {
+                o(lhead, mul{},
+                  [&](const auto &o) { o(lhead, F{}, [](auto) {}); });
               });
             },
-            0, 1);
-        o(ltail, [&](const auto &o) {
-          o(
-              lhead, [&](const auto &o) { o(lhead, F{}, 0, 1); }, 1, 2);
-        });
+            [&](const auto &o) {
+              o(
+                  lhead, [&](const auto &o) { o(lhead, F{}, [](auto) {}); },
+                  [](auto) {});
+            });
       })(o);
     };
 
@@ -79,17 +77,16 @@ struct E {
           o(
               lhead,
               [&](const auto &o) {
-                o(lhead, lparen{}, 0, 3);
-                o(ltail, [&](const auto &o) {
-                  o(lhead, E{}, 1, 3);
-                  o(ltail, [&](const auto &o) { o(lhead, rparen{}, 2, 3); });
+                o(lhead, lparen{}, [&](const auto &o) {
+                  o(lhead, E{},
+                    [&](const auto &o) { o(lhead, rparen{}, [](auto) {}); });
                 });
               },
-              0, 1);
-          o(ltail, [&](const auto &o) {
-            o(
-                lhead, [&](const auto &o) { o(lhead, id{}, 0, 1); }, 1, 2);
-          });
+              [&](const auto &o) {
+                o(
+                    lhead, [&](const auto &o) { o(lhead, id{}, [](auto) {}); },
+                    [](auto) {});
+              });
         })(o);
       };
     };
@@ -110,14 +107,13 @@ struct S {
       o(
           lhead,
           [&](const auto &o) {
-            o(lhead, S{}, 0, 1);
-            o(ltail, [&](const auto &o) { o(lhead, A{}, 1, 2); });
+            o(lhead, S{}, [&](const auto &o) { o(lhead, A{}, [](auto) {}); });
           },
-          0, 1);
-      o(ltail, [&](const auto &o) {
-        o(
-            lhead, [&](const auto &o) { o(lhead, Є{}, 0, 1); }, 1, 2);
-      });
+          [&](const auto &o) {
+            o(
+                lhead, [&](const auto &o) { o(lhead, Є{}, [](auto) {}); },
+                [](auto) {});
+          });
     })(o);
   };
 
@@ -125,7 +121,8 @@ struct S {
     void operator()(const auto &o) const {
       ([&](const auto &o) {
         o(
-            lhead, [&](const auto &o) { o(lhead, a{}, 0, 1); }, 0, 1);
+            lhead, [&](const auto &o) { o(lhead, a{}, [](auto) {}); },
+            [](auto) {});
       })(o);
     };
   };
@@ -148,10 +145,9 @@ struct S {
       o(
           lhead,
           [&](const auto &o) {
-            o(lhead, A{}, 0, 1);
-            o(ltail, [&](const auto &o) { o(lhead, A{}, 1, 2); });
+            o(lhead, A{}, [&](const auto &o) { o(lhead, A{}, [](auto) {}); });
           },
-          0, 1);
+          [](auto) {});
     })(o);
   };
   struct A {
@@ -160,14 +156,13 @@ struct S {
         o(
             lhead,
             [&](const auto &o) {
-              o(lhead, a{}, 0, 1);
-              o(ltail, [&](const auto &o) { o(lhead, A{}, 1, 2); });
+              o(lhead, a{}, [&](const auto &o) { o(lhead, A{}, [](auto) {}); });
             },
-            0, 1);
-        o(ltail, [&](const auto &o) {
-          o(
-              lhead, [&](const auto &o) { o(lhead, b{}, 0, 1); }, 1, 2);
-        });
+            [&](const auto &o) {
+              o(
+                  lhead, [&](const auto &o) { o(lhead, b{}, [](auto) {}); },
+                  [](auto) {});
+            });
       })(o);
     };
   };
