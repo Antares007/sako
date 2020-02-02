@@ -22,11 +22,11 @@ template <typename... Ts> struct print;
 
 #include "../purry.hpp"
 
-template <typename V> struct argumented_variable {
+template <typename V> struct a_variable {
   V v;
   void operator()(const auto &o) const { L1(L1(v))(o); }
 };
-template <typename V> argumented_variable(V) -> argumented_variable<V>;
+template <typename V> a_variable(V) -> a_variable<V>;
 
 #include <set>
 
@@ -37,11 +37,10 @@ constexpr inline bool is_tail_v = is_tail<std::decay_t<T>>::value;
 
 constexpr inline auto prn = [](const auto &o, auto &&svar) {
   auto set = std::set<std::type_index>{};
-  argumented_variable{Forward(svar)}(o::rec{[&](const auto &arec, head_ray *,
-                                                auto &&argumented_production,
-                                                const auto a_tail) {
-    argumented_production(o::rec{[&](auto vrec, head_ray *, auto &&variable,
-                                     auto v_tail) {
+  a_variable{Forward(svar)}(o::rec{[&](const auto &arec, head_ray *,
+                                       auto &&a_production, const auto a_tail) {
+    a_production(o::rec{[&](auto vrec, head_ray *, auto &&variable,
+                            auto v_tail) {
       auto var_type = std::type_index(typeid(variable));
       if (set.contains(var_type))
         return;
@@ -55,7 +54,7 @@ constexpr inline auto prn = [](const auto &o, auto &&svar) {
           s = s + " " + type_name(symbol);
           if constexpr (!std::is_invocable_r_v<void, decltype(symbol),
                                                void (*)(int), const char *>) {
-            argumented_variable{Forward(symbol)}(arec);
+            a_variable{Forward(symbol)}(arec);
           }
           return s_tail(srec);
         }});
@@ -72,39 +71,62 @@ template <typename S>
 constexpr inline bool is_terminal_v =
     std::is_invocable_r_v<void, S, void (*)(int), const char *>;
 
-constexpr inline auto olr = [](const auto &o, auto &&svar, const char *b) {
+constexpr inline auto olr = [](const auto &o, auto svar, const char *b) {
   auto dollar = '\0';
   auto eq = [](const auto &a, const auto &b) {
     return std::type_index(typeid(a)) == std::type_index(typeid(b));
   };
   size_t ident = 0;
   size_t pos = 0;
-  argumented_variable{Forward(svar)}(o::rec{
-      [&](const auto &a_rec, head_ray *, auto &&argumented_production, auto) {
-        argumented_production(
-            o::rec{[&](auto, head_ray *, auto &&variable, auto) {
-              if (eq(svar, variable) && b[pos] == dollar)
-                return o("accept!", ident);
-              ++ident;
-              variable(o::rec{[&](auto, head_ray *, auto &&production, auto) {
-                production(o::rec{[&](auto, head_ray *, auto &&symbol, auto) {
-                  if constexpr (is_terminal_v<decltype(symbol)>) {
-                    symbol(
-                        [&](int len) {
-                          if (len < 0)
-                            ;
-                          else
-                            pos += len;
-                        },
-                        b + pos);
-                  } else {
-                    argumented_variable{Forward(symbol)}(a_rec);
-                  }
-                }});
-              }});
-              --ident;
+  auto ok = false;
+  a_variable{svar}(o::rec{[&](auto a_rec, head_ray *, auto a_production, auto) {
+    a_production(o::rec{[&](auto, head_ray *, auto variable, auto) {
+      if (eq(svar, variable) && b[pos] == dollar)
+        return o("accept!", ident);
+      ++ident;
+      variable(
+          o::rec{[&](auto p_rec, head_ray *, auto production, auto p_tail) {
+            auto saved_pos = pos;
+            ok = false;
+            production(o::rec{[&](auto s_rec, head_ray *, auto symbol,
+                                  auto s_tail) {
+              if constexpr (is_terminal_v<decltype(symbol)>) {
+                symbol(
+                    [&](int len) {
+                      if (len < 0) {
+                        pos = saved_pos;
+                        p_tail(p_rec);
+                      } else {
+                        pos += len;
+                        o("O:" + type_name(variable) + " " + type_name(symbol),
+                          ident);
+                        if constexpr (is_tail_v<decltype(s_tail)>) {
+                          ok = true;
+                          o("rs", ident);
+                        } else
+                          s_tail(s_rec);
+                      }
+                    },
+                    b + pos);
+              } else {
+                a_variable{symbol}(a_rec);
+                if (!ok) {
+                  pos = saved_pos;
+                  return p_tail(p_rec);
+                } else {
+                  if constexpr (is_tail_v<decltype(s_tail)>) {
+                    ok = true;
+                  } else
+                    o("rv", ident);
+                  s_tail(s_rec);
+                }
+              }
             }});
-      }});
+          }});
+      --ident;
+    }});
+  }});
+  o(pos, ident);
 };
 
 int main() {
@@ -115,6 +137,6 @@ int main() {
           std::cout << "  ";
         std::cout << v << '\n';
       },
-      grammar_aabb::S{}, "aabb");
+      grammar_aabb::S{}, "abb");
   return 9;
 }

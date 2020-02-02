@@ -1,8 +1,8 @@
 struct head_ray;
-struct tail_ray;
-
 constexpr inline auto lhead = static_cast<head_ray *>(nullptr);
-constexpr inline auto ltail = static_cast<tail_ray *>(nullptr);
+struct ltail {
+  void operator()(const auto &) const {}
+};
 
 struct plus {
   void operator()(const auto &o, const char *b) const {
@@ -40,14 +40,12 @@ struct E {
           lhead,
           [&](const auto &o) {
             o(lhead, E{}, [&](const auto &o) {
-              o(lhead, plus{},
-                [&](const auto &o) { o(lhead, T{}, [](auto) {}); });
+              o(lhead, plus{}, [&](const auto &o) { o(lhead, T{}, ltail{}); });
             });
           },
           [&](const auto &o) {
             o(
-                lhead, [&](const auto &o) { o(lhead, T{}, [](auto) {}); },
-                [](auto) {});
+                lhead, [&](const auto &o) { o(lhead, T{}, ltail{}); }, ltail{});
           });
     })(o);
   };
@@ -59,14 +57,13 @@ struct E {
             lhead,
             [&](const auto &o) {
               o(lhead, T{}, [&](const auto &o) {
-                o(lhead, mul{},
-                  [&](const auto &o) { o(lhead, F{}, [](auto) {}); });
+                o(lhead, mul{}, [&](const auto &o) { o(lhead, F{}, ltail{}); });
               });
             },
             [&](const auto &o) {
               o(
-                  lhead, [&](const auto &o) { o(lhead, F{}, [](auto) {}); },
-                  [](auto) {});
+                  lhead, [&](const auto &o) { o(lhead, F{}, ltail{}); },
+                  ltail{});
             });
       })(o);
     };
@@ -79,13 +76,13 @@ struct E {
               [&](const auto &o) {
                 o(lhead, lparen{}, [&](const auto &o) {
                   o(lhead, E{},
-                    [&](const auto &o) { o(lhead, rparen{}, [](auto) {}); });
+                    [&](const auto &o) { o(lhead, rparen{}, ltail{}); });
                 });
               },
               [&](const auto &o) {
                 o(
-                    lhead, [&](const auto &o) { o(lhead, id{}, [](auto) {}); },
-                    [](auto) {});
+                    lhead, [&](const auto &o) { o(lhead, id{}, ltail{}); },
+                    ltail{});
               });
         })(o);
       };
@@ -107,12 +104,11 @@ struct S {
       o(
           lhead,
           [&](const auto &o) {
-            o(lhead, S{}, [&](const auto &o) { o(lhead, A{}, [](auto) {}); });
+            o(lhead, S{}, [&](const auto &o) { o(lhead, A{}, ltail{}); });
           },
           [&](const auto &o) {
             o(
-                lhead, [&](const auto &o) { o(lhead, Є{}, [](auto) {}); },
-                [](auto) {});
+                lhead, [&](const auto &o) { o(lhead, Є{}, ltail{}); }, ltail{});
           });
     })(o);
   };
@@ -121,8 +117,7 @@ struct S {
     void operator()(const auto &o) const {
       ([&](const auto &o) {
         o(
-            lhead, [&](const auto &o) { o(lhead, a{}, [](auto) {}); },
-            [](auto) {});
+            lhead, [&](const auto &o) { o(lhead, a{}, ltail{}); }, ltail{});
       })(o);
     };
   };
@@ -145,9 +140,11 @@ struct S {
       o(
           lhead,
           [&](const auto &o) {
-            o(lhead, A{}, [&](const auto &o) { o(lhead, A{}, [](auto) {}); });
+            o(lhead, A{}, [&](const auto &o) { //
+              o(lhead, A{}, ltail{});
+            });
           },
-          [](auto) {});
+          ltail{});
     })(o);
   };
   struct A {
@@ -156,12 +153,17 @@ struct S {
         o(
             lhead,
             [&](const auto &o) {
-              o(lhead, a{}, [&](const auto &o) { o(lhead, A{}, [](auto) {}); });
+              o(lhead, a{}, [&](const auto &o) { //
+                o(lhead, A{}, ltail{});
+              });
             },
             [&](const auto &o) {
               o(
-                  lhead, [&](const auto &o) { o(lhead, b{}, [](auto) {}); },
-                  [](auto) {});
+                  lhead,
+                  [&](const auto &o) { //
+                    o(lhead, b{}, ltail{});
+                  },
+                  ltail{});
             });
       })(o);
     };
