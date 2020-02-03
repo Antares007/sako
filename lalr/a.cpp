@@ -72,6 +72,8 @@ constexpr inline bool is_terminal_v =
     std::is_invocable_r_v<void, S, void (*)(int), const char *>;
 
 constexpr inline auto olr = [](const auto &o, auto svar, const char *b) {
+  o("tree for:", 0);
+  o(b, 0);
   auto dollar = '\0';
   auto eq = [](const auto &a, const auto &b) {
     return std::type_index(typeid(a)) == std::type_index(typeid(b));
@@ -83,45 +85,44 @@ constexpr inline auto olr = [](const auto &o, auto svar, const char *b) {
     a_production(o::rec{[&](auto, head_ray *, auto variable, auto) {
       if (eq(svar, variable) && b[pos] == dollar)
         return o("accept!", ident);
+      o("." + type_name(variable), ident);
       ++ident;
       variable(
           o::rec{[&](auto p_rec, head_ray *, auto production, auto p_tail) {
             auto saved_pos = pos;
+            std::string rstack = "";
             ok = false;
-            production(o::rec{[&](auto s_rec, head_ray *, auto symbol,
-                                  auto s_tail) {
-              if constexpr (is_terminal_v<decltype(symbol)>) {
-                symbol(
-                    [&](int len) {
-                      if (len < 0) {
-                        pos = saved_pos;
-                        p_tail(p_rec);
-                      } else {
-                        pos += len;
-                        o("O:" + type_name(variable) + " " + type_name(symbol),
-                          ident);
-                        if constexpr (is_tail_v<decltype(s_tail)>) {
-                          ok = true;
-                          o("rs", ident);
-                        } else
-                          s_tail(s_rec);
-                      }
-                    },
-                    b + pos);
-              } else {
-                a_variable{symbol}(a_rec);
-                if (!ok) {
-                  pos = saved_pos;
-                  return p_tail(p_rec);
-                } else {
-                  if constexpr (is_tail_v<decltype(s_tail)>) {
-                    ok = true;
-                  } else
-                    o("rv", ident);
-                  s_tail(s_rec);
-                }
-              }
-            }});
+            production(
+                o::rec{[&](auto s_rec, head_ray *, auto symbol, auto s_tail) {
+                  if constexpr (is_terminal_v<decltype(symbol)>) {
+                    symbol(
+                        [&](int len) {
+                          if (len < 0) {
+                            pos = saved_pos;
+                            rstack = "";
+                          } else {
+                            pos += len;
+                            rstack += type_name(symbol);
+                            s_tail(s_rec);
+                          }
+                        },
+                        b + pos);
+                  } else {
+                    a_variable{symbol}(a_rec);
+                    if (!ok) {
+                      pos = saved_pos;
+                      rstack = "";
+                    } else {
+                      rstack += type_name(symbol);
+                      s_tail(s_rec);
+                    }
+                  }
+                }});
+            ok = rstack.size() > 0;
+            if (ok)
+              o(rstack, ident);
+            else
+              p_tail(p_rec);
           }});
       --ident;
     }});
