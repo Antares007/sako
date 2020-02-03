@@ -4,6 +4,7 @@ struct ltail {
   void operator()(const auto &) const {}
 };
 
+namespace grammar::E41 {
 struct plus {
   void operator()(const auto &o, const char *b) const {
     o(b[0] == '+' && b[1] != '=' && b[1] != '+' ? 1 : -1);
@@ -49,7 +50,6 @@ struct E {
           });
     })(o);
   };
-
   struct T {
     void operator()(const auto &o) const {
       ([&](const auto &o) {
@@ -67,7 +67,6 @@ struct E {
             });
       })(o);
     };
-
     struct F {
       void operator()(const auto &o) const {
         ([&](const auto &o) {
@@ -90,10 +89,13 @@ struct E {
   };
 };
 ;
+} // namespace grammar::E41
 
-namespace grammar {
+namespace grammar::ll_k_problem {
 struct a {
-  void operator()(const auto &o, const char *b) const { o(b[0] == 'a'); }
+  void operator()(const auto &o, const char *b) const {
+    o(b[0] == 'a' ? 1 : -1);
+  }
 };
 struct Є {
   void operator()(const auto &o, const char *b) const { (void(b), o(0)); }
@@ -112,7 +114,6 @@ struct S {
           });
     })(o);
   };
-
   struct A {
     void operator()(const auto &o) const {
       ([&](const auto &o) {
@@ -122,8 +123,9 @@ struct S {
     };
   };
 };
-} // namespace grammar
-namespace grammar_aabb {
+} // namespace grammar::ll_k_problem
+
+namespace grammar::aabb {
 struct a {
   void operator()(const auto &o, const char *b) const {
     o(b[0] == 'a' ? 1 : -1);
@@ -140,9 +142,7 @@ struct S {
       o(
           lhead,
           [&](const auto &o) {
-            o(lhead, A{}, [&](const auto &o) { //
-              o(lhead, A{}, ltail{});
-            });
+            o(lhead, A{}, [&](const auto &o) { o(lhead, A{}, ltail{}); });
           },
           ltail{});
     })(o);
@@ -153,20 +153,15 @@ struct S {
         o(
             lhead,
             [&](const auto &o) {
-              o(lhead, a{}, [&](const auto &o) { //
-                o(lhead, A{}, ltail{});
-              });
+              o(lhead, a{}, [&](const auto &o) { o(lhead, A{}, ltail{}); });
             },
             [&](const auto &o) {
               o(
-                  lhead,
-                  [&](const auto &o) { //
-                    o(lhead, b{}, ltail{});
-                  },
+                  lhead, [&](const auto &o) { o(lhead, b{}, ltail{}); },
                   ltail{});
             });
       })(o);
     };
   };
 };
-} // namespace grammar_aabb
+} // namespace grammar::aabb

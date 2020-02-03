@@ -81,6 +81,7 @@ constexpr inline auto olr = [](const auto &o, auto svar, const char *b) {
   size_t ident = 0;
   size_t pos = 0;
   auto ok = false;
+  int error;
   a_variable{svar}(o::rec{[&](auto a_rec, head_ray *, auto a_production, auto) {
     a_production(o::rec{[&](auto, head_ray *, auto variable, auto) {
       if (eq(svar, variable) && b[pos] == dollar)
@@ -91,53 +92,62 @@ constexpr inline auto olr = [](const auto &o, auto svar, const char *b) {
           o::rec{[&](auto p_rec, head_ray *, auto production, auto p_tail) {
             auto saved_pos = pos;
             std::string rstack = "";
-            ok = false;
+            int index = 0;
             production(
                 o::rec{[&](auto s_rec, head_ray *, auto symbol, auto s_tail) {
+                  index++;
                   if constexpr (is_terminal_v<decltype(symbol)>) {
                     symbol(
                         [&](int len) {
-                          if (len < 0) {
-                            pos = saved_pos;
-                            rstack = "";
-                          } else {
+                          if (len >= 0) {
                             pos += len;
                             rstack += type_name(symbol);
                             s_tail(s_rec);
+                          } else {
+                            error = len;
+                            o("err: " + type_name(symbol), ident);
                           }
                         },
                         b + pos);
                   } else {
-                    a_variable{symbol}(a_rec);
-                    if (!ok) {
-                      pos = saved_pos;
-                      rstack = "";
+                    if (index == 0 && eq(variable, symbol)) {
+
                     } else {
-                      rstack += type_name(symbol);
-                      s_tail(s_rec);
+                      a_variable{symbol}(a_rec);
+                      if (!error) {
+                        rstack += type_name(symbol);
+                        s_tail(s_rec);
+                      }
                     }
                   }
                 }});
-            ok = rstack.size() > 0;
-            if (ok)
-              o(rstack, ident);
-            else
+            if (!error) {
+              ok = true;
+              o("reduce " + rstack + " to " + type_name(variable), ident);
+            } else if constexpr (!is_tail_v<decltype(p_tail)>) {
+              pos = saved_pos;
+              error = 0;
               p_tail(p_rec);
+            }
           }});
       --ident;
     }});
   }});
-  o(pos, ident);
+  if (error)
+    o("error!", ident);
+  else
+    o(pos, ident);
 };
 
 int main() {
-  prn([](auto v) { std::cout << v << '\n'; }, E{});
+  auto var = grammar::ll_k_problem::S{};
+  prn([](auto v) { std::cout << v << '\n'; }, var);
   olr(
       [](auto v, size_t ident) {
         while (ident--)
           std::cout << "  ";
         std::cout << v << '\n';
       },
-      grammar_aabb::S{}, "abb");
+      var, "aaa");
   return 9;
 }
