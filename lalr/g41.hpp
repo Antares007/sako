@@ -35,3 +35,9 @@ v_(A)(L2(L2(a{}, A{}), //
          L1(b{})));
 _v _v
 } // namespace grammar::aabb
+
+namespace grammar::ss {
+RG(a)(b[0] == 'a' ? 1 : -1);
+v_(S)(L2(L3(S{}, S{}, S{}), L1(a{})));
+_v
+} // namespace grammar::ss

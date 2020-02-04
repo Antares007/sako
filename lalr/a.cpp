@@ -70,7 +70,19 @@ constexpr inline auto prn = [](const auto &o, auto &&svar) {
 template <typename S>
 constexpr inline bool is_terminal_v =
     std::is_invocable_r_v<void, S, void (*)(int), const char *>;
+constexpr inline auto print_production = [](auto production) {
+  auto str_prod = std::string{};
+  production(o::rec{[&](auto s_rec, head_ray *, auto symbol, auto s_tail) {
+    str_prod += " " + type_name(symbol);
+    s_tail(s_rec);
+  }});
+  return str_prod;
+};
 
+// o("->" + print_production(production) +
+//      (seen != "" ? " seen(" + seen + ")" : ""),
+//  ident);
+#include <deque>
 constexpr inline auto olr = [](const auto &o, auto svar, const char *b) {
   o("tree for:", 0);
   o(b, 0);
@@ -81,51 +93,34 @@ constexpr inline auto olr = [](const auto &o, auto svar, const char *b) {
   size_t ident = 0;
   size_t pos = 0;
   auto ok = false;
-  int error;
+  auto error{0};
+  std::deque<std::type_index> gotos{};
+  auto seen = std::string{};
   a_variable{svar}(o::rec{[&](auto a_rec, head_ray *, auto a_production, auto) {
     a_production(o::rec{[&](auto, head_ray *, auto variable, auto) {
       if (eq(svar, variable) && b[pos] == dollar)
         return o("accept!", ident);
-      o("." + type_name(variable), ident);
+      o("var=" + type_name(variable), ident);
       ++ident;
       variable(
           o::rec{[&](auto p_rec, head_ray *, auto production, auto p_tail) {
             auto saved_pos = pos;
-            std::string rstack = "";
-            int index = -1;
             production(
                 o::rec{[&](auto s_rec, head_ray *, auto symbol, auto s_tail) {
-                  index++;
-                  if constexpr (is_terminal_v<decltype(symbol)>) {
+                  if constexpr (is_terminal_v<decltype(symbol)>)
                     symbol(
                         [&](int len) {
-                          if (len >= 0) {
+                          if (len >= 0)
                             pos += len;
-                            rstack += type_name(symbol);
-                            s_tail(s_rec);
-                          } else {
-                            error = len;
-                            // o("err: " + type_name(symbol), ident);
-                          }
+                          else
+                            error = -1;
                         },
                         b + pos);
-                  } else {
-                    // o("hmmm" + type_name(symbol), ident);
-                    if (index == 0 && eq(variable, symbol)) {
-                      error = 0;
-                      p_tail(p_rec);
-                      s_tail(s_rec);
-                      // o("aaaa", ident);
-                    } else {
-                      a_variable{symbol}(a_rec);
-                      if (!error) {
-                        rstack += type_name(symbol);
-                        s_tail(s_rec);
-                      }
-                    }
-                  }
+                  else
+                    a_variable{symbol}(a_rec);
                 }});
-            if (!error) {
+            /*
+            if (error == 0) {
               ok = true;
               o("reduce " + rstack + " to " + type_name(variable), ident);
             } else if constexpr (!is_tail_v<decltype(p_tail)>) {
@@ -133,6 +128,7 @@ constexpr inline auto olr = [](const auto &o, auto svar, const char *b) {
               error = 0;
               p_tail(p_rec);
             }
+            */
           }});
       --ident;
     }});
@@ -144,13 +140,13 @@ constexpr inline auto olr = [](const auto &o, auto svar, const char *b) {
 };
 
 int main() {
-  auto var = grammar::E41::E{};
-  auto input = "a+a";
+  auto var = grammar::aabb::S{};
+  auto input = "aaabb";
   prn([](auto v) { std::cout << v << '\n'; }, var);
   olr(
       [](auto v, size_t ident) {
         while (ident--)
-          std::cout << "  ";
+          std::cout << "    ";
         std::cout << v << '\n';
       },
       var, input);
