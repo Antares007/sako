@@ -92,7 +92,7 @@ constexpr inline auto olr = [](const auto &o, auto svar, const char *b) {
           o::rec{[&](auto p_rec, head_ray *, auto production, auto p_tail) {
             auto saved_pos = pos;
             std::string rstack = "";
-            int index = 0;
+            int index = -1;
             production(
                 o::rec{[&](auto s_rec, head_ray *, auto symbol, auto s_tail) {
                   index++;
@@ -105,13 +105,17 @@ constexpr inline auto olr = [](const auto &o, auto svar, const char *b) {
                             s_tail(s_rec);
                           } else {
                             error = len;
-                            o("err: " + type_name(symbol), ident);
+                            // o("err: " + type_name(symbol), ident);
                           }
                         },
                         b + pos);
                   } else {
+                    // o("hmmm" + type_name(symbol), ident);
                     if (index == 0 && eq(variable, symbol)) {
-
+                      error = 0;
+                      p_tail(p_rec);
+                      s_tail(s_rec);
+                      // o("aaaa", ident);
                     } else {
                       a_variable{symbol}(a_rec);
                       if (!error) {
@@ -140,7 +144,8 @@ constexpr inline auto olr = [](const auto &o, auto svar, const char *b) {
 };
 
 int main() {
-  auto var = grammar::ll_k_problem::S{};
+  auto var = grammar::E41::E{};
+  auto input = "a+a";
   prn([](auto v) { std::cout << v << '\n'; }, var);
   olr(
       [](auto v, size_t ident) {
@@ -148,6 +153,6 @@ int main() {
           std::cout << "  ";
         std::cout << v << '\n';
       },
-      var, "aaa");
+      var, input);
   return 9;
 }

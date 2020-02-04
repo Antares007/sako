@@ -114,6 +114,7 @@ struct S {
           });
     })(o);
   };
+
   struct A {
     void operator()(const auto &o) const {
       ([&](const auto &o) {
