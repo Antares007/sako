@@ -159,35 +159,24 @@ template <typename V, typename S> struct g0t0 {
   S s;
   template <typename O> struct vpith {
     const O &o;
-    const S &s;
     void operator()(head_ray *, Car production, Car p_tail) const { //
       production([&](head_ray *, Car symbol, Car s_tail) {
-        if constexpr (std::is_same_v<std::decay_t<decltype(s)>,
-                                     std::decay_t<decltype(symbol)>>)
+        if constexpr (std::is_same_v<S, std::decay_t<decltype(symbol)>>)
           o(
-              lhead,
-              [&](Car o) {
-                s_tail(spith<decltype(o)>{o, s});
-              },
-              [&](Car o) {
-                p_tail(vpith<decltype(o)>{o, s});
-              });
+              lhead, [&](Car o) { s_tail(spith<decltype(o)>{o}); },
+              [&](Car o) { p_tail(vpith<decltype(o)>{o}); });
       });
     }
   };
   template <typename O> struct spith {
     const O &o;
-    const S &s;
     void operator()(head_ray *, Car symbol, Car s_tail) const { //
-      auto tail = [&](Car o) { s_tail(spith<decltype(o)>{o, s}); };
-      if constexpr (is_terminal_v<decltype(symbol)>)
-        o(lhead, symbol, tail);
-      else
-        o(lhead, g0t0<decltype(symbol), S>{symbol, s}, tail);
+      auto tail = [&](Car o) { s_tail(spith<decltype(o)>{o}); };
+      o(lhead, symbol, tail);
     }
   };
   template <typename O> void operator()(const O &o) const { //
-    v(vpith<O>{o, s});
+    v(vpith<O>{o});
   }
 };
 template <typename... Args> g0t0(Args...) -> g0t0<Args...>;
@@ -195,8 +184,9 @@ template <typename... Args> g0t0(Args...) -> g0t0<Args...>;
 int main() {
   auto var = grammar::E41::E{};
   // auto input = "a+b*o+a";
-  auto gvar = g0t0{var, grammar::E41::E{}};
-  prn([](auto v) { std::cout << v << '\n'; }, var);
+  using namespace grammar::E41;
+  auto gvar = g0t0{g0t0{g0t0{var, E{}}, plus{}}, E::T{}};
+  //  prn([](auto v) { std::cout << v << '\n'; }, var);
   prn([](auto v) { std::cout << v << '\n'; }, gvar);
   // olr(
   //    [](auto v, size_t ident) {
