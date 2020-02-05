@@ -1,26 +1,23 @@
 #include "lalr/mb.hpp"
 #include "purry.hpp"
 #include <iostream>
-struct h;
-struct t;
-#define L(x) static_cast<x *>(nullptr)
-struct b {
-  int &i;
-  void operator()(const auto &o) const {
-    o(L(h), i++);
-    return o(L(t), b{i});
-  }
+
+constexpr inline auto l = [](const auto &o) {
+  o(lhead, 1, [&](const auto &o) {
+    o(lhead, 2, [&](const auto &o) { o(lhead, 3, nullptr); });
+  });
 };
-struct p {
-  void operator()(h *, int i) const {
-    if (i % 1000 == 0)
-      std::cout << i << ' ';
-    return;
-  }
-  void operator()(t *, const auto &tail) const { tail(p{}); }
-};
+
+template <typename... Ts> struct print;
+
 int main() {
-  int i = 0;
-  b{i}(p{});
+  l(o::rec{[](Car rec, head_ray *, int i, Car tail) {
+    std::cout << i << ' ';
+    if constexpr (std::is_same_v<std::decay_t<decltype(tail)>,
+                                 decltype(nullptr)>)
+      print<decltype(tail)> pp;
+    else
+      tail(rec);
+  }});
   return 9;
 }

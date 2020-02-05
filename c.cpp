@@ -166,3 +166,28 @@ struct S {
   };
 };
 } // namespace grammar::aabb
+
+namespace grammar::ss {
+struct a {
+  void operator()(const auto &o, const char *b) const {
+    o(b[0] == 'a' ? 1 : -1);
+  }
+};
+struct S {
+  void operator()(const auto &o) const {
+    ([&](const auto &o) {
+      o(
+          lhead,
+          [&](const auto &o) {
+            o(lhead, S{}, [&](const auto &o) {
+              o(lhead, S{}, [&](const auto &o) { o(lhead, S{}, ltail{}); });
+            });
+          },
+          [&](const auto &o) {
+            o(
+                lhead, [&](const auto &o) { o(lhead, a{}, ltail{}); }, ltail{});
+          });
+    })(o);
+  };
+};
+} // namespace grammar::ss

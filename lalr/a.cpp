@@ -13,9 +13,9 @@ constexpr inline auto demangle = [](const char *name) {
 };
 constexpr inline auto type_name = [](auto s) {
   auto name = demangle(typeid(s).name());
-  int pos = name.find_last_of(":");
-  if (pos > 0)
-    name = name.substr(pos + 1, name.size() - pos - 1);
+  // int pos = name.find_last_of(":");
+  // if (pos > 0)
+  //  name = name.substr(pos + 1, name.size() - pos - 1);
   return name;
 };
 template <typename... Ts> struct print;
@@ -79,7 +79,7 @@ constexpr inline auto prn = [](const auto &o, const auto &svar) {
 //  ident);
 #include <deque>
 constexpr inline auto olr = [](const auto &o, auto svar, const char *b) {
-  o("tree for:", 0);
+  o("tree for:", -1);
   o(b, 0);
   auto dollar = '\0';
   auto eq = [](const auto &a, const auto &b) {
@@ -154,10 +154,50 @@ constexpr inline auto olr = [](const auto &o, auto svar, const char *b) {
     o(pos, ident);
 };
 
+template <typename V, typename S> struct g0t0 {
+  V v;
+  S s;
+  template <typename O> struct vpith {
+    const O &o;
+    const S &s;
+    void operator()(head_ray *, Car production, Car p_tail) const { //
+      production([&](head_ray *, Car symbol, Car s_tail) {
+        if constexpr (std::is_same_v<std::decay_t<decltype(s)>,
+                                     std::decay_t<decltype(symbol)>>)
+          o(
+              lhead,
+              [&](Car o) {
+                s_tail(spith<decltype(o)>{o, s});
+              },
+              [&](Car o) {
+                p_tail(vpith<decltype(o)>{o, s});
+              });
+      });
+    }
+  };
+  template <typename O> struct spith {
+    const O &o;
+    const S &s;
+    void operator()(head_ray *, Car symbol, Car s_tail) const { //
+      auto tail = [&](Car o) { s_tail(spith<decltype(o)>{o, s}); };
+      if constexpr (is_terminal_v<decltype(symbol)>)
+        o(lhead, symbol, tail);
+      else
+        o(lhead, g0t0<decltype(symbol), S>{symbol, s}, tail);
+    }
+  };
+  template <typename O> void operator()(const O &o) const { //
+    v(vpith<O>{o, s});
+  }
+};
+template <typename... Args> g0t0(Args...) -> g0t0<Args...>;
+
 int main() {
   auto var = grammar::E41::E{};
   // auto input = "a+b*o+a";
+  auto gvar = g0t0{var, grammar::E41::E{}};
   prn([](auto v) { std::cout << v << '\n'; }, var);
+  prn([](auto v) { std::cout << v << '\n'; }, gvar);
   // olr(
   //    [](auto v, size_t ident) {
   //      while (ident--)
