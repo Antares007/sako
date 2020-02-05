@@ -2,6 +2,8 @@
 // this is for my bro
 // keep it simple
 
+#define Car const auto &
+
 struct head_ray;
 constexpr inline auto lhead = static_cast<head_ray *>(nullptr);
 struct ltail {

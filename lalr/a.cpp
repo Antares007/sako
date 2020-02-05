@@ -28,55 +28,50 @@ template <typename V> struct a_variable {
 };
 template <typename V> a_variable(V) -> a_variable<V>;
 
-#include <set>
-
 template <typename> struct is_tail : std::false_type {};
 template <> struct is_tail<ltail> : std::true_type {};
 template <typename T>
 constexpr inline bool is_tail_v = is_tail<std::decay_t<T>>::value;
 
-constexpr inline auto prn = [](const auto &o, auto &&svar) {
-  auto set = std::set<std::type_index>{};
-  a_variable{Forward(svar)}(o::rec{[&](const auto &arec, head_ray *,
-                                       auto &&a_production, const auto a_tail) {
-    a_production(o::rec{[&](auto vrec, head_ray *, auto &&variable,
-                            auto v_tail) {
-      auto var_type = std::type_index(typeid(variable));
-      if (set.contains(var_type))
-        return;
-      set.insert(var_type);
-      variable(o::rec{[&](auto prec, head_ray *, auto &&production,
-                          auto p_tail) {
-        auto name = type_name(variable);
-        auto s = name + " ->";
-        production(o::rec{[&](auto srec, head_ray *, auto &&symbol,
-                              auto s_tail) {
-          s = s + " " + type_name(symbol);
-          if constexpr (!std::is_invocable_r_v<void, decltype(symbol),
-                                               void (*)(int), const char *>) {
-            a_variable{Forward(symbol)}(arec);
-          }
-          return s_tail(srec);
-        }});
-        o(s);
-        return p_tail(prec);
-      }});
-      return v_tail(vrec);
-    }});
-    return a_tail(arec);
-  }});
-};
-
 template <typename S>
 constexpr inline bool is_terminal_v =
     std::is_invocable_r_v<void, S, void (*)(int), const char *>;
-constexpr inline auto print_production = [](auto production) {
+
+constexpr inline auto print_production = [](Car production) {
   auto str_prod = std::string{};
   production(o::rec{[&](auto s_rec, head_ray *, auto symbol, auto s_tail) {
     str_prod += " " + type_name(symbol);
     s_tail(s_rec);
   }});
   return str_prod;
+};
+
+#include <set>
+constexpr inline auto prn = [](const auto &o, const auto &svar) {
+  auto set = std::set<std::type_index>();
+  a_variable{svar}(o::rec{[&](Car arec, head_ray *, Car a_production, Car) {
+    a_production([&](head_ray *, Car variable, Car) {
+      variable(o::rec{[&](Car prec, head_ray *, Car production, Car p_tail) {
+        auto str_prod = std::string{};
+        production(o::rec{[&](Car s_rec, head_ray *, Car symbol, Car s_tail) {
+          str_prod += " " + type_name(symbol);
+          s_tail(s_rec);
+        }});
+        o(type_name(variable) + " ->" + str_prod);
+        p_tail(prec);
+      }});
+      set.insert(std::type_index(typeid(variable)));
+      variable(o::rec{[&](Car prec, head_ray *, Car production, Car p_tail) {
+        production(o::rec{[&](Car srec, head_ray *, Car symbol, Car s_tail) {
+          if constexpr (!is_terminal_v<decltype(symbol)>)
+            if (!set.contains(std::type_index(typeid(symbol))))
+              a_variable{symbol}(arec);
+          s_tail(srec);
+        }});
+        p_tail(prec);
+      }});
+    });
+  }});
 };
 
 // o("->" + print_production(production) +
@@ -127,12 +122,8 @@ constexpr inline auto olr = [](const auto &o, auto svar, const char *b) {
           else {
             if (index == 0 && std::is_same_v<std::decay_t<decltype(variable)>,
                                              std::decay_t<decltype(symbol)>>) {
-              o("left recursion", ident++);
-              p_tail(p_rec);
-              o("error:" + std::to_string(error), ident++);
-              ident--;
-              if (error)
-                return;
+              o("left recursion" + std::to_string(index), ident);
+              error = -8;
             } else
               a_variable{symbol}(a_rec);
           }
@@ -153,6 +144,7 @@ constexpr inline auto olr = [](const auto &o, auto svar, const char *b) {
           }
         }});
       }});
+      o("hello " + type_name(variable), ident);
       --ident;
     }});
   }});
@@ -164,14 +156,14 @@ constexpr inline auto olr = [](const auto &o, auto svar, const char *b) {
 
 int main() {
   auto var = grammar::E41::E{};
-  auto input = "a+b*o+a";
+  // auto input = "a+b*o+a";
   prn([](auto v) { std::cout << v << '\n'; }, var);
-  olr(
-      [](auto v, size_t ident) {
-        while (ident--)
-          std::cout << "    ";
-        std::cout << v << '\n';
-      },
-      var, input);
+  // olr(
+  //    [](auto v, size_t ident) {
+  //      while (ident--)
+  //        std::cout << "    ";
+  //      std::cout << v << '\n';
+  //    },
+  //    var, input);
   return 9;
 }
