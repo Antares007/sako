@@ -204,22 +204,7 @@ int main() {
   auto gvar =                       // g0t0{
       g0t0{g0t0{var, E{}}, plus{}}; //, E::T{}};
   //  prn([](auto v) { std::cout << v << '\n'; }, var);
-  prn(
-      [](Car v) { //
-        auto substr = std::string{"grammar::E41::"};
-        int i0 = 0;
-        while (v[i0] != 'g' && v[i0] != '\0')
-          i0++;
-        int i1 = 0;
-        while (substr[i1] == v[i0 + i1])
-          i1++;
-        if (i1)
-          std::cout << v.substr(i0, i1 - i0) << v.substr(i1, substr.size());
-        else
-          std::cout << v;
-        std::cout << '\n';
-      },
-      gvar);
+  prn([](Car v) { std::cout << v << '\n'; }, gvar);
   // olr(
   //    [](auto v, size_t ident) {
   //      while (ident--)
