@@ -28,10 +28,9 @@ template <typename V> struct a_variable {
 };
 template <typename V> a_variable(V) -> a_variable<V>;
 
-template <typename> struct is_tail : std::false_type {};
-template <> struct is_tail<ltail> : std::true_type {};
 template <typename T>
-constexpr inline bool is_tail_v = is_tail<std::decay_t<T>>::value;
+constexpr inline bool is_tail_v =
+    std::is_same_v<std::decay_t<T>, decltype(nullptr)>;
 
 template <typename S>
 constexpr inline bool is_terminal_v =
@@ -55,10 +54,12 @@ constexpr inline auto prn = [](const auto &o, const auto &svar) {
         auto str_prod = std::string{};
         production(o::rec{[&](Car s_rec, head_ray *, Car symbol, Car p_tail) {
           str_prod += " " + type_name(symbol);
-          p_tail(s_rec);
+          if constexpr (!is_tail_v<decltype(p_tail)>)
+            p_tail(s_rec);
         }});
         o(type_name(variable) + " ->" + str_prod);
-        v_tail(prec);
+        if constexpr (!is_tail_v<decltype(v_tail)>)
+          v_tail(prec);
       }});
       set.insert(std::type_index(typeid(variable)));
       variable(o::rec{[&](Car prec, head_ray *, Car production, Car v_tail) {
@@ -66,9 +67,11 @@ constexpr inline auto prn = [](const auto &o, const auto &svar) {
           if constexpr (!is_terminal_v<decltype(symbol)>)
             if (!set.contains(std::type_index(typeid(symbol))))
               a_variable{symbol}(arec);
-          p_tail(srec);
+          if constexpr (!is_tail_v<decltype(p_tail)>)
+            p_tail(srec);
         }});
-        v_tail(prec);
+        if constexpr (!is_tail_v<decltype(v_tail)>)
+          v_tail(prec);
       }});
     });
   }});
@@ -164,15 +167,17 @@ template <typename V, typename S> struct g0t0 {
         if constexpr (std::is_same_v<S, std::decay_t<decltype(symbol)>>) {
           if constexpr (is_tail_v<decltype(p_tail)> &&
                         is_tail_v<decltype(v_tail)>)
-            o(lhead, p_tail, v_tail);
+            o(head_ray_v, p_tail, v_tail);
           else if constexpr (is_tail_v<decltype(p_tail)>)
-            o(lhead, p_tail, [&](Car o) { v_tail(v_pith<decltype(o)>{o}); });
+            o(head_ray_v, p_tail,
+              [&](Car o) { v_tail(v_pith<decltype(o)>{o}); });
           else if constexpr (is_tail_v<decltype(v_tail)>)
             o(
-                lhead, [&](Car o) { p_tail(p_pith<decltype(o)>{o}); }, v_tail);
+                head_ray_v, [&](Car o) { p_tail(p_pith<decltype(o)>{o}); },
+                v_tail);
           else
             o(
-                lhead, [&](Car o) { p_tail(p_pith<decltype(o)>{o}); },
+                head_ray_v, [&](Car o) { p_tail(p_pith<decltype(o)>{o}); },
                 [&](Car o) { v_tail(v_pith<decltype(o)>{o}); });
         }
       });
@@ -182,9 +187,10 @@ template <typename V, typename S> struct g0t0 {
     const O &o;
     void operator()(head_ray *, Car symbol, Car p_tail) const {
       if constexpr (is_tail_v<decltype(p_tail)>)
-        o(lhead, symbol, p_tail);
+        o(head_ray_v, symbol, p_tail);
       else
-        o(lhead, symbol, [&p_tail](Car o) { p_tail(p_pith<decltype(o)>{o}); });
+        o(head_ray_v, symbol,
+          [&p_tail](Car o) { p_tail(p_pith<decltype(o)>{o}); });
     }
   };
   template <typename O> void operator()(const O &o) const { v(v_pith<O>{o}); }

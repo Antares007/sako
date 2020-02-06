@@ -3,8 +3,8 @@
 #include <iostream>
 
 constexpr inline auto l = [](const auto &o) {
-  o(lhead, 1, [&](const auto &o) {
-    o(lhead, 2, [&](const auto &o) { o(lhead, 3, nullptr); });
+  o(head_ray_v, 1, [&](const auto &o) {
+    o(head_ray_v, 2, [&](const auto &o) { o(head_ray_v, 3, nullptr); });
   });
 };
 

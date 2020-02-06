@@ -5,18 +5,16 @@
 #define Car const auto &
 
 struct head_ray;
-constexpr inline auto lhead = static_cast<head_ray *>(nullptr);
-struct ltail {
-  void operator()(Car) const {}
-};
+constexpr inline auto head_ray_v = static_cast<head_ray *>(nullptr);
 
-#define L1(a) [&](Car o) { o(lhead, a, ltail{}); }
+#define L1(a) [&](Car o) { o(head_ray_v, a, nullptr); }
 #define L2(a, b)                                                               \
-  [&](Car o) { o(lhead, a, [&](Car o) { o(lhead, b, ltail{}); }); }
+  [&](Car o) { o(head_ray_v, a, [&](Car o) { o(head_ray_v, b, nullptr); }); }
 #define L3(a, b, c)                                                            \
   [&](Car o) {                                                                 \
-    o(lhead, a,                                                                \
-      [&](Car o) { o(lhead, b, [&](Car o) { o(lhead, c, ltail{}); }); });      \
+    o(head_ray_v, a, [&](Car o) {                                              \
+      o(head_ray_v, b, [&](Car o) { o(head_ray_v, c, nullptr); });             \
+    });                                                                        \
   }
 #define LRec(b)                                                                \
   [&](Car o, tail_ray *, Car t) {                                              \
