@@ -74,135 +74,37 @@ constexpr inline auto prn = [](const auto &o, const auto &svar) {
   }});
 };
 
-// o("->" + print_production(production) +
-//      (seen != "" ? " seen(" + seen + ")" : ""),
-//  ident);
-#include <deque>
-constexpr inline auto olr = [](const auto &o, auto svar, const char *b) {
-  o("tree for:", -1);
-  o(b, 0);
-  auto dollar = '\0';
-  auto eq = [](const auto &a, const auto &b) {
-    return std::type_index(typeid(a)) == std::type_index(typeid(b));
-  };
-  size_t ident = 0;
-  size_t pos = 0;
-  auto error{0};
-  std::deque<std::type_index> gotos{};
-  auto seen = std::string{};
-  a_variable{svar}(o::rec{[&](auto a_rec, head_ray *, auto a_production, auto) {
-    a_production(o::rec{[&](auto, head_ray *, auto variable, auto) {
-      if (eq(svar, variable) && b[pos] == dollar)
-        return o("accept!", ident);
-      o("v(" + type_name(variable) + ")", ident);
-      ++ident;
-      variable(o::rec{[&](auto p_rec, head_ray *, auto production,
-                          auto v_tail) {
-        auto saved_pos = pos;
-        auto index = -1;
-        o("->" + print_production(production), ident);
-        production(o::rec{[&](auto s_rec, head_ray *, auto symbol,
-                              auto p_tail) {
-          index++;
-          if constexpr (is_terminal_v<decltype(symbol)>)
-            symbol(
-                [&](int len) {
-                  if (len >= 0) {
-                    o("p " + type_name(symbol) + " = " +
-                          std::string(b + pos, len) +
-                          " pos:" + std::to_string(pos),
-                      ident);
-                    pos += len;
-                  } else {
-                    o("e " + type_name(symbol), ident);
-                    error = -1;
-                  }
-                },
-                b + pos);
-          else {
-            if (index == 0 && std::is_same_v<std::decay_t<decltype(variable)>,
-                                             std::decay_t<decltype(symbol)>>) {
-              o("left recursion" + std::to_string(index), ident);
-              error = -8;
-            } else
-              a_variable{symbol}(a_rec);
-          }
-          if (error) {
-            if (!is_tail_v<decltype(v_tail)>) {
-              o("reset", ident);
-              pos = saved_pos;
-              error = 0;
-              v_tail(p_rec);
-            }
-          } else {
-            if constexpr (is_tail_v<decltype(p_tail)>)
-              o("reduce " + print_production(production) + " to " +
-                    type_name(variable),
-                ident);
-            else
-              p_tail(s_rec);
-          }
-        }});
-      }});
-      o("hello " + type_name(variable), ident);
-      --ident;
-    }});
-  }});
-  if (error)
-    o("error!", ident);
-  else
-    o(pos, ident);
-};
-
-template <typename V, typename S> struct g0t0 {
+template <typename V> struct lolr {
   V v;
-  S s;
-  template <typename O> struct v_pith {
+
+  template <typename O> struct a_pith {
     const O &o;
-    void operator()(head_ray *, Car production, Car... v_tail) const { //
-      production([&](head_ray *, Car symbol, Car... p_tail) {
-        if constexpr (std::is_same_v<S, std::decay_t<decltype(symbol)>>) {
-          if constexpr (sizeof...(v_tail) && sizeof...(p_tail))
-            o(
-                head_ray_v,
-                [&](Car o) { (p_tail(p_pith<decltype(o)>{o}), ...); },
-                [&](Car o) { (v_tail(v_pith<decltype(o)>{o}), ...); });
-          else if constexpr (sizeof...(v_tail))
-            o(head_ray_v,
-              [&](Car o) { (p_tail(p_pith<decltype(o)>{o}), ...); });
-          else
-            std::cout << "hmm!!!\n";
-        }
+    const char *b;
+    void operator()(head_ray *, Car a_production, Car...) const { //
+      a_production([&](head_ray *, Car, Car...) {
+        //
       });
     }
   };
-  template <typename O> struct p_pith {
-    const O &o;
-    void operator()(head_ray *, Car symbol, Car... p_tail) const {
-      if constexpr (sizeof...(p_tail))
-        o(head_ray_v, symbol,
-          [&p_tail...](Car o) { (p_tail(p_pith<decltype(o)>{o}), ...); });
-      else
-        o(head_ray_v, symbol);
-    }
-  };
-  template <typename O> void operator()(const O &o) const { v(v_pith<O>{o}); }
+
+  void operator()(Car o, const char *b) const { //
+    // o("______", 0);
+    // prn([&](Car v) { o(v, 0); }, v);
+    // o("______", 0);
+    a_variable{v}(a_pith<decltype(o)>{o, b});
+  }
 };
-template <typename... Args> g0t0(Args...) -> g0t0<Args...>;
+template <typename... Args> lolr(Args...) -> lolr<Args...>;
 
 int main() {
-  auto var = grammar::E41::E{};
-  // auto input = "a+b*o+a";
+  auto input = "a+b*o+a";
   using namespace grammar::E41;
-  auto gvar = g0t0{g0t0{g0t0{var, E{}}, plus{}}, E::T{}};
-  //  prn([](auto v) { std::cout << v << '\n'; }, var);
-  prn([](Car v) { std::cout << v << '\n'; }, gvar);
-  // olr(
-  //    [](auto v, size_t ident) {
-  //      while (ident--)
-  //        std::cout << "    ";
-  //      std::cout << v << '\n';
-  //    },
-  //    var, input);
+  lolr{E{}}(
+      [](auto v, size_t ident) {
+        while (ident--)
+          std::cout << "    ";
+        std::cout << v << '\n';
+      },
+      input);
   return 9;
 }
