@@ -60,7 +60,21 @@ template <const char *Match> struct str {
   }
 };
 
+constexpr inline auto l = [](Car o) {
+  o(head_ray_v, 1,
+    [&](Car o) { o(head_ray_v, 2, [&](Car o) { o(head_ray_v, 3); }); });
+};
+struct pith {
+  void operator()(head_ray *, int i, Car... tail) const {
+    std::cout << i << ' ';
+    if constexpr (sizeof...(tail) == 0)
+      std::cout << "end!";
+    (tail(*this), ...);
+  }
+};
 int main() {
+  l(pith{});
+  return 9;
   auto text = "g0t0<grammar::E41::E, grammar::E41::E>";
 
   constexpr static const char abcაბვ[] = "abcაბვ";

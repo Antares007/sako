@@ -7,14 +7,13 @@
 struct head_ray;
 constexpr inline auto head_ray_v = static_cast<head_ray *>(nullptr);
 
-#define L1(a) [&](Car o) { o(head_ray_v, a, nullptr); }
+#define L1(a) [&](Car o) { o(head_ray_v, a); }
 #define L2(a, b)                                                               \
-  [&](Car o) { o(head_ray_v, a, [&](Car o) { o(head_ray_v, b, nullptr); }); }
+  [&](Car o) { o(head_ray_v, a, [&](Car o) { o(head_ray_v, b); }); }
 #define L3(a, b, c)                                                            \
   [&](Car o) {                                                                 \
-    o(head_ray_v, a, [&](Car o) {                                              \
-      o(head_ray_v, b, [&](Car o) { o(head_ray_v, c, nullptr); });             \
-    });                                                                        \
+    o(head_ray_v, a,                                                           \
+      [&](Car o) { o(head_ray_v, b, [&](Car o) { o(head_ray_v, c); }); });     \
   }
 #define LRec(b)                                                                \
   [&](Car o, tail_ray *, Car t) {                                              \

@@ -48,30 +48,27 @@ constexpr inline auto print_production = [](Car production) {
 #include <set>
 constexpr inline auto prn = [](const auto &o, const auto &svar) {
   auto set = std::set<std::type_index>();
-  a_variable{svar}(o::rec{[&](Car arec, head_ray *, Car a_production, Car) {
-    a_production([&](head_ray *, Car variable, Car) {
-      variable(o::rec{[&](Car prec, head_ray *, Car production, Car v_tail) {
+  a_variable{svar}(o::rec{[&](Car arec, head_ray *, Car a_production, Car...) {
+    a_production([&](head_ray *, Car variable, Car...) {
+      variable(o::rec{[&](Car prec, head_ray *, Car production, Car... v_tail) {
         auto str_prod = std::string{};
-        production(o::rec{[&](Car s_rec, head_ray *, Car symbol, Car p_tail) {
-          str_prod += " " + type_name(symbol);
-          if constexpr (!is_tail_v<decltype(p_tail)>)
-            p_tail(s_rec);
-        }});
+        production(
+            o::rec{[&](Car s_rec, head_ray *, Car symbol, Car... p_tail) {
+              str_prod += " " + type_name(symbol);
+              (p_tail(s_rec), ...);
+            }});
         o(type_name(variable) + " ->" + str_prod);
-        if constexpr (!is_tail_v<decltype(v_tail)>)
-          v_tail(prec);
+        (v_tail(prec), ...);
       }});
       set.insert(std::type_index(typeid(variable)));
-      variable(o::rec{[&](Car prec, head_ray *, Car production, Car v_tail) {
-        production(o::rec{[&](Car srec, head_ray *, Car symbol, Car p_tail) {
+      variable(o::rec{[&](Car prec, head_ray *, Car production, Car... v_tail) {
+        production(o::rec{[&](Car srec, head_ray *, Car symbol, Car... p_tail) {
           if constexpr (!is_terminal_v<decltype(symbol)>)
             if (!set.contains(std::type_index(typeid(symbol))))
               a_variable{symbol}(arec);
-          if constexpr (!is_tail_v<decltype(p_tail)>)
-            p_tail(srec);
+          (p_tail(srec), ...);
         }});
-        if constexpr (!is_tail_v<decltype(v_tail)>)
-          v_tail(prec);
+        (v_tail(prec), ...);
       }});
     });
   }});
@@ -162,35 +159,31 @@ template <typename V, typename S> struct g0t0 {
   S s;
   template <typename O> struct v_pith {
     const O &o;
-    void operator()(head_ray *, Car production, Car v_tail) const { //
-      production([&](head_ray *, Car symbol, Car p_tail) {
+    void operator()(head_ray *, Car production, Car... v_tail) const { //
+      production([&](head_ray *, Car symbol, Car... p_tail) {
         if constexpr (std::is_same_v<S, std::decay_t<decltype(symbol)>>) {
-          if constexpr (is_tail_v<decltype(p_tail)> &&
-                        is_tail_v<decltype(v_tail)>)
-            o(head_ray_v, p_tail, v_tail);
-          else if constexpr (is_tail_v<decltype(p_tail)>)
-            o(head_ray_v, p_tail,
-              [&](Car o) { v_tail(v_pith<decltype(o)>{o}); });
-          else if constexpr (is_tail_v<decltype(v_tail)>)
+          if constexpr (sizeof...(v_tail) && sizeof...(p_tail))
             o(
-                head_ray_v, [&](Car o) { p_tail(p_pith<decltype(o)>{o}); },
-                v_tail);
+                head_ray_v,
+                [&](Car o) { (p_tail(p_pith<decltype(o)>{o}), ...); },
+                [&](Car o) { (v_tail(v_pith<decltype(o)>{o}), ...); });
+          else if constexpr (sizeof...(v_tail))
+            o(head_ray_v,
+              [&](Car o) { (p_tail(p_pith<decltype(o)>{o}), ...); });
           else
-            o(
-                head_ray_v, [&](Car o) { p_tail(p_pith<decltype(o)>{o}); },
-                [&](Car o) { v_tail(v_pith<decltype(o)>{o}); });
+            std::cout << "hmm!!!\n";
         }
       });
     }
   };
   template <typename O> struct p_pith {
     const O &o;
-    void operator()(head_ray *, Car symbol, Car p_tail) const {
-      if constexpr (is_tail_v<decltype(p_tail)>)
-        o(head_ray_v, symbol, p_tail);
-      else
+    void operator()(head_ray *, Car symbol, Car... p_tail) const {
+      if constexpr (sizeof...(p_tail))
         o(head_ray_v, symbol,
-          [&p_tail](Car o) { p_tail(p_pith<decltype(o)>{o}); });
+          [&p_tail...](Car o) { (p_tail(p_pith<decltype(o)>{o}), ...); });
+      else
+        o(head_ray_v, symbol);
     }
   };
   template <typename O> void operator()(const O &o) const { v(v_pith<O>{o}); }
@@ -201,8 +194,7 @@ int main() {
   auto var = grammar::E41::E{};
   // auto input = "a+b*o+a";
   using namespace grammar::E41;
-  auto gvar =                       // g0t0{
-      g0t0{g0t0{var, E{}}, plus{}}; //, E::T{}};
+  auto gvar = g0t0{g0t0{g0t0{var, E{}}, plus{}}, E::T{}};
   //  prn([](auto v) { std::cout << v << '\n'; }, var);
   prn([](Car v) { std::cout << v << '\n'; }, gvar);
   // olr(

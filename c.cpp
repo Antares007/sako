@@ -1,8 +1,5 @@
 struct head_ray;
-constexpr inline auto lhead = static_cast<head_ray *>(nullptr);
-struct ltail {
-  void operator()(const auto &) const {}
-};
+constexpr inline auto head_ray_v = static_cast<head_ray *>(nullptr);
 
 namespace grammar::E41 {
 struct plus {
@@ -38,15 +35,14 @@ struct E {
   void operator()(const auto &o) const {
     ([&](const auto &o) {
       o(
-          lhead,
+          head_ray_v,
           [&](const auto &o) {
-            o(lhead, E{}, [&](const auto &o) {
-              o(lhead, plus{}, [&](const auto &o) { o(lhead, T{}, ltail{}); });
+            o(head_ray_v, E{}, [&](const auto &o) {
+              o(head_ray_v, plus{}, [&](const auto &o) { o(head_ray_v, T{}); });
             });
           },
           [&](const auto &o) {
-            o(
-                lhead, [&](const auto &o) { o(lhead, T{}, ltail{}); }, ltail{});
+            o(head_ray_v, [&](const auto &o) { o(head_ray_v, T{}); });
           });
     })(o);
   };
@@ -54,16 +50,15 @@ struct E {
     void operator()(const auto &o) const {
       ([&](const auto &o) {
         o(
-            lhead,
+            head_ray_v,
             [&](const auto &o) {
-              o(lhead, T{}, [&](const auto &o) {
-                o(lhead, mul{}, [&](const auto &o) { o(lhead, F{}, ltail{}); });
+              o(head_ray_v, T{}, [&](const auto &o) {
+                o(head_ray_v, mul{},
+                  [&](const auto &o) { o(head_ray_v, F{}); });
               });
             },
             [&](const auto &o) {
-              o(
-                  lhead, [&](const auto &o) { o(lhead, F{}, ltail{}); },
-                  ltail{});
+              o(head_ray_v, [&](const auto &o) { o(head_ray_v, F{}); });
             });
       })(o);
     };
@@ -71,17 +66,15 @@ struct E {
       void operator()(const auto &o) const {
         ([&](const auto &o) {
           o(
-              lhead,
+              head_ray_v,
               [&](const auto &o) {
-                o(lhead, lparen{}, [&](const auto &o) {
-                  o(lhead, E{},
-                    [&](const auto &o) { o(lhead, rparen{}, ltail{}); });
+                o(head_ray_v, lparen{}, [&](const auto &o) {
+                  o(head_ray_v, E{},
+                    [&](const auto &o) { o(head_ray_v, rparen{}); });
                 });
               },
               [&](const auto &o) {
-                o(
-                    lhead, [&](const auto &o) { o(lhead, id{}, ltail{}); },
-                    ltail{});
+                o(head_ray_v, [&](const auto &o) { o(head_ray_v, id{}); });
               });
         })(o);
       };
@@ -104,22 +97,19 @@ struct S {
   void operator()(const auto &o) const {
     ([&](const auto &o) {
       o(
-          lhead,
+          head_ray_v,
           [&](const auto &o) {
-            o(lhead, S{}, [&](const auto &o) { o(lhead, A{}, ltail{}); });
+            o(head_ray_v, S{}, [&](const auto &o) { o(head_ray_v, A{}); });
           },
           [&](const auto &o) {
-            o(
-                lhead, [&](const auto &o) { o(lhead, Є{}, ltail{}); }, ltail{});
+            o(head_ray_v, [&](const auto &o) { o(head_ray_v, Є{}); });
           });
     })(o);
   };
-
   struct A {
     void operator()(const auto &o) const {
       ([&](const auto &o) {
-        o(
-            lhead, [&](const auto &o) { o(lhead, a{}, ltail{}); }, ltail{});
+        o(head_ray_v, [&](const auto &o) { o(head_ray_v, a{}); });
       })(o);
     };
   };
@@ -140,26 +130,21 @@ struct b {
 struct S {
   void operator()(const auto &o) const {
     ([&](const auto &o) {
-      o(
-          lhead,
-          [&](const auto &o) {
-            o(lhead, A{}, [&](const auto &o) { o(lhead, A{}, ltail{}); });
-          },
-          ltail{});
+      o(head_ray_v, [&](const auto &o) {
+        o(head_ray_v, A{}, [&](const auto &o) { o(head_ray_v, A{}); });
+      });
     })(o);
   };
   struct A {
     void operator()(const auto &o) const {
       ([&](const auto &o) {
         o(
-            lhead,
+            head_ray_v,
             [&](const auto &o) {
-              o(lhead, a{}, [&](const auto &o) { o(lhead, A{}, ltail{}); });
+              o(head_ray_v, a{}, [&](const auto &o) { o(head_ray_v, A{}); });
             },
             [&](const auto &o) {
-              o(
-                  lhead, [&](const auto &o) { o(lhead, b{}, ltail{}); },
-                  ltail{});
+              o(head_ray_v, [&](const auto &o) { o(head_ray_v, b{}); });
             });
       })(o);
     };
@@ -177,15 +162,14 @@ struct S {
   void operator()(const auto &o) const {
     ([&](const auto &o) {
       o(
-          lhead,
+          head_ray_v,
           [&](const auto &o) {
-            o(lhead, S{}, [&](const auto &o) {
-              o(lhead, S{}, [&](const auto &o) { o(lhead, S{}, ltail{}); });
+            o(head_ray_v, S{}, [&](const auto &o) {
+              o(head_ray_v, S{}, [&](const auto &o) { o(head_ray_v, S{}); });
             });
           },
           [&](const auto &o) {
-            o(
-                lhead, [&](const auto &o) { o(lhead, a{}, ltail{}); }, ltail{});
+            o(head_ray_v, [&](const auto &o) { o(head_ray_v, a{}); });
           });
     })(o);
   };
