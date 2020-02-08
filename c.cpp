@@ -3,31 +3,27 @@ constexpr inline auto head_ray_v = static_cast<head_ray *>(nullptr);
 
 namespace grammar::E41 {
 struct plus {
-  void operator()(const auto &o, const char *b) const {
-    o(b[0] == '+' && b[1] != '=' && b[1] != '+' ? 1 : -1);
+  void operator()(int &o, const char *b) const {
+    o = (b[0] == '+' && b[1] != '=' && b[1] != '+' ? 1 : -1);
   }
 };
 struct mul {
-  void operator()(const auto &o, const char *b) const {
-    o(b[0] == '*' && b[1] != '=' ? 1 : -1);
+  void operator()(int &o, const char *b) const {
+    o = (b[0] == '*' && b[1] != '=' ? 1 : -1);
   }
 };
 struct lparen {
-  void operator()(const auto &o, const char *b) const {
-    o(b[0] == '(' ? 1 : -1);
-  }
+  void operator()(int &o, const char *b) const { o = (b[0] == '(' ? 1 : -1); }
 };
 struct rparen {
-  void operator()(const auto &o, const char *b) const {
-    o(b[0] == ')' ? 1 : -1);
-  }
+  void operator()(int &o, const char *b) const { o = (b[0] == ')' ? 1 : -1); }
 };
 struct id {
-  void operator()(const auto &o, const char *b) const {
-    int i = 0;
-    while ('a' <= b[i] && b[i] <= 'z')
-      i++;
-    o(i > 0 ? i : -1);
+  void operator()(int &o, const char *b) const {
+    o = 0;
+    for (; 'a' <= b[o] && b[o] <= 'z'; ++o)
+      ;
+    o = o ? o : -1;
   }
 };
 
@@ -46,6 +42,7 @@ struct E {
           });
     })(o);
   };
+
   struct T {
     void operator()(const auto &o) const {
       ([&](const auto &o) {
@@ -62,6 +59,7 @@ struct E {
             });
       })(o);
     };
+
     struct F {
       void operator()(const auto &o) const {
         ([&](const auto &o) {
@@ -86,12 +84,10 @@ struct E {
 
 namespace grammar::ll_k_problem {
 struct a {
-  void operator()(const auto &o, const char *b) const {
-    o(b[0] == 'a' ? 1 : -1);
-  }
+  void operator()(int &o, const char *b) const { o = (b[0] == 'a' ? 1 : -1); }
 };
 struct Є {
-  void operator()(const auto &o, const char *b) const { (void(b), o(0)); }
+  void operator()(int &o, const char *b) const { (void(b), o = 0); }
 };
 struct S {
   void operator()(const auto &o) const {
@@ -106,6 +102,7 @@ struct S {
           });
     })(o);
   };
+
   struct A {
     void operator()(const auto &o) const {
       ([&](const auto &o) {
@@ -118,14 +115,10 @@ struct S {
 
 namespace grammar::aabb {
 struct a {
-  void operator()(const auto &o, const char *b) const {
-    o(b[0] == 'a' ? 1 : -1);
-  }
+  void operator()(int &o, const char *b) const { o = (b[0] == 'a' ? 1 : -1); }
 };
 struct b {
-  void operator()(const auto &o, const char *b) const {
-    o(b[0] == 'b' ? 1 : -1);
-  }
+  void operator()(int &o, const char *b) const { o = (b[0] == 'b' ? 1 : -1); }
 };
 struct S {
   void operator()(const auto &o) const {
@@ -154,9 +147,7 @@ struct S {
 
 namespace grammar::ss {
 struct a {
-  void operator()(const auto &o, const char *b) const {
-    o(b[0] == 'a' ? 1 : -1);
-  }
+  void operator()(int &o, const char *b) const { o = (b[0] == 'a' ? 1 : -1); }
 };
 struct S {
   void operator()(const auto &o) const {

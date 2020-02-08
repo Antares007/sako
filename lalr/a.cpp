@@ -23,8 +23,10 @@ template <typename... Ts> struct print;
 #include "../purry.hpp"
 
 template <typename V> struct a_variable {
-  V v;
-  void operator()(const auto &o) const { L1(L1(v))(o); }
+  const V &v;
+  void operator()(const auto &o) const { //
+    L1(L1(v))(o);
+  }
 };
 template <typename V> a_variable(V) -> a_variable<V>;
 
@@ -34,7 +36,7 @@ constexpr inline bool is_tail_v =
 
 template <typename S>
 constexpr inline bool is_terminal_v =
-    std::is_invocable_r_v<void, S, void (*)(int), const char *>;
+    std::is_invocable_r_v<void, S, int &, const char *>;
 
 constexpr inline auto print_production = [](Car production) {
   auto str_prod = std::string{};
@@ -76,28 +78,57 @@ constexpr inline auto prn = [](const auto &o, const auto &svar) {
 
 template <typename V> struct lolr {
   V v;
-
-  template <typename O> struct a_pith {
-    const O &o;
-    const char *b;
-    void operator()(head_ray *, Car a_production, Car...) const { //
-      a_production([&](head_ray *, Car, Car...) {
-        //
-      });
+#define CLOSURE                                                                \
+  const O &o;                                                                  \
+  const char *b;                                                               \
+  const std::type_index &vid;                                                  \
+  int &pos;
+#define ID(x) std::type_index(typeid(x))
+  template <typename O> struct v_pith {
+    CLOSURE
+    void operator()(head_ray *, Car h, Car... t) const {
+      // 1) E' -> E;
+      int len;
+      h(p_pith<O>{o, b + pos, vid, len});
+      if (len < 0)
+        (t(*this), ...);
+      else
+        pos += len;
     }
   };
-
+  template <typename O> struct p_pith {
+    CLOSURE
+    void operator()(head_ray *, Car h, Car... t) const { //
+      if constexpr (is_terminal_v<decltype(h)>) {
+        int len;
+        h(len, b);
+        if (pos >= 0)
+          (t(*this), ...);
+        print<decltype(h)> aa;
+      } else {
+        if (vid == ID(h))
+          ;
+        else {
+          // 2) E
+          o("eheeeyyy", 10);
+        }
+      }
+    }
+  };
   void operator()(Car o, const char *b) const { //
-    // o("______", 0);
-    // prn([&](Car v) { o(v, 0); }, v);
-    // o("______", 0);
-    a_variable{v}(a_pith<decltype(o)>{o, b});
+    o("______", 3);
+    prn([&](Car v) { o(v, 3); }, v);
+    o("______", 3);
+    auto a_variable = L1(L2(v, [](int &o, const char *b) { o = -b[0]; }));
+    auto vid = ID(a_variable);
+    auto pos = 0;
+    a_variable(v_pith<decltype(o)>{o, b, vid, pos});
   }
 };
 template <typename... Args> lolr(Args...) -> lolr<Args...>;
 
 int main() {
-  auto input = "a+b*o+a";
+  auto input = "a*b+o";
   using namespace grammar::E41;
   lolr{E{}}(
       [](auto v, size_t ident) {

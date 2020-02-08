@@ -22,13 +22,13 @@ constexpr inline auto head_ray_v = static_cast<head_ray *>(nullptr);
   }
 #define RG(name)                                                               \
   struct name {                                                                \
-    void operator()(Car o, const char *b) const { o(RG_
+    void operator()(int &o, const char *b) const { o=(RG_
 #define RG_(expr) expr);                                                       \
   }                                                                            \
   }
 #define RGB(name)                                                              \
   struct name {                                                                \
-    void operator()(Car o, const char *b) const {                              \
+    void operator()(int &o, const char *b) const {                             \
       RGB_
 #define RGB_(body)                                                             \
   body                                                                         \

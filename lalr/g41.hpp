@@ -7,7 +7,7 @@ RG(mul)(b[0] == '*' && b[1] != '=' ? 1 : -1);
 RG(lparen)(b[0] == '(' ? 1 : -1);
 RG(rparen)(b[0] == ')' ? 1 : -1);
 RGB(id)
-(int i = 0; while ('a' <= b[i] && b[i] <= 'z') i++; o(i > 0 ? i : -1););
+(o = 0; for (; 'a' <= b[o] && b[o] <= 'z'; ++o); o = o ? o : -1;);
 
 v_(E)(L2(L3(E{}, plus{}, T{}), //
          L1(T{})));
@@ -20,7 +20,7 @@ _v _v _v;
 
 namespace grammar::ll_k_problem {
 RG(a)(b[0] == 'a' ? 1 : -1);
-RGB(Є)((void(b), o(0)););
+RGB(Є)((void(b), o = 0););
 v_(S)(L2(L2(S{}, A{}), //
          L1(Є{})));
 v_(A)(L1(L1(a{})));
