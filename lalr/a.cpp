@@ -82,55 +82,55 @@ template <typename V> struct lolr {
   const O &o;                                                                  \
   const char *b;                                                               \
   const std::type_index &vid;                                                  \
-  int &pos;
+  int &len;
 #define ID(x) std::type_index(typeid(x))
   template <typename O> struct v_pith {
     CLOSURE
-    void operator()(head_ray *, Car h, Car... t) const {
-      // 1) E' -> E;
-      int len;
-      h(p_pith<O>{o, b + pos, vid, len});
+    void operator()(head_ray *, Car prod, Car v_tail) const {
+      o("P>" + std::string(b), 1);
+      prod(p_pith{o, b, vid, len});
       if (len < 0)
-        (t(*this), ...);
-      else
-        pos += len;
+        (v_tail(v_pith{o, b, vid, len}));
+      o("P<" + std::string(b + std::max(len, 0)), -1);
     }
   };
+  template <typename O> v_pith(O, ...) -> v_pith<O>;
   template <typename O> struct p_pith {
     CLOSURE
-    void operator()(head_ray *, Car h, Car... t) const { //
-      if constexpr (is_terminal_v<decltype(h)>) {
-        int len;
-        h(len, b);
-        if (pos >= 0)
-          (t(*this), ...);
-        print<decltype(h)> aa;
+    void operator()(head_ray *, Car symbol, Car p_tail) const { //
+      o(type_name(symbol) + ">" + std::string(b), 1);
+      if constexpr (is_terminal_v<decltype(symbol)>) {
+        symbol(len, b);
       } else {
-        if (vid == ID(h))
-          ;
-        else {
-          // 2) E
-          o("eheeeyyy", 10);
-        }
+        symbol(v_pith{o, b, ID(symbol), len});
       }
+      if (len >= 0) {
+        (p_tail(p_pith{o, b + len, vid, len}));
+      }
+      o(type_name(symbol) + "<" + std::string(b + std::max(len, 0)), -1);
     }
   };
+  template <typename O> p_pith(O, ...) -> p_pith<O>;
   void operator()(Car o, const char *b) const { //
-    o("______", 3);
-    prn([&](Car v) { o(v, 3); }, v);
-    o("______", 3);
-    auto a_variable = L1(L2(v, [](int &o, const char *b) { o = -b[0]; }));
+    auto a_variable = L1(L1(v));
     auto vid = ID(a_variable);
-    auto pos = 0;
-    a_variable(v_pith<decltype(o)>{o, b, vid, pos});
+    int len = 0;
+    int pos = 0;
+    a_variable(v_pith{[&](auto v, int i) {
+                        pos += std::min(i, 0);
+                        o(v, pos);
+                        pos += std::max(i, 0);
+                      },
+                      b, vid, len});
+    o(pos, 3);
   }
 };
 template <typename... Args> lolr(Args...) -> lolr<Args...>;
 
 int main() {
-  auto input = "a*b+o";
-  using namespace grammar::E41;
-  lolr{E{}}(
+  auto input = "abb";
+  using namespace grammar::aabb;
+  lolr{S{}}(
       [](auto v, size_t ident) {
         while (ident--)
           std::cout << "    ";
