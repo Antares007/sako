@@ -76,53 +76,37 @@ constexpr inline auto prn = [](const auto &o, const auto &svar) {
   }});
 };
 
+template <typename _Tp, typename _Up>
+inline constexpr bool is_same_v =
+    std::is_same<std::decay_t<_Tp>, std::decay_t<_Up>>::value;
+
 template <typename V> struct lolr {
   V v;
-#define CLOSURE                                                                \
-  const O &o;                                                                  \
-  const char *b;                                                               \
-  const std::type_index &vid;                                                  \
-  int &len;
-#define ID(x) std::type_index(typeid(x))
-  template <typename O> struct v_pith {
-    CLOSURE
-    void operator()(head_ray *, Car prod, Car v_tail) const {
-      o("P>" + std::string(b), 1);
-      prod(p_pith{o, b, vid, len});
-      if (len < 0)
-        (v_tail(v_pith{o, b, vid, len}));
-      o("P<" + std::string(b + std::max(len, 0)), -1);
-    }
-  };
-  template <typename O> v_pith(O, ...) -> v_pith<O>;
-  template <typename O> struct p_pith {
-    CLOSURE
-    void operator()(head_ray *, Car symbol, Car p_tail) const { //
-      o(type_name(symbol) + ">" + std::string(b), 1);
-      if constexpr (is_terminal_v<decltype(symbol)>) {
-        symbol(len, b);
+  template <typename O, typename T> struct a_pith {
+    const O &o;
+    const char *b;
+    const T &tail;
+
+    void operator()(head_ray *, Car h, Car t) const {
+      if constexpr (is_same_v<decltype(nullptr), decltype(tail)>) {
+        h(a_pith<O, decltype(t)>{o, b, t});
+      } else if constexpr (is_terminal_v<decltype(h)>) {
+        int len;
+        h(len, b);
+        if (len < 0)
+          tail(a_pith<O, decltype(nullptr)>{o, b, nullptr});
+        else
+          t(a_pith<O, decltype(t)>{o, b + len, tail});
       } else {
-        symbol(v_pith{o, b, ID(symbol), len});
+        // h(a_pith<O, decltype(t)>{o, b, t});
       }
-      if (len >= 0) {
-        (p_tail(p_pith{o, b + len, vid, len}));
-      }
-      o(type_name(symbol) + "<" + std::string(b + std::max(len, 0)), -1);
     }
   };
-  template <typename O> p_pith(O, ...) -> p_pith<O>;
   void operator()(Car o, const char *b) const { //
-    auto a_variable = L1(L1(v));
-    auto vid = ID(a_variable);
-    int len = 0;
-    int pos = 0;
-    a_variable(v_pith{[&](auto v, int i) {
-                        pos += std::min(i, 0);
-                        o(v, pos);
-                        pos += std::max(i, 0);
-                      },
-                      b, vid, len});
-    o(pos, 3);
+    // auto a_variable = L1(L1(v));
+    // auto vid = ID(a_variable);
+    // a_variable(v_pith{o, b});
+    v(a_pith<decltype(o), decltype(nullptr)>{o, b, nullptr});
   }
 };
 template <typename... Args> lolr(Args...) -> lolr<Args...>;
