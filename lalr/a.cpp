@@ -76,37 +76,53 @@ constexpr inline auto prn = [](const auto &o, const auto &svar) {
   }});
 };
 
-template <typename _Tp, typename _Up>
-inline constexpr bool is_same_v =
-    std::is_same<std::decay_t<_Tp>, std::decay_t<_Up>>::value;
+#define Is_End(x)                                                              \
+  std::is_same_v<std::decay_t<decltype(nullptr)>, std::decay_t<decltype(tail)>>
+#define Is_Term(x) is_terminal_v<decltype(x)>
 
 template <typename V> struct lolr {
   V v;
-  template <typename O, typename T> struct a_pith {
+  template <typename O, typename T> struct p_pith {
     const O &o;
     const char *b;
+    const char *bc;
     const T &tail;
 
     void operator()(head_ray *, Car h, Car t) const {
-      if constexpr (is_same_v<decltype(nullptr), decltype(tail)>) {
-        h(a_pith<O, decltype(t)>{o, b, t});
-      } else if constexpr (is_terminal_v<decltype(h)>) {
+      if constexpr (Is_Term(h)) {
         int len;
-        h(len, b);
-        if (len < 0)
-          tail(a_pith<O, decltype(nullptr)>{o, b, nullptr});
-        else
-          t(a_pith<O, decltype(t)>{o, b + len, tail});
+        h(len, bc);
+        if (len < 0) {
+          if constexpr (Is_End(tail)) {
+            o(-9, 0);
+          } else {
+            tail(v_pith<O>{o, b});
+          }
+        } else {
+          if constexpr (!Is_End(t)) {
+            t(p_pith<O, T>{o, b, bc + len, tail});
+          } else if constexpr (!Is_End(tail)) {
+            tail(v_pith<O>{o, b});
+          } else {
+            o(-6, 0);
+          }
+        }
       } else {
-        // h(a_pith<O, decltype(t)>{o, b, t});
       }
+    }
+  };
+  template <typename O> struct v_pith {
+    const O &o;
+    const char *b;
+    void operator()(head_ray *, Car p, Car t) const {
+      p(p_pith<decltype(o), decltype(t)>{o, b, b, t});
     }
   };
   void operator()(Car o, const char *b) const { //
     // auto a_variable = L1(L1(v));
     // auto vid = ID(a_variable);
     // a_variable(v_pith{o, b});
-    v(a_pith<decltype(o), decltype(nullptr)>{o, b, nullptr});
+    v(v_pith<decltype(o)>{o, b});
   }
 };
 template <typename... Args> lolr(Args...) -> lolr<Args...>;
