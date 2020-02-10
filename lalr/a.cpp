@@ -77,32 +77,32 @@ constexpr inline auto prn = [](const auto &o, const auto &svar) {
 };
 
 #define Is_End(x)                                                              \
-  std::is_same_v<std::decay_t<decltype(nullptr)>, std::decay_t<decltype(tail)>>
+  std::is_same_v<decltype(nullptr), std::decay_t<decltype(tail)>>
 #define Is_Term(x) is_terminal_v<decltype(x)>
 
 template <typename V> struct lolr {
   V v;
   template <typename O, typename T> struct p_pith {
     const O &o;
-    const char *b;
     const char *bc;
+    const char *ad;
     const T &tail;
 
     void operator()(head_ray *, Car h, Car t) const {
       if constexpr (Is_Term(h)) {
         int len;
-        h(len, bc);
+        h(len, ad);
         if (len < 0) {
           if constexpr (Is_End(tail)) {
             o(-9, 0);
           } else {
-            tail(v_pith<O>{o, b});
+            tail(v_pith<O>{o, bc});
           }
         } else {
           if constexpr (!Is_End(t)) {
-            t(p_pith<O, T>{o, b, bc + len, tail});
+            t(p_pith<O, T>{o, bc, ad + len, tail});
           } else if constexpr (!Is_End(tail)) {
-            tail(v_pith<O>{o, b});
+            tail(v_pith<O>{o, bc});
           } else {
             o(-6, 0);
           }
