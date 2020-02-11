@@ -4,6 +4,8 @@
 #include <string>
 #include <typeindex>
 
+#define Is_End(x) std::is_same_v<decltype(nullptr), std::decay_t<decltype(x)>>
+#define Is_Term(x) is_terminal_v<decltype(x)>
 constexpr inline auto demangle = [](const char *name) {
   int stat = 0;
   auto buff = abi::__cxa_demangle(name, nullptr, nullptr, &stat);
@@ -48,37 +50,26 @@ constexpr inline auto print_production = [](Car production) {
 };
 
 #include <set>
-constexpr inline auto prn = [](const auto &o, const auto &svar) {
-  auto set = std::set<std::type_index>();
-  a_variable{svar}(o::rec{[&](Car arec, head_ray *, Car a_production, Car...) {
-    a_production([&](head_ray *, Car variable, Car...) {
-      variable(o::rec{[&](Car prec, head_ray *, Car production, Car... v_tail) {
-        auto str_prod = std::string{};
-        production(
-            o::rec{[&](Car s_rec, head_ray *, Car symbol, Car... p_tail) {
-              str_prod += " " + type_name(symbol);
-              (p_tail(s_rec), ...);
-            }});
-        o(type_name(variable) + " ->" + str_prod);
-        (v_tail(prec), ...);
-      }});
-      set.insert(std::type_index(typeid(variable)));
-      variable(o::rec{[&](Car prec, head_ray *, Car production, Car... v_tail) {
-        production(o::rec{[&](Car srec, head_ray *, Car symbol, Car... p_tail) {
-          if constexpr (!is_terminal_v<decltype(symbol)>)
-            if (!set.contains(std::type_index(typeid(symbol))))
-              a_variable{symbol}(arec);
-          (p_tail(srec), ...);
-        }});
-        (v_tail(prec), ...);
-      }});
-    });
-  }});
-};
 
-#define Is_End(x)                                                              \
-  std::is_same_v<decltype(nullptr), std::decay_t<decltype(tail)>>
-#define Is_Term(x) is_terminal_v<decltype(x)>
+template <typename O, int D = 0> struct a_pith {
+  const O &o;
+  void operator()(head_ray *, Car h, Car t) const { //
+    using H = decltype(h);
+    using T = decltype(t);
+    if constexpr (D < -13)
+      o(D, "depth");
+    else if constexpr (std::is_invocable_r_v<void, H, a_pith<O, D - 1>> &&
+                       std::is_invocable_r_v<void, T, a_pith<O, D - 1>>)
+      o((h(a_pith<O, D - 1>{o}), h), (t(a_pith<O, D - 1>{o}), t));
+    else if constexpr (std::is_invocable_r_v<void, H, a_pith<O, D - 1>>)
+      o((h(a_pith<O, D - 1>{o}), h), t);
+    else if constexpr (std::is_invocable_r_v<void, T, a_pith<O, D - 1>>)
+      o(h, (t(a_pith<O, D - 1>{o}), t));
+    else
+      o(h, t);
+  }
+};
+template <typename O, char D = 0> a_pith(O) -> a_pith<O, D>;
 
 template <typename V> struct lolr {
   V v;
@@ -114,8 +105,19 @@ template <typename V> struct lolr {
   template <typename O> struct v_pith {
     const O &o;
     const char *b;
-    void operator()(head_ray *, Car p, Car t) const {
-      p(p_pith<decltype(o), decltype(t)>{o, b, b, t});
+    void operator()(head_ray *, Car v1, Car pt) const {
+      v1([&](head_ray *, Car v1, Car rt) {
+        if constexpr (std::is_invocable_r_v<void, decltype(v1), int &,
+                                            const char *>)
+          ; // print<decltype(h), decltype(pt), decltype(rt)> terminal;
+        else
+          v1([&](head_ray *, Car v2, Car) {
+            v2([&](head_ray *, Car v2, Car) {
+              print<decltype(v1), decltype(v2), decltype(pt), decltype(rt)>
+                  variable;
+            });
+          });
+      });
     }
   };
   void operator()(Car o, const char *b) const { //
@@ -126,16 +128,54 @@ template <typename V> struct lolr {
   }
 };
 template <typename... Args> lolr(Args...) -> lolr<Args...>;
-
+template <typename O, typename R> struct append_pith {
+  const O &o;
+  const R &r;
+  void operator()(head_ray *, Car h, Car t) const {
+    o(head_ray_v, h, [&](Car o) {
+      if constexpr (std::is_invocable_r_v<void, decltype(t), decltype(*this)>)
+        t(*this);
+      else
+        r(o);
+    });
+  };
+};
+template <typename O, typename R> append_pith(O, R) -> append_pith<O, R>;
 int main() {
   auto input = "abb";
   using namespace grammar::aabb;
-  lolr{S{}}(
-      [](auto v, size_t ident) {
-        while (ident--)
-          std::cout << "    ";
-        std::cout << v << '\n';
-      },
-      input);
+  using namespace grammar;
+  auto l1 = L3(1, 2, 3);
+  auto l2 = L2('a', "bo");
+  l1(append_pith{o::rec{//
+                        [](const auto &rec, head_ray *, Car h, Car t) {
+                          std::cout << h;
+                          if constexpr (std::is_invocable_r_v<void, decltype(t),
+                                                              decltype(rec)>)
+                            t(rec);
+                        }},
+                 l2});
+
+  // auto p = a_pith{o::rays{
+  //    [](int d, const char *err) { std::cerr << d << " " << err << '\n';
+  //    },
+  //    [](Car terminal, Car tail) { //
+  //      auto n = type_name(terminal);
+  //      if (n.find("operator") != std::string::npos)
+  //        n = n.substr(0, n.find("operator"));
+  //      auto n2 = type_name(tail);
+  //      if (n2.find("operator") != std::string::npos)
+  //        n2 = n2.substr(0, n2.find("operator"));
+  //      std::cout << n << " - " << n2 << '\n';
+  //    }}};
+  // S{}(p);
+
+  // lolr{E43::E{}}(
+  //    [](auto v, size_t ident) {
+  //      while (ident--)
+  //        std::cout << "    ";
+  //      std::cout << v << '\n';
+  //    },
+  //    input);
   return 9;
 }
