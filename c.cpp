@@ -1,7 +1,7 @@
 struct head_ray;
 constexpr inline auto head_ray_v = static_cast<head_ray *>(nullptr);
 
-namespace grammar::E41 {
+namespace grammar {
 struct plus {
   void operator()(int &o, const char *b) const {
     o = (b[0] == '+' && b[1] != '=' && b[1] != '+' ? 1 : -1);
@@ -26,44 +26,42 @@ struct id {
     o = o ? o : -1;
   }
 };
-
+struct a {
+  void operator()(int &o, const char *b) const { o = (b[0] == 'a' ? 1 : -1); }
+};
+struct b {
+  void operator()(int &o, const char *b) const { o = (b[0] == 'b' ? 1 : -1); }
+};
+struct Є {
+  void operator()(int &o, const char *b) const { (void(b), o = 0); }
+};
+namespace E41 {
 struct E {
   void operator()(const auto &o) const {
     ([&](const auto &o) {
       o(
           head_ray_v,
           [&](const auto &o) {
-            o(              //
-                head_ray_v, //
-                E{},        //
-                [&](const auto &o) {
-                  o(              //
-                      head_ray_v, //
-                      plus{},     //
-                      [&](const auto &o) {
-                        o(              //
-                            head_ray_v, //
-                            T{},        //
-                            nullptr     //
-                        );
-                      });
-                });
+            o(head_ray_v, E{}, [&](const auto &o) {
+              o(head_ray_v, plus{}, [&](const auto &o) {
+                o(head_ray_v, T{}, nullptr);
+                (void(0));
+              });
+            });
           },
           [&](const auto &o) {
             o(
-                head_ray_v, //
+                head_ray_v,
                 [&](const auto &o) {
-                  o(              //
-                      head_ray_v, //
-                      T{},        //
-                      nullptr     //
-                  );
+                  o(head_ray_v, T{}, nullptr);
+                  (void(0));
                 },
-                nullptr //
-            );
+                nullptr);
+            (void(0));
           });
     })(o);
-  };
+  }
+
   struct T {
     void operator()(const auto &o) const {
       ([&](const auto &o) {
@@ -71,145 +69,109 @@ struct E {
             head_ray_v,
             [&](const auto &o) {
               o(head_ray_v, T{}, [&](const auto &o) {
-                o(head_ray_v, mul{},
-                  [&](const auto &o) { o(head_ray_v, F{}, nullptr); });
+                o(head_ray_v, mul{}, [&](const auto &o) {
+                  o(head_ray_v, F{}, nullptr);
+                  (void(0));
+                });
               });
             },
             [&](const auto &o) {
               o(
                   head_ray_v,
-                  [&](const auto &o) { o(head_ray_v, F{}, nullptr); }, nullptr);
+                  [&](const auto &o) {
+                    o(head_ray_v, F{}, nullptr);
+                    (void(0));
+                  },
+                  nullptr);
+              (void(0));
             });
       })(o);
-    };
-    struct F {
-      void operator()(const auto &o) const {
-        ([&](const auto &o) {
-          o(
-              head_ray_v,
-              [&](const auto &o) {
-                o(head_ray_v, lparen{}, [&](const auto &o) {
-                  o(head_ray_v, E{},
-                    [&](const auto &o) { o(head_ray_v, rparen{}, nullptr); });
-                });
-              },
-              [&](const auto &o) {
-                o(
-                    head_ray_v,
-                    [&](const auto &o) { o(head_ray_v, id{}, nullptr); },
-                    nullptr);
-              });
-        })(o);
-      };
-    };
+    }
   };
-};
-;
-} // namespace grammar::E41
 
-namespace grammar::ll_k_problem {
-struct a {
-  void operator()(int &o, const char *b) const { o = (b[0] == 'a' ? 1 : -1); }
-};
-struct Є {
-  void operator()(int &o, const char *b) const { (void(b), o = 0); }
-};
-struct S {
-  void operator()(const auto &o) const {
-    ([&](const auto &o) {
-      o(
-          head_ray_v,
-          [&](const auto &o) {
-            o(head_ray_v, S{},
-              [&](const auto &o) { o(head_ray_v, A{}, nullptr); });
-          },
-          [&](const auto &o) {
-            o(
-                head_ray_v, [&](const auto &o) { o(head_ray_v, Є{}, nullptr); },
-                nullptr);
-          });
-    })(o);
-  };
-  struct A {
-    void operator()(const auto &o) const {
-      ([&](const auto &o) {
-        o(
-            head_ray_v, [&](const auto &o) { o(head_ray_v, a{}, nullptr); },
-            nullptr);
-      })(o);
-    };
-  };
-};
-} // namespace grammar::ll_k_problem
-
-namespace grammar::aabb {
-struct a {
-  void operator()(int &o, const char *b) const { o = (b[0] == 'a' ? 1 : -1); }
-};
-struct b {
-  void operator()(int &o, const char *b) const { o = (b[0] == 'b' ? 1 : -1); }
-};
-struct S {
-  void operator()(const auto &o) const {
-    ([&](const auto &o) {
-      o(
-          head_ray_v,
-          [&](const auto &o) {
-            o(              //
-                head_ray_v, //
-                A{},        //
-                [&](const auto &o) {
-                  o(              //
-                      head_ray_v, //
-                      A{},        //
-                      nullptr     //
-                  );
-                });
-          },
-          nullptr //
-      );
-    })(o);
-  };
-  struct A {
+  struct F {
     void operator()(const auto &o) const {
       ([&](const auto &o) {
         o(
             head_ray_v,
             [&](const auto &o) {
-              o(              //
-                  head_ray_v, //
-                  a{},        //
-                  [&](const auto &o) {
-                    o(              //
-                        head_ray_v, //
-                        A{},        //
-                        nullptr     //
-                    );
-                  });
+              o(head_ray_v, lparen{}, [&](const auto &o) {
+                o(head_ray_v, E{}, [&](const auto &o) {
+                  o(head_ray_v, rparen{}, nullptr);
+                  (void(0));
+                });
+              });
             },
             [&](const auto &o) {
               o(
                   head_ray_v,
                   [&](const auto &o) {
-                    o(              //
-                        head_ray_v, //
-                        b{},        //
-                        nullptr     //
-                    );
+                    o(head_ray_v, id{}, nullptr);
+                    (void(0));
                   },
-                  nullptr //
-              );
+                  nullptr);
+              (void(0));
             });
       })(o);
-    };
+    }
   };
 };
-} // namespace grammar::aabb
 
-namespace grammar::ss {
-struct a {
-  void operator()(int &o, const char *b) const { o = (b[0] == 'a' ? 1 : -1); }
+} // namespace E41
+namespace E43 {
+struct E {
+  void operator()(const auto &o) const {
+    ([&](const auto &o) {
+      o(
+          head_ray_v,
+          [&](const auto &o) {
+            o(head_ray_v, E{}, [&](const auto &o) {
+              o(head_ray_v, plus{}, [&](const auto &o) {
+                o(head_ray_v, E{}, nullptr);
+                (void(0));
+              });
+            });
+          },
+          [&](const auto &o) {
+            o(
+                head_ray_v,
+                [&](const auto &o) {
+                  o(head_ray_v, E{}, [&](const auto &o) {
+                    o(head_ray_v, mul{}, [&](const auto &o) {
+                      o(head_ray_v, E{}, nullptr);
+                      (void(0));
+                    });
+                  });
+                },
+                [&](const auto &o) {
+                  o(
+                      head_ray_v,
+                      [&](const auto &o) {
+                        o(head_ray_v, lparen{}, [&](const auto &o) {
+                          o(head_ray_v, E{}, [&](const auto &o) {
+                            o(head_ray_v, rparen{}, nullptr);
+                            (void(0));
+                          });
+                        });
+                      },
+                      [&](const auto &o) {
+                        o(
+                            head_ray_v,
+                            [&](const auto &o) {
+                              o(head_ray_v, id{}, nullptr);
+                              (void(0));
+                            },
+                            nullptr);
+                        (void(0));
+                      });
+                });
+          });
+    })(o);
+  }
 };
+
+} // namespace E43
+namespace ll_k_problem {
 struct S {
   void operator()(const auto &o) const {
     ([&](const auto &o) {
@@ -217,16 +179,80 @@ struct S {
           head_ray_v,
           [&](const auto &o) {
             o(head_ray_v, S{}, [&](const auto &o) {
-              o(head_ray_v, S{},
-                [&](const auto &o) { o(head_ray_v, S{}, nullptr); });
+              o(head_ray_v, A{}, nullptr);
+              (void(0));
             });
           },
           [&](const auto &o) {
             o(
-                head_ray_v, [&](const auto &o) { o(head_ray_v, a{}, nullptr); },
+                head_ray_v,
+                [&](const auto &o) {
+                  o(head_ray_v, Є{}, nullptr);
+                  (void(0));
+                },
                 nullptr);
+            (void(0));
           });
     })(o);
+  }
+
+  struct A {
+    void operator()(const auto &o) const {
+      ([&](const auto &o) {
+        o(
+            head_ray_v,
+            [&](const auto &o) {
+              o(head_ray_v, a{}, nullptr);
+              (void(0));
+            },
+            nullptr);
+        (void(0));
+      })(o);
+    }
   };
 };
-} // namespace grammar::ss
+} // namespace ll_k_problem
+namespace aabb {
+struct S {
+  void operator()(const auto &o) const {
+    ([&](const auto &o) {
+      o(
+          head_ray_v,
+          [&](const auto &o) {
+            o(head_ray_v, A{}, [&](const auto &o) {
+              o(head_ray_v, A{}, nullptr);
+              (void(0));
+            });
+          },
+          nullptr);
+      (void(0));
+    })(o);
+  }
+  struct A {
+    void operator()(const auto &o) const {
+      ([&](const auto &o) {
+        o(
+            head_ray_v,
+            [&](const auto &o) {
+              o(head_ray_v, a{}, [&](const auto &o) {
+                o(head_ray_v, A{}, nullptr);
+                (void(0));
+              });
+            },
+            [&](const auto &o) {
+              o(
+                  head_ray_v,
+                  [&](const auto &o) {
+                    o(head_ray_v, b{}, nullptr);
+                    (void(0));
+                  },
+                  nullptr);
+              (void(0));
+            });
+      })(o);
+    }
+  };
+};
+
+} // namespace aabb
+} // namespace grammar
