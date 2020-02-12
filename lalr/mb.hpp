@@ -8,41 +8,36 @@ struct head_ray;
 constexpr inline auto head_ray_v = static_cast<head_ray *>(nullptr);
 
 #define L1(a)                                                                  \
-  [&](Car o) {                                                                 \
+  [](Car o) {                                                                  \
     o(head_ray_v, a, nullptr);                                                 \
     (void(0));                                                                 \
   }
 #define L2(a, b)                                                               \
-  [&](Car o) {                                                                 \
-    o(head_ray_v, a, [&](Car o) {                                              \
+  [](Car o) {                                                                  \
+    o(head_ray_v, a, [](Car o) {                                               \
       o(head_ray_v, b, nullptr);                                               \
       (void(0));                                                               \
     });                                                                        \
   }
 #define L3(a, b, c)                                                            \
-  [&](Car o) {                                                                 \
-    o(head_ray_v, a, [&](Car o) {                                              \
-      o(head_ray_v, b, [&](Car o) {                                            \
+  [](Car o) {                                                                  \
+    o(head_ray_v, a, [](Car o) {                                               \
+      o(head_ray_v, b, [](Car o) {                                             \
         o(head_ray_v, c, nullptr);                                             \
         (void(0));                                                             \
       });                                                                      \
     });                                                                        \
   }
 #define L4(a, b, c, d)                                                         \
-  [&](Car o) {                                                                 \
-    o(head_ray_v, a, [&](Car o) {                                              \
-      o(head_ray_v, b, [&](Car o) {                                            \
-        o(head_ray_v, c, [&](Car o) {                                          \
+  [](Car o) {                                                                  \
+    o(head_ray_v, a, [](Car o) {                                               \
+      o(head_ray_v, b, [](Car o) {                                             \
+        o(head_ray_v, c, [](Car o) {                                           \
           o(head_ray_v, d, nullptr);                                           \
           (void(0));                                                           \
         });                                                                    \
       });                                                                      \
     });                                                                        \
-  }
-#define LRec(b)                                                                \
-  [&](Car o, tail_ray *, Car t) {                                              \
-    if (b)                                                                     \
-      t(o);                                                                    \
   }
 #define RG(name)                                                               \
   struct name {                                                                \
