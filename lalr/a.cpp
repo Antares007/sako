@@ -71,63 +71,6 @@ template <typename O, int D = 0> struct a_pith {
 };
 template <typename O, char D = 0> a_pith(O) -> a_pith<O, D>;
 
-template <typename V> struct lolr {
-  V v;
-  template <typename O, typename T> struct p_pith {
-    const O &o;
-    const char *bc;
-    const char *ad;
-    const T &tail;
-
-    void operator()(head_ray *, Car h, Car t) const {
-      if constexpr (Is_Term(h)) {
-        int len;
-        h(len, ad);
-        if (len < 0) {
-          if constexpr (Is_End(tail)) {
-            o(-9, 0);
-          } else {
-            tail(v_pith<O>{o, bc});
-          }
-        } else {
-          if constexpr (!Is_End(t)) {
-            t(p_pith<O, T>{o, bc, ad + len, tail});
-          } else if constexpr (!Is_End(tail)) {
-            tail(v_pith<O>{o, bc});
-          } else {
-            o(-6, 0);
-          }
-        }
-      } else {
-      }
-    }
-  };
-  template <typename O> struct v_pith {
-    const O &o;
-    const char *b;
-    void operator()(head_ray *, Car v1, Car pt) const {
-      v1([&](head_ray *, Car v1, Car rt) {
-        if constexpr (std::is_invocable_r_v<void, decltype(v1), int &,
-                                            const char *>)
-          ; // print<decltype(h), decltype(pt), decltype(rt)> terminal;
-        else
-          v1([&](head_ray *, Car v2, Car) {
-            v2([&](head_ray *, Car v2, Car) {
-              print<decltype(v1), decltype(v2), decltype(pt), decltype(rt)>
-                  variable;
-            });
-          });
-      });
-    }
-  };
-  void operator()(Car o, const char *b) const { //
-    // auto a_variable = L1(L1(v));
-    // auto vid = ID(a_variable);
-    // a_variable(v_pith{o, b});
-    v(v_pith<decltype(o)>{o, b});
-  }
-};
-template <typename... Args> lolr(Args...) -> lolr<Args...>;
 template <typename O, typename R> struct append_pith {
   const O &o;
   const R &r;
@@ -141,41 +84,42 @@ template <typename O, typename R> struct append_pith {
   };
 };
 template <typename O, typename R> append_pith(O, R) -> append_pith<O, R>;
+
+template <typename V> struct lolr {
+  V v;
+  template <typename O> struct v_pith {
+    const O &o;
+    const char *b;
+    void operator()(head_ray *, Car v1, Car pt) const {
+      v1([&](head_ray *, Car v1, Car rt) {
+        if constexpr (std::is_invocable_r_v<void, decltype(v1), int &,
+                                            const char *>)
+          print<decltype(v1), decltype(pt), decltype(rt)> terminal;
+        else
+          v1([&](head_ray *, Car v2, Car) {
+            v2([&](head_ray *, Car v2, Car) {
+              print<decltype(v1), decltype(v2), decltype(pt), decltype(rt)>
+                  variable;
+            });
+          });
+      });
+    }
+  };
+  void operator()(Car o, const char *b) const { //
+    v(v_pith<decltype(o)>{o, b});
+  }
+};
+template <typename... Args> lolr(Args...) -> lolr<Args...>;
 int main() {
   auto input = "abb";
   using namespace grammar::aabb;
   using namespace grammar;
-  auto l1 = L3(1, 2, 3);
-  auto l2 = L2('a', "bo");
-  l1(append_pith{o::rec{//
-                        [](const auto &rec, head_ray *, Car h, Car t) {
-                          std::cout << h;
-                          if constexpr (std::is_invocable_r_v<void, decltype(t),
-                                                              decltype(rec)>)
-                            t(rec);
-                        }},
-                 l2});
-
-  // auto p = a_pith{o::rays{
-  //    [](int d, const char *err) { std::cerr << d << " " << err << '\n';
-  //    },
-  //    [](Car terminal, Car tail) { //
-  //      auto n = type_name(terminal);
-  //      if (n.find("operator") != std::string::npos)
-  //        n = n.substr(0, n.find("operator"));
-  //      auto n2 = type_name(tail);
-  //      if (n2.find("operator") != std::string::npos)
-  //        n2 = n2.substr(0, n2.find("operator"));
-  //      std::cout << n << " - " << n2 << '\n';
-  //    }}};
-  // S{}(p);
-
-  // lolr{E43::E{}}(
-  //    [](auto v, size_t ident) {
-  //      while (ident--)
-  //        std::cout << "    ";
-  //      std::cout << v << '\n';
-  //    },
-  //    input);
+  lolr{aabb::S{}}(
+      [](auto v, size_t ident) {
+        while (ident--)
+          std::cout << "    ";
+        std::cout << v << '\n';
+      },
+      input);
   return 9;
 }
