@@ -2,14 +2,15 @@
 #include "mb.hpp"
 // clang-format off
 namespace grammar {
-RG(  plus   )(b[0] == '+' && b[1] != '=' && b[1] != '+' ? 1 : -1);
-RG(  mul    )(b[0] == '*' && b[1] != '=' ? 1 : -1);
-RG(  lparen )(b[0] == '(' ? 1 : -1);
-RG(  rparen )(b[0] == ')' ? 1 : -1);
+RG ( plus   )(b[0] == '+' && b[1] != '=' && b[1] != '+' ? 1 : -1);
+RG ( mul    )(b[0] == '*' && b[1] != '=' ? 1 : -1);
+RG ( lparen )(b[0] == '(' ? 1 : -1);
+RG ( rparen )(b[0] == ')' ? 1 : -1);
 RGB( id     )(o = 0; for (; 'a' <= b[o] && b[o] <= 'z'; ++o); o = o ? o : -1;);
-RG(  a      )(b[0] == 'a' ? 1 : -1);
-RG(  b      )(b[0] == 'b' ? 1 : -1);
-RGB( Є      )((void(b), o = 0););
+RG ( a      )(b[0] == 'a' ? 1 : -1);
+RG ( b      )(b[0] == 'b' ? 1 : -1);
+RGB( Є      )((void(b)); o = 0;);
+RG ( dollar )(-b[0]);
 namespace E41 {
 v_( E )(L2(L3( E{},      plus{}, T{}      ), 
            L1( T{}                        )))

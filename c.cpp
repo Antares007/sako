@@ -1,6 +1,4 @@
-struct head_ray;
-constexpr inline auto head_ray_v = static_cast<head_ray *>(nullptr);
-
+#include "lalr/mb.hpp"
 namespace grammar {
 struct plus {
   void operator()(int &o, const char *b) const {
@@ -33,7 +31,13 @@ struct b {
   void operator()(int &o, const char *b) const { o = (b[0] == 'b' ? 1 : -1); }
 };
 struct Є {
-  void operator()(int &o, const char *b) const { (void(b), o = 0); }
+  void operator()(int &o, const char *b) const {
+    (void(b));
+    o = 0;
+  }
+};
+struct dollar {
+  void operator()(int &o, const char *b) const { o = (-b[0]); }
 };
 namespace E41 {
 struct E {
