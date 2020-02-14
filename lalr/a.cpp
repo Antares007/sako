@@ -24,7 +24,7 @@ template <typename... Ts> struct print;
 
 #define Is_nullptr(x)                                                          \
   std::is_same_v<decltype(nullptr), std::decay_t<decltype(x)>>
-#define Is_Terminal(x)                                                         \
+#define Is_terminal(x)                                                         \
   std::is_invocable_r_v<void, decltype(x), int &, const char *>
 template <typename T>
 constexpr inline bool is_tail_v =
@@ -65,41 +65,47 @@ template <typename O, int D = 0> struct a_pith {
 };
 template <typename O, char D = 0> a_pith(O) -> a_pith<O, D>;
 
-template <typename L, typename R> struct append {
-  L l;
-  R r;
-  void operator()(Car o) const { l(pith<decltype(o)>{o, r}); }
+template <typename A, typename B> struct append {
+  A a;
+  B b;
+  void operator()(Car o) const { a(pith<decltype(o)>{o, b}); }
   template <typename O> struct pith {
     const O &o;
-    const R &r;
+    const B &b;
     void operator()(head_ray *, Car h, Car t) const {
       if constexpr (Is_nullptr(t))
-        o(head_ray_v, h, r);
+        o(head_ray_v, h, b);
       else
-        o(head_ray_v, h, [&](Car o) { t(pith<decltype(o)>{o, r}); });
+        o(head_ray_v, h, [&](Car o) { t(pith<decltype(o)>{o, b}); });
     }
   };
 };
-template <typename L, typename R> append(L, R) -> append<L, R>;
+template <typename A, typename B> append(A, B) -> append<A, B>;
 
-template <typename L, typename F> struct map {
-  L l;
-  F f;
-  void operator()(Car o) const { l(pith<decltype(o)>{o, f}); }
+template <typename A, typename B> struct map {
+  A a;
+  B b;
+  void operator()(Car o) const { a(pith<decltype(o)>{o, b}); }
   template <typename O> struct pith {
     const O &o;
-    const F &f;
+    const B &b;
     void operator()(head_ray *, auto &&h, auto &&t) const {
       if constexpr (Is_nullptr(t))
-        o(head_ray_v, f(Forward(h)), Forward(t));
+        o(head_ray_v, b(Forward(h)), Forward(t));
       else
-        o(head_ray_v, f(Forward(h)), [&](Car o) {
-          t(pith<decltype(o)>{o, f});
+        o(head_ray_v, b(Forward(h)), [&](Car o) {
+          t(pith<decltype(o)>{o, b});
         });
     }
   };
 };
-template <typename L, typename F> map(L, F) -> map<L, F>;
+template <typename A, typename B> map(A, B) -> map<A, B>;
+
+template <typename P> struct avar {
+  P p;
+  void operator()(Car o) const { o(head_ray_v, p, nullptr); }
+};
+template <typename P> avar(P) -> avar<P>;
 
 #define PPP                                                                    \
   print<decltype(s), decltype(s2), decltype(pt), decltype(pt2), decltype(st),  \
@@ -107,26 +113,26 @@ template <typename L, typename F> map(L, F) -> map<L, F>;
       variable
 template <typename V> struct lolr {
   V v;
-  template <typename O, typename T> struct v_pith {
+  template <typename O> struct v_pith {
     const O &o;
     const char *b;
-    T tail;
     void operator()(head_ray *, Car p, Car pt) const {
-      p([&](head_ray *, Car s, Car st) {
-        if constexpr (Is_Terminal(s)) {
+      p(o::rec{[&](Car srec, head_ray *, Car s, Car st) {
+        if constexpr (Is_terminal(s)) {
           print<decltype(s), decltype(pt), decltype(st)> terminal;
         } else {
           s([&](head_ray *, Car p2, Car pt2) {
             p2([&](head_ray *, Car s2, Car st2) {
-              if constexpr (std::is_same_v<
-                                std::decay_t<decltype(s)>,
-                                std::decay_t<decltype(s2)>>) { // left recusion
+              if constexpr (std::is_same_v<decltype(s),
+                                           decltype(s2)>) { // left recusion
                 PPP;
-              } else if constexpr (Is_Terminal(s2)) { // fitst terminal
+              } else if constexpr (Is_terminal(s2)) { // fitst terminal
                 int len;
                 s2(len, b);
                 if (len < 0) {
+                  PPP;
                 } else {
+                  st2(append_pith{srec, st});
                 }
               } else { // another variable
                 PPP;
@@ -134,12 +140,25 @@ template <typename V> struct lolr {
             });
           });
         }
-      });
+      }});
     }
   };
   void operator()(Car o, const char *b) const { //
-    v(v_pith<decltype(o), grammar::dollar>{o, b, grammar::dollar{}});
+    map{v, [](auto &&production) {
+          return append{Forward(production), L1(grammar::dollar{})};
+        }}(v_pith<decltype(o)>{o, b});
   }
+  template <typename O, typename B> struct append_pith {
+    const O &o;
+    const B &b;
+    void operator()(head_ray *, Car h, Car t) const {
+      if constexpr (Is_nullptr(t))
+        o(head_ray_v, h, b);
+      else
+        o(head_ray_v, h, [&](Car o) { t(append_pith<decltype(o), B>{o, b}); });
+    }
+  };
+  template <typename O, typename B> append_pith(O, B) -> append_pith<O, B>;
 };
 template <typename... Args> lolr(Args...) -> lolr<Args...>;
 
