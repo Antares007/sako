@@ -23,8 +23,7 @@ template <typename... Ts> struct print;
 
 #include "../purry.hpp"
 
-#define Is_nullptr(x)                                                          \
-  std::is_same_v<decltype(nullptr), std::decay_t<decltype(x)>>
+#define LEND(x) std::is_same_v<decltype(nullptr), std::decay_t<decltype(x)>>
 #define Is_terminal(x)                                                         \
   std::is_invocable_r_v<void, decltype(x), int &, const char *>
 template <typename T>
@@ -72,14 +71,29 @@ template <typename O, char D = 0> a_pith(O) -> a_pith<O, D>;
       variable
 template <typename V> struct lolr {
   V v;
-  template <typename O> struct v_pith {
-    const O &o;
-    const char *b;
-    void operator()(head_ray *, Car p, Car pt) const {
+  void operator()(Car o, const char *b) const { //
+    unsigned int pos = 0;
+    auto v_pith = o::rec{[&](Car vrec, head_ray *, Car p, Car pt) {
       p(o::rec{[&](Car srec, head_ray *, Car s, Car st) {
         if constexpr (Is_terminal(s)) {
-          print<decltype(s), decltype(pt), decltype(st)> terminal;
+          // print<decltype(s), decltype(pt), decltype(st)> terminal;
+          int len;
+          s(len, b + pos);
+          if (len < 0) {
+            if constexpr (LEND(pt))
+              o(-1, 0);
+            else
+              pt(vrec);
+          } else {
+            o(len, pos);
+            pos += len;
+            if constexpr (LEND(st))
+              o(9, 0);
+            else
+              st(srec);
+          }
         } else {
+          static_assert(!LEND(st), "teminal dollar must be at the end!");
           s([&](head_ray *, Car p2, Car pt2) {
             p2([&](head_ray *, Car s2, Car st2) {
               if constexpr (std::is_same_v<decltype(s),
@@ -87,24 +101,26 @@ template <typename V> struct lolr {
                 PPP;
               } else if constexpr (Is_terminal(s2)) { // fitst terminal
                 int len;
-                s2(len, b);
+                s2(len, b + pos);
                 if (len < 0) {
-                  if constexpr (Is_nullptr(pt2)) {
+                  if constexpr (LEND(pt2)) {
                     o(-1, 0);
                   } else {
-                    if constexpr (Is_nullptr(st)) {
-                    } else {
-                    }
+                    auto tvar = [&](Car o) {
+                      pt2(concat_to_inners_pith{o, st});
+                    };
+                    if constexpr (LEND(pt))
+                      tvar(vrec);
+                    else
+                      tvar(concat_pith{vrec, pt});
                   }
-                } else {
-                  if constexpr (Is_nullptr(st2) && Is_nullptr(st))
-                    o(9, 0);
-                  else if constexpr (Is_nullptr(st2))
+                } else { // throw tails (we found correct production to follow
+                  o(len, pos);
+                  pos += len;
+                  if constexpr (LEND(st2))
                     st(srec);
-                  else if constexpr (Is_nullptr(st))
-                    st2(srec);
                   else
-                    st2(append_pith{srec, st});
+                    st2(concat_pith{srec, st});
                 }
               } else { // another variable
                 PPP;
@@ -113,32 +129,14 @@ template <typename V> struct lolr {
           });
         }
       }});
-    }
-  };
-  void operator()(Car o, const char *b) const { //
-    [&](Car o) {
-      v(concat_to_inners_pith{o, L1(grammar::dollar{})});
-    }(v_pith<decltype(o)>{o, b});
+    }};
+    [&](Car o) { v(concat_to_inners_pith{o, L1(grammar::dollar{})}); }(v_pith);
   }
-  template <typename O, typename B> struct append_pith {
-    const O &o;
-    const B &b;
-    void operator()(head_ray *, Car h, Car t) const {
-      if constexpr (Is_nullptr(t))
-        o(head_ray_v, h, b);
-      else
-        o(head_ray_v, h, [&](Car o) { t(append_pith<decltype(o), B>{o, b}); });
-    }
-  };
-  template <typename O> struct append_pith<O, decltype(nullptr)> : O {
-    using O::operator();
-  };
-  template <typename O, typename B> append_pith(O, B) -> append_pith<O, B>;
 };
 template <typename... Args> lolr(Args...) -> lolr<Args...>;
 
 int main() {
-  auto input = "abb";
+  auto input = "aabaab";
   using namespace grammar::aabb;
   using namespace grammar;
   lolr{aabb::S{}}(
