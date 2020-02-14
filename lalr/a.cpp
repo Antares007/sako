@@ -1,4 +1,5 @@
 #include "../c.cpp"
+#include "list_piths.hpp"
 #include <cxxabi.h>
 #include <iostream>
 #include <string>
@@ -65,48 +66,6 @@ template <typename O, int D = 0> struct a_pith {
 };
 template <typename O, char D = 0> a_pith(O) -> a_pith<O, D>;
 
-template <typename A, typename B> struct append {
-  A a;
-  B b;
-  void operator()(Car o) const { a(pith<decltype(o)>{o, b}); }
-  template <typename O> struct pith {
-    const O &o;
-    const B &b;
-    void operator()(head_ray *, Car h, Car t) const {
-      if constexpr (Is_nullptr(t))
-        o(head_ray_v, h, b);
-      else
-        o(head_ray_v, h, [&](Car o) { t(pith<decltype(o)>{o, b}); });
-    }
-  };
-};
-template <typename A, typename B> append(A, B) -> append<A, B>;
-
-template <typename A, typename B> struct map {
-  A a;
-  B b;
-  void operator()(Car o) const { a(pith<decltype(o)>{o, b}); }
-  template <typename O> struct pith {
-    const O &o;
-    const B &b;
-    void operator()(head_ray *, auto &&h, auto &&t) const {
-      if constexpr (Is_nullptr(t))
-        o(head_ray_v, b(Forward(h)), Forward(t));
-      else
-        o(head_ray_v, b(Forward(h)), [&](Car o) {
-          t(pith<decltype(o)>{o, b});
-        });
-    }
-  };
-};
-template <typename A, typename B> map(A, B) -> map<A, B>;
-
-template <typename P> struct avar {
-  P p;
-  void operator()(Car o) const { o(head_ray_v, p, nullptr); }
-};
-template <typename P> avar(P) -> avar<P>;
-
 #define PPP                                                                    \
   print<decltype(s), decltype(s2), decltype(pt), decltype(pt2), decltype(st),  \
         decltype(st2)>                                                         \
@@ -130,9 +89,22 @@ template <typename V> struct lolr {
                 int len;
                 s2(len, b);
                 if (len < 0) {
-                  PPP;
+                  if constexpr (Is_nullptr(pt2)) {
+                    o(-1, 0);
+                  } else {
+                    if constexpr (Is_nullptr(st)) {
+                    } else {
+                    }
+                  }
                 } else {
-                  st2(append_pith{srec, st});
+                  if constexpr (Is_nullptr(st2) && Is_nullptr(st))
+                    o(9, 0);
+                  else if constexpr (Is_nullptr(st2))
+                    st(srec);
+                  else if constexpr (Is_nullptr(st))
+                    st2(srec);
+                  else
+                    st2(append_pith{srec, st});
                 }
               } else { // another variable
                 PPP;
@@ -144,9 +116,9 @@ template <typename V> struct lolr {
     }
   };
   void operator()(Car o, const char *b) const { //
-    map{v, [](auto &&production) {
-          return append{Forward(production), L1(grammar::dollar{})};
-        }}(v_pith<decltype(o)>{o, b});
+    [&](Car o) {
+      v(concat_to_inners_pith{o, L1(grammar::dollar{})});
+    }(v_pith<decltype(o)>{o, b});
   }
   template <typename O, typename B> struct append_pith {
     const O &o;
@@ -158,6 +130,9 @@ template <typename V> struct lolr {
         o(head_ray_v, h, [&](Car o) { t(append_pith<decltype(o), B>{o, b}); });
     }
   };
+  template <typename O> struct append_pith<O, decltype(nullptr)> : O {
+    using O::operator();
+  };
   template <typename O, typename B> append_pith(O, B) -> append_pith<O, B>;
 };
 template <typename... Args> lolr(Args...) -> lolr<Args...>;
@@ -166,18 +141,6 @@ int main() {
   auto input = "abb";
   using namespace grammar::aabb;
   using namespace grammar;
-  map{L2(L3(1, 2, 3), L2('a', 'b')), [](auto &&i) {
-        return append{Forward(i), L2(3, 6)};
-      }}(o::rec{[](Car rec, head_ray *, Car v, Car t) {
-    if constexpr (std::is_invocable_r_v<void, decltype(v), void (*)(...)>) {
-      v(rec);
-      std::cout << '\n';
-    } else
-      std::cout << v;
-    if constexpr (!Is_nullptr(t))
-      t(rec);
-  }});
-
   lolr{aabb::S{}}(
       [](auto v, size_t ident) {
         while (ident--)
