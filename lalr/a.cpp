@@ -1,4 +1,4 @@
-#include "../c.cpp"
+#include "g41.hpp"
 #include "list_piths.hpp"
 #include <cxxabi.h>
 #include <iostream>
@@ -69,82 +69,94 @@ template <typename O, char D = 0> a_pith(O) -> a_pith<O, D>;
   print<decltype(s), decltype(s2), decltype(pt), decltype(pt2), decltype(st),  \
         decltype(st2)>                                                         \
       variable
+
+template <typename O> struct v_pith {
+  const O &o;
+  const char *b;
+  unsigned int &pos;
+  void operator()(head_ray *, Car p, Car pt) const {
+    p(o::rec{[&](Car srec, head_ray *, Car s, Car st) {
+      // print<decltype(s), decltype(pt), decltype(st)> terminal;
+      if constexpr (Is_terminal(s)) {
+        int len;
+        s(len, b + pos);
+        if (len < 0) {
+          if constexpr (LEND(pt))
+            o(-1, 0);
+          else
+            pt(*this);
+        } else {
+          o(len, pos);
+          pos += len;
+          if constexpr (LEND(st))
+            o(9, 0);
+          else
+            st(srec);
+        }
+      } else {
+        static_assert(!LEND(st), "teminal dollar must be at the end!");
+        s([&](head_ray *, Car p2, Car pt2) {
+          p2([&](head_ray *, Car s2, Car st2) {
+            if constexpr (std::is_same_v<decltype(s),
+                                         decltype(s2)>) { // left recusion
+              if constexpr (LEND(pt2)) {
+                o(-1, 0);
+              } else {
+                PPP;
+              }
+            } else if constexpr (Is_terminal(s2)) { // fitst terminal
+              int len;
+              s2(len, b + pos);
+              if (len < 0) {
+                if constexpr (LEND(pt2)) {
+                  o(-1, 0);
+                } else {
+                  auto tvar = [&](Car o) { pt2(concat_to_inners_pith{o, st}); };
+                  if constexpr (LEND(pt))
+                    tvar(*this);
+                  else
+                    tvar(concat_pith{*this, pt});
+                }
+              } else { // throw tails (we found correct production to follow
+                o(len, pos);
+                pos += len;
+                if constexpr (LEND(st2))
+                  st(srec);
+                else
+                  st2(concat_pith{srec, st});
+              }
+            } else { // another variable
+              PPP;
+            };
+          });
+        });
+      }
+    }});
+  }
+};
 template <typename V> struct lolr {
   V v;
   void operator()(Car o, const char *b) const { //
     unsigned int pos = 0;
-    auto v_pith = o::rec{[&](Car vrec, head_ray *, Car p, Car pt) {
-      p(o::rec{[&](Car srec, head_ray *, Car s, Car st) {
-        if constexpr (Is_terminal(s)) {
-          // print<decltype(s), decltype(pt), decltype(st)> terminal;
-          int len;
-          s(len, b + pos);
-          if (len < 0) {
-            if constexpr (LEND(pt))
-              o(-1, 0);
-            else
-              pt(vrec);
-          } else {
-            o(len, pos);
-            pos += len;
-            if constexpr (LEND(st))
-              o(9, 0);
-            else
-              st(srec);
-          }
-        } else {
-          static_assert(!LEND(st), "teminal dollar must be at the end!");
-          s([&](head_ray *, Car p2, Car pt2) {
-            p2([&](head_ray *, Car s2, Car st2) {
-              if constexpr (std::is_same_v<decltype(s),
-                                           decltype(s2)>) { // left recusion
-                PPP;
-              } else if constexpr (Is_terminal(s2)) { // fitst terminal
-                int len;
-                s2(len, b + pos);
-                if (len < 0) {
-                  if constexpr (LEND(pt2)) {
-                    o(-1, 0);
-                  } else {
-                    auto tvar = [&](Car o) {
-                      pt2(concat_to_inners_pith{o, st});
-                    };
-                    if constexpr (LEND(pt))
-                      tvar(vrec);
-                    else
-                      tvar(concat_pith{vrec, pt});
-                  }
-                } else { // throw tails (we found correct production to follow
-                  o(len, pos);
-                  pos += len;
-                  if constexpr (LEND(st2))
-                    st(srec);
-                  else
-                    st2(concat_pith{srec, st});
-                }
-              } else { // another variable
-                PPP;
-              };
-            });
-          });
-        }
-      }});
-    }};
-    [&](Car o) { v(concat_to_inners_pith{o, L1(grammar::dollar{})}); }(v_pith);
+    [&](Car o) {
+      v(concat_to_inners_pith{o, L1(grammar::dollar{})});
+    }(v_pith<decltype(o)>{o, b, pos});
   }
 };
 template <typename... Args> lolr(Args...) -> lolr<Args...>;
 
+struct m_pith {
+  void operator()(int v, size_t ident) const {
+    while (ident--)
+      std::cout << "    ";
+    std::cout << v << '\n';
+  }
+};
+
 int main() {
-  auto input = "aabaab";
+  auto input = "abb";
   using namespace grammar::aabb;
   using namespace grammar;
-  lolr{aabb::S{}}(
-      [](auto v, size_t ident) {
-        while (ident--)
-          std::cout << "    ";
-        std::cout << v << '\n';
-      },
-      input);
+  lolr{aabb::S{}}(m_pith{}, input);
   return 9;
 }
