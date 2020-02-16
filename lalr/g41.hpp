@@ -38,30 +38,27 @@ v_( A )(L2(L2( a{}, A{} ),
 namespace aabb2 {
 v_( S )(
     L2(
-      L2( A{}, A{} ),
-      L1( mul{} )
+      L2( A{},   A{} ),
+      L1( mul{}      )
       )
     )
 v_( A )(
     L2(
-      L1( B{} ),
-      L1( plus{} )
+      L2( B{},   B{} ),
+      L1( plus{}     )
       )
     )_v
 v_( B )(
     L2(
-      L2( a{}, A{} ),
-      L1( b{} )
+      L2( a{},   A{} ),
+      L1( b{}        )
       )
     )_v _v
 }
 }
 /*
-S   S
-AA  AA
-A+  aAA
-B+  aBA
-aA+ abA
-aB+ ab+
-ab+
+S
+AA
++BB
++bb
   */
