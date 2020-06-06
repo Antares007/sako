@@ -32,7 +32,7 @@ constexpr inline auto drawB = [](auto o, auto pith, auto display, auto window) {
   o([&](auto o) {
     glClear(GL_COLOR_BUFFER_BIT);
 
-    pith(rays{o,
+    pith(o::rays{o,
               [&](int x, int y, uint32_t p) { buff[x + y * gwa.width] = p; }});
 
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, gwa.width, gwa.height, GL_RGBA,

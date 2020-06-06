@@ -52,54 +52,55 @@ int main() {
 
   size_t framecounter = 0;
 
-  auto sample =
-      (loopB ^ (windowB, display, windowRoot, 0, 0, 256 * 2, 240 * 2,
-                (drawB ^ (draw_string ^ [&](auto o) {
-                   auto tp1 = std::chrono::system_clock::now();
-                   auto tp2 = std::chrono::system_clock::now();
-                   auto fFrameTimer = 0.f;
-                   auto nFrameCount = 0;
-                   auto nFps = 0;
+  auto sample = purry(
+      loopB,
+      curry(windowB, display, windowRoot, 0, 0, 256, 240,
+            purry(drawB, purry(draw_string, [&](auto o) {
+                    auto tp1 = std::chrono::system_clock::now();
+                    auto tp2 = std::chrono::system_clock::now();
+                    auto fFrameTimer = 0.f;
+                    auto nFrameCount = 0;
+                    auto nFps = 0;
 
-                   o([&](auto o) {
-                     // Handle Timing
-                     tp2 = std::chrono::system_clock::now();
-                     std::chrono::duration<float> elapsedTime = tp2 - tp1;
-                     tp1 = tp2;
-                     // Our time per frame coefficient
-                     float fElapsedTime = elapsedTime.count();
-                     for (int i = 0; i < 256 * 2; i++)
-                       for (int j = 0; j < 240 * 2; j++)
-                         o(i, j,
-                           pixel(rand() % 128, rand() % 128, rand() % 128).n);
-                     o(++framecounter < 20000);
-                     fFrameTimer += fElapsedTime;
-                     nFrameCount++;
-                     if (fFrameTimer >= 1.0f) {
-                       fFrameTimer -= 1.0f;
-                       nFps = nFrameCount;
-                       nFrameCount = 0;
-                     }
-                     if (nFps > 0) {
-                       char buf[16]; // need a buffer for that
-                       sprintf(buf, "%d", nFps);
-                       o(10, 10, buf, -1, 2);
-                     }
-                     // for (int i = 0; i < 128; i++)
-                     //  for (int j = 0; j < 48; j++) {
-                     //    o(i, j, pixel(0xFF000000 | fontSprite[i + j
-                     //    * 128]).n);
-                     //  }
-                     // for (int i = 0; i < 128; i++)
-                     //  for (int j = 0; j < 48; j++) {
-                     //    auto p = temp_bitmap[i + j * 128];
-                     //    if (p)
-                     //      o(i, j + 48, pixel(p, p, p).n);
-                     //  }
-                   });
-                 }))));
+                    o([&](auto o) {
+                      // Handle Timing
+                      tp2 = std::chrono::system_clock::now();
+                      std::chrono::duration<float> elapsedTime = tp2 - tp1;
+                      tp1 = tp2;
+                      // Our time per frame coefficient
+                      float fElapsedTime = elapsedTime.count();
+                      for (int i = 0; i < 256; i++)
+                        for (int j = 0; j < 240; j++)
+                          o(i, j,
+                            pixel(rand() % 128, rand() % 128, rand() % 128).n);
+                      o(++framecounter < 20000);
+                      fFrameTimer += fElapsedTime;
+                      nFrameCount++;
+                      if (fFrameTimer >= 1.0f) {
+                        fFrameTimer -= 1.0f;
+                        nFps = nFrameCount;
+                        nFrameCount = 0;
+                      }
+                      if (nFps > 0) {
+                        char buf[16]; // need a buffer for that
+                        sprintf(buf, "%d", nFps);
+                        o(10, 10, buf, -1, 2);
+                      }
+                      // for (int i = 0; i < 128; i++)
+                      //  for (int j = 0; j < 48; j++) {
+                      //    o(i, j, pixel(0xFF000000 | fontSprite[i + j
+                      //    * 128]).n);
+                      //  }
+                      // for (int i = 0; i < 128; i++)
+                      //  for (int j = 0; j < 48; j++) {
+                      //    auto p = temp_bitmap[i + j * 128];
+                      //    if (p)
+                      //      o(i, j + 48, pixel(p, p, p).n);
+                      //  }
+                    });
+                  }))));
 
-  sample(rays{[](error_ray *, auto err) { std::cerr << err << std::endl; },
-              [](auto x) { std::cout << x << std::endl; }});
+  sample(o::rays{[](error_ray *, auto err) { std::cerr << err << std::endl; },
+                 [](auto x) { std::cout << x << std::endl; }});
   return 9;
 }

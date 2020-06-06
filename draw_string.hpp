@@ -39,7 +39,7 @@ constexpr inline auto draw_string = [](auto o, auto pith) {
     }
   }
   o([&](auto o) {
-    pith(rays{o, [&](int32_t x, int32_t y, const char *sText, uint32_t col = -1,
+    pith(o::rays{o, [&](int32_t x, int32_t y, const char *sText, uint32_t col = -1,
                      uint32_t scale = 1) {
                 int32_t sx = 0;
                 int32_t sy = 0;
